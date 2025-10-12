@@ -108,6 +108,7 @@ class MessageTopic:
     FLIGHT_MODE_CHANGED = "flight.mode_changed"
     AUTOPILOT_ENGAGED = "flight.autopilot.engaged"
     GEAR_POSITION = "flight.gear.position"
+    CONTROL_INPUT = "flight.control_input"
 
     # Cabin
     DOOR_STATE = "cabin.door.state"
@@ -121,6 +122,7 @@ class MessageTopic:
     # Collision
     COLLISION_DETECTED = "physics.collision_detected"
     TERRAIN_ELEVATION = "terrain.elevation"
+    TERRAIN_UPDATED = "terrain.updated"
     NEARBY_CITIES = "terrain.nearby_cities"
 
 

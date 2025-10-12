@@ -530,9 +530,7 @@ class TestSimpleFuelSystemEventPublishing:
         system.initialize(context)
         return system
 
-    def test_publishes_fuel_state_event(
-        self, fuel: SimpleFuelSystem, event_bus: EventBus
-    ) -> None:
+    def test_publishes_fuel_state_event(self, fuel: SimpleFuelSystem, event_bus: EventBus) -> None:
         """Test fuel system publishes state events."""
         received_events = []
 
