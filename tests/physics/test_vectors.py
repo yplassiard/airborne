@@ -1,6 +1,5 @@
 """Tests for Vector3 class."""
 
-
 import numpy as np
 import pytest
 
