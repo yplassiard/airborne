@@ -1,0 +1,45 @@
+# Pre-commit hooks for code quality
+# Install: uv run pre-commit install
+# Run manually: uv run pre-commit run --all-files
+
+repos:
+  - repo: local
+    hooks:
+      - id: ruff-format
+        name: Ruff Format
+        entry: uv run ruff format
+        language: system
+        types: [python]
+        pass_filenames: false
+        args: ["."]
+
+      - id: ruff-check
+        name: Ruff Lint
+        entry: uv run ruff check
+        language: system
+        types: [python]
+        pass_filenames: false
+        args: ["--fix", "."]
+
+      - id: mypy
+        name: MyPy Type Check
+        entry: uv run mypy
+        language: system
+        types: [python]
+        pass_filenames: false
+        args: ["src"]
+
+      - id: pylint
+        name: Pylint Quality Check
+        entry: uv run pylint
+        language: system
+        types: [python]
+        pass_filenames: false
+        args: ["src"]
+
+      - id: pytest
+        name: Pytest
+        entry: uv run pytest
+        language: system
+        pass_filenames: false
+        always_run: true
