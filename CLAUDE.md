@@ -15,6 +15,55 @@ This document provides instructions for Claude (AI assistant) when working on th
 
 ---
 
+## Code Quality Tools & Standards
+
+AirBorne follows **industry-standard Python development practices** to ensure robust, maintainable code.
+
+### Required Tools
+
+All code must pass these quality checks:
+
+1. **Ruff** - Fast Python linter and formatter (replaces Black, flake8, isort)
+   - Formatting: `uv run ruff format .`
+   - Linting: `uv run ruff check . --fix`
+   - Replaces: Black, flake8, isort, pyupgrade
+
+2. **mypy** - Static type checker
+   - Command: `uv run mypy src`
+   - Ensures type safety and catches type errors before runtime
+
+3. **pylint** - Code quality and standards checker
+   - Command: `uv run pylint src`
+   - Checks for code smells, bugs, and style issues
+
+4. **pytest** - Testing framework
+   - Command: `uv run pytest`
+   - With coverage: `uv run pytest --cov=src/airborne`
+
+### Quality Standards
+
+✅ **All commits must pass these checks** (unless marked as WIP)
+
+```bash
+# Pre-commit checklist (run before every commit)
+uv run ruff format .           # Format code
+uv run ruff check . --fix      # Lint and auto-fix
+uv run mypy src                # Type check
+uv run pylint src              # Quality check
+uv run pytest                  # Run tests
+```
+
+❌ **Never commit code that:**
+- Has linting errors
+- Has type checking errors
+- Has failing tests
+- Has missing type hints
+- Is not formatted with Ruff
+
+🚧 **WIP commits** are allowed to skip checks temporarily, but must be fixed before phase completion.
+
+---
+
 ## Progress Tracking
 
 ### Update plan.md
@@ -102,10 +151,13 @@ Review all code written in the phase:
 
 ### Code Style
 - [ ] Follows PEP 8 style guide
-- [ ] Formatted with Black
+- [ ] Formatted with Ruff (replaces Black + flake8)
 - [ ] Type hints on all functions/methods
 - [ ] Docstrings on all public APIs
 - [ ] Maximum line length: 100 characters
+- [ ] Passes Ruff linting checks
+- [ ] Passes mypy type checking
+- [ ] Passes pylint quality checks
 
 ### Error Handling
 - [ ] Appropriate exception handling
@@ -450,7 +502,9 @@ Before marking a task complete, verify:
 - [ ] Examples provided for complex usage
 
 ### Code Quality
-- [ ] Follows PEP 8 / Black formatting
+- [ ] Passes Ruff formatting and linting (`uv run ruff check .`)
+- [ ] Passes mypy type checking (`uv run mypy src`)
+- [ ] Passes pylint checks (`uv run pylint src`)
 - [ ] No code duplication
 - [ ] Proper error handling
 - [ ] No hardcoded values (use config)
@@ -505,6 +559,39 @@ fix(network): resolve connection timeout issue
 - When reaching a stable state
 
 **Commit often, push less frequently.**
+
+### Pre-Commit Quality Checks
+
+**Before every commit** (unless marked as WIP), ensure code passes all quality checks:
+
+```bash
+# 1. Format code with Ruff
+uv run ruff format .
+
+# 2. Run Ruff linting
+uv run ruff check . --fix
+
+# 3. Run mypy type checking
+uv run mypy src
+
+# 4. Run pylint
+uv run pylint src
+
+# 5. Run tests
+uv run pytest
+```
+
+**All checks must pass** before committing. If any check fails:
+- Fix the issues immediately
+- Do not commit broken code
+- Exception: Use `WIP:` prefix for work-in-progress commits
+
+**WIP Commits** (allowed to skip checks temporarily):
+```
+WIP: implementing event bus (type errors to fix)
+```
+
+**Important**: WIP commits must be fixed before phase completion.
 
 ---
 
@@ -605,16 +692,20 @@ End of day summary:
 - ✅ Tested (>80% coverage)
 - ✅ Documented (docstrings + comments)
 - ✅ Typed (type hints everywhere)
-- ✅ Formatted (Black, PEP 8)
+- ✅ Formatted (Ruff, PEP 8)
+- ✅ Linted (Ruff, mypy, pylint passing)
 - ✅ Maintainable (clean, clear, modular)
+- ✅ Robust (no crashes, graceful error handling)
 
 ### Never Compromise On:
 - ❌ Skipping tests
 - ❌ Missing documentation
-- ❌ Ignoring errors/warnings
+- ❌ Ignoring errors/warnings from linters
+- ❌ Committing code that fails quality checks (unless WIP)
 - ❌ Hardcoding values
 - ❌ Code duplication
 - ❌ Unclear variable names
+- ❌ Missing type hints
 
 ---
 
@@ -625,9 +716,12 @@ End of day summary:
 3. **Ask when unsure** - Don't guess
 4. **Test everything** - No exceptions
 5. **Document thoroughly** - Future developers will thank you
-6. **Assess quality** - After every phase
-7. **Commit frequently** - Save your work
-8. **Communicate clearly** - Keep user informed
+6. **Run quality checks** - Before every commit (Ruff, mypy, pylint)
+7. **Assess quality** - After every phase
+8. **Commit frequently** - Save your work
+9. **Communicate clearly** - Keep user informed
+
+**Remember**: Code that doesn't pass linting/type checking is not production-ready.
 
 ---
 
