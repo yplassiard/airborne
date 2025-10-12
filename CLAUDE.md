@@ -468,42 +468,33 @@ Before marking a task complete, verify:
 
 ### Commit Message Format
 
+**Use one-liner commits only** with the following format:
+
 ```
-<type>(<scope>): <subject>
-
-<body>
-
-<footer>
+<type>(<scope>): <brief description>
 ```
 
 **Types**:
 - `feat`: New feature
+- `enh`: Enhancement to existing feature
 - `fix`: Bug fix
-- `docs`: Documentation changes
-- `style`: Code style changes (formatting)
-- `refactor`: Code refactoring
-- `test`: Adding/updating tests
-- `chore`: Maintenance tasks
+
+**Scope**: Plugin or service name (e.g., `audio`, `engine`, `physics`, `core`)
+
+**Important**:
+- ❌ **NO** multi-line commit messages
+- ❌ **NO** Co-Authored-By footer
+- ❌ **NO** body or footer sections
+- ✅ Keep it concise and descriptive
 
 **Examples**:
 ```
 feat(core): implement event bus with priority handling
-
-- Add Event base class with timestamp
-- Add EventPriority enum
-- Implement EventBus with subscribe/publish/unsubscribe
-- Add unit tests with 95% coverage
-
-Closes #1
-```
-
-```
-fix(audio): resolve stereo panning calculation error
-
-The panning calculation was inverted, causing left sounds to play
-on the right speaker. Fixed the sign in the pan calculation.
-
-Fixes #15
+enh(audio): improve stereo panning calculation
+fix(engine): correct fuel consumption rate
+feat(physics): add 6DOF flight model
+enh(checklist): add auto-verification for items
+fix(network): resolve connection timeout issue
 ```
 
 ### When to Commit
