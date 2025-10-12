@@ -54,7 +54,7 @@ class ComponentRegistry:
             raise RegistryError(f"Component already registered: {name}")
 
         self._components[name] = implementation
-        logger.info(f"Registered component: {name} -> {implementation.__name__}")
+        logger.info("Registered component: %s -> %s", name, implementation.__name__)
 
     def unregister(self, name: str) -> None:
         """Unregister a component type.
@@ -69,7 +69,7 @@ class ComponentRegistry:
             raise RegistryError(f"Component not registered: {name}")
 
         del self._components[name]
-        logger.info(f"Unregistered component: {name}")
+        logger.info("Unregistered component: %s", name)
 
     def create(self, name: str, config: dict[str, Any]) -> Any:
         """Create an instance of a registered component.

@@ -89,7 +89,7 @@ class GameLoop:
             logger.info("Game loop interrupted by user")
 
         except Exception as e:
-            logger.error(f"Game loop error: {e}", exc_info=True)
+            logger.error("Game loop error: %s", e, exc_info=True)
             raise
 
         finally:
@@ -114,7 +114,7 @@ class GameLoop:
             # Clamp accumulator to prevent spiral of death
             max_accumulator = self.physics_dt * 5
             if self.physics_accumulator > max_accumulator:
-                logger.warning(f"Physics accumulator clamped: {self.physics_accumulator:.3f}s")
+                logger.warning("Physics accumulator clamped: %.3fs", self.physics_accumulator)
                 self.physics_accumulator = max_accumulator
 
             # Update physics at fixed rate
@@ -144,7 +144,7 @@ class GameLoop:
                 try:
                     plugin_info.plugin.update(dt)
                 except Exception as e:
-                    logger.error(f"Error updating plugin {plugin_info.metadata.name}: {e}")
+                    logger.error("Error updating plugin %s: %s", plugin_info.metadata.name, e)
                     plugin_info.plugin.on_error(e)
 
     def _limit_framerate(self) -> None:

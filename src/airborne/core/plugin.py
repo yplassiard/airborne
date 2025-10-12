@@ -244,7 +244,7 @@ class IPlugin(ABC):
         """
         import logging
 
-        logging.error(f"Error in plugin {self.get_metadata().name}: {error}")
+        logging.error("Error in plugin %s: %s", self.get_metadata().name, error)
 
 
 class PluginState(Enum):

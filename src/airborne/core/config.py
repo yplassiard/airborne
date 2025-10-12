@@ -69,7 +69,7 @@ class ConfigLoader:
             if data is None:
                 data = {}
 
-            logger.info(f"Loaded configuration from: {path}")
+            logger.info("Loaded configuration from: %s", path)
             return cls(data)
 
         except Exception as e:
@@ -167,7 +167,7 @@ class ConfigLoader:
             with path.open("w", encoding="utf-8") as f:
                 yaml.safe_dump(self._data, f, default_flow_style=False, sort_keys=False)
 
-            logger.info(f"Saved configuration to: {path}")
+            logger.info("Saved configuration to: %s", path)
 
         except Exception as e:
             raise ConfigError(f"Failed to save configuration: {e}") from e

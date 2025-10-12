@@ -1,0 +1,68 @@
+# Logging configuration for AirBorne
+
+# Global settings
+version: 1
+level: INFO  # Default level: DEBUG, INFO, WARNING, ERROR, CRITICAL
+format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+date_format: "%Y-%m-%d %H:%M:%S"
+log_dir: "logs"
+
+# Combined log file (all logs in one file)
+combined_log:
+  enabled: true
+  filename: "airborne.log"
+  max_bytes: 10485760  # 10 MB
+  backup_count: 5  # Keep 5 backup files
+
+# Console output
+console:
+  enabled: true
+  level: INFO  # Only INFO and above to console
+
+# Plugin-specific logging configurations
+plugins:
+  # Core systems
+  core.event_bus:
+    enabled: true
+    level: INFO
+    dedicated_file: false
+
+  core.messaging:
+    enabled: true
+    level: INFO
+    dedicated_file: false
+
+  core.plugin_loader:
+    enabled: true
+    level: INFO
+    dedicated_file: false
+
+  # Example: Engine plugin with dedicated file
+  engine_plugin:
+    enabled: true
+    level: DEBUG
+    dedicated_file: true
+    max_bytes: 5242880  # 5 MB
+    backup_count: 3
+
+  # Example: Audio plugin
+  audio_plugin:
+    enabled: true
+    level: INFO
+    dedicated_file: false
+
+  # Example: Physics plugin with verbose logging
+  physics_plugin:
+    enabled: true
+    level: DEBUG
+    dedicated_file: true
+
+  # Example: Network plugin (can be disabled)
+  network_plugin:
+    enabled: true
+    level: INFO
+    dedicated_file: false
+
+  # Example: Disabled plugin (no logs)
+  # test_plugin:
+  #   enabled: false

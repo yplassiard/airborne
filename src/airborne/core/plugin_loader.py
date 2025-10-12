@@ -78,7 +78,7 @@ class PluginLoader:
 
         for plugin_dir in self.plugin_dirs:
             if not plugin_dir.exists():
-                logger.warning(f"Plugin directory does not exist: {plugin_dir}")
+                logger.warning("Plugin directory does not exist: %s", plugin_dir)
                 continue
 
             for plugin_file in plugin_dir.rglob("*_plugin.py"):
@@ -87,9 +87,9 @@ class PluginLoader:
                     if metadata:
                         discovered.append(metadata)
                         self._metadata_cache[metadata.name] = metadata
-                        logger.info(f"Discovered plugin: {metadata.name} v{metadata.version}")
+                        logger.info("Discovered plugin: %s v%s", metadata.name, metadata.version)
                 except Exception as e:
-                    logger.error(f"Failed to discover plugin {plugin_file}: {e}")
+                    logger.error("Failed to discover plugin %s: %s", plugin_file, e)
 
         return discovered
 
@@ -122,13 +122,13 @@ class PluginLoader:
                         self.plugin_classes[metadata.name] = item
                         return metadata
                     except Exception as e:
-                        logger.error(f"Failed to get metadata from {item_name}: {e}")
+                        logger.error("Failed to get metadata from %s: %s", item_name, e)
                         return None
 
             return None
 
         except Exception as e:
-            logger.error(f"Failed to load plugin file {plugin_file}: {e}")
+            logger.error("Failed to load plugin file %s: %s", plugin_file, e)
             return None
 
     def load_plugin(self, plugin_name: str, context: PluginContext) -> IPlugin:
@@ -169,7 +169,7 @@ class PluginLoader:
         # Load dependencies first
         for dep_name in metadata.dependencies:
             if dep_name not in self.loaded_plugins:
-                logger.info(f"Loading dependency: {dep_name} for {plugin_name}")
+                logger.info("Loading dependency: %s for %s", dep_name, plugin_name)
                 try:
                     self.load_plugin(dep_name, context)
                 except Exception as e:
@@ -182,13 +182,13 @@ class PluginLoader:
             plugin = plugin_class()
             plugin_info = PluginInfo(plugin=plugin, metadata=metadata, state=PluginState.LOADING)
 
-            logger.info(f"Initializing plugin: {plugin_name}")
+            logger.info("Initializing plugin: %s", plugin_name)
             plugin.initialize(context)
 
             plugin_info.state = PluginState.LOADED
             self.loaded_plugins[plugin_name] = plugin_info
 
-            logger.info(f"Successfully loaded plugin: {plugin_name}")
+            logger.info("Successfully loaded plugin: %s", plugin_name)
             return plugin
 
         except Exception as e:
@@ -222,7 +222,9 @@ class PluginLoader:
         # Check for plugins that depend on this one
         dependents = self._find_dependents(plugin_name)
         if dependents:
-            logger.warning(f"Unloading {plugin_name} which is required by: {', '.join(dependents)}")
+            logger.warning(
+                "Unloading %s which is required by: %s", plugin_name, ", ".join(dependents)
+            )
 
         # Shutdown plugin
         try:
@@ -230,13 +232,13 @@ class PluginLoader:
             plugin_info.plugin.shutdown()
             plugin_info.state = PluginState.UNLOADED_AFTER_RUN
         except Exception as e:
-            logger.error(f"Error shutting down plugin {plugin_name}: {e}")
+            logger.error("Error shutting down plugin %s: %s", plugin_name, e)
             plugin_info.state = PluginState.ERROR
             plugin_info.error = e
 
         # Remove from loaded plugins
         del self.loaded_plugins[plugin_name]
-        logger.info(f"Unloaded plugin: {plugin_name}")
+        logger.info("Unloaded plugin: %s", plugin_name)
 
     def _find_dependents(self, plugin_name: str) -> list[str]:
         """Find plugins that depend on the given plugin.
