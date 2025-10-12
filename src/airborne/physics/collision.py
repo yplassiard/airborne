@@ -19,7 +19,7 @@ Typical usage example:
 """
 
 import math
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from airborne.physics.flight_model.base import AircraftState
 from airborne.physics.vectors import Vector3
@@ -96,9 +96,9 @@ class CollisionResult:
     """
 
     collided: bool
-    contact_point: Vector3 = Vector3.zero()
+    contact_point: Vector3 = field(default_factory=Vector3.zero)
     penetration_depth: float = 0.0
-    contact_normal: Vector3 = Vector3.unit_y()
+    contact_normal: Vector3 = field(default_factory=Vector3.unit_y)
 
 
 class CollisionDetector:
