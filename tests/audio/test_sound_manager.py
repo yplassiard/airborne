@@ -1,6 +1,5 @@
 """Tests for sound manager."""
 
-
 import pytest
 
 from airborne.audio.engine.base import (

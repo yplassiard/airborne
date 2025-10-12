@@ -85,7 +85,7 @@ class SoundManager:
             for sound in list(self._sound_cache.values()):
                 try:
                     self._audio_engine.unload_sound(sound)
-                except Exception as e:
+                except Exception as e:  # pylint: disable=broad-exception-caught
                     logger.error("Error unloading sound: %s", e)
 
             self._audio_engine.shutdown()
@@ -139,7 +139,7 @@ class SoundManager:
         sound = self.load_sound(path)
         return self._audio_engine.play_2d(sound, volume, pitch, loop)
 
-    def play_sound_3d(
+    def play_sound_3d(  # pylint: disable=too-many-arguments,too-many-positional-arguments
         self,
         path: str,
         position: Vector3,

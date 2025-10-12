@@ -219,7 +219,7 @@ class IAudioEngine(ABC):
         """
 
     @abstractmethod
-    def play_3d(
+    def play_3d(  # pylint: disable=too-many-arguments,too-many-positional-arguments
         self,
         sound: Sound,
         position: Vector3,

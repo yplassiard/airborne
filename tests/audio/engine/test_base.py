@@ -1,6 +1,5 @@
 """Tests for audio engine base classes."""
 
-
 from airborne.audio.engine.base import (
     AudioFormat,
     AudioSource,

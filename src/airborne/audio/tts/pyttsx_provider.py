@@ -136,7 +136,7 @@ class PyTTSXProvider(ITTSProvider):
         if self._engine:
             try:
                 self._engine.stop()
-            except Exception as e:
+            except Exception as e:  # pylint: disable=broad-exception-caught
                 logger.error("Error stopping pyttsx3 engine: %s", e)
 
         self._initialized = False
@@ -189,7 +189,7 @@ class PyTTSXProvider(ITTSProvider):
             if self._state == TTSState.SPEAKING:
                 try:
                     self._engine.stop()
-                except Exception as e:
+                except Exception as e:  # pylint: disable=broad-exception-caught
                     logger.error("Error stopping speech: %s", e)
             self._state = TTSState.IDLE
             self._current_item = None
@@ -338,10 +338,10 @@ class PyTTSXProvider(ITTSProvider):
             if self._current_item.callback and not self._stop_requested:
                 try:
                     self._current_item.callback()
-                except Exception as e:
+                except Exception as e:  # pylint: disable=broad-exception-caught
                     logger.error("Error in speech callback: %s", e)
 
-        except Exception as e:
+        except Exception as e:  # pylint: disable=broad-exception-caught
             logger.error("Error during speech: %s", e)
 
         finally:

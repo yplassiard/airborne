@@ -11,6 +11,7 @@ Typical usage example:
     sound = engine.load_sound("sounds/engine.wav")
     source_id = engine.play_3d(sound, Vector3(0, 0, 10))
 """
+# pylint: disable=no-member  # PyBASS3 has no type stubs (E1101)
 
 from pathlib import Path
 from typing import Any
@@ -114,14 +115,14 @@ class PyBASSEngine(IAudioEngine):
         for source_id in list(self._sources.keys()):
             try:
                 self.stop_source(source_id)
-            except Exception as e:
+            except Exception as e:  # pylint: disable=broad-exception-caught
                 logger.error("Error stopping source %d: %s", source_id, e)
 
         # Free all sounds
         for sound in list(self._sounds.values()):
             try:
                 self.unload_sound(sound)
-            except Exception as e:
+            except Exception as e:  # pylint: disable=broad-exception-caught
                 logger.error("Error unloading sound %s: %s", sound.path, e)
 
         # Shutdown BASS
@@ -263,7 +264,7 @@ class PyBASSEngine(IAudioEngine):
         logger.debug("Playing 2D sound: %s (source_id=%d)", sound.path, source_id)
         return source_id
 
-    def play_3d(
+    def play_3d(  # pylint: disable=too-many-arguments,too-many-positional-arguments
         self,
         sound: Sound,
         position: Vector3,
