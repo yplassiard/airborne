@@ -76,7 +76,32 @@ def load_bass_library() -> tuple[str, str]:
     """
     bass_path, bass_fx_path = get_bass_library_path()
 
-    # Add library directory to system path so pybass3 can find it
+    # Pre-load the library using ctypes so pybass3 can find it
+    try:
+        import ctypes
+
+        # Load BASS library with explicit path
+        if sys.platform == "win32":
+            ctypes.WinDLL(str(bass_path))
+        else:
+            # Use RTLD_GLOBAL to make symbols available globally
+            ctypes.CDLL(str(bass_path), mode=ctypes.RTLD_GLOBAL)
+
+        logger.info(f"Successfully pre-loaded BASS library from {bass_path}")
+
+        # Load BASS_FX if available
+        if bass_fx_path.exists():
+            if sys.platform == "win32":
+                ctypes.WinDLL(str(bass_fx_path))
+            else:
+                ctypes.CDLL(str(bass_fx_path), mode=ctypes.RTLD_GLOBAL)
+            logger.info(f"Successfully pre-loaded BASS_FX library from {bass_fx_path}")
+
+    except Exception as e:
+        logger.error(f"Failed to pre-load BASS library: {e}")
+        raise
+
+    # Also add library directory to system path as fallback
     lib_dir = bass_path.parent
     if str(lib_dir) not in os.environ.get("PATH", ""):
         if sys.platform == "win32":
