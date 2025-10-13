@@ -119,6 +119,9 @@ class MessageTopic:
     TRAFFIC_UPDATE = "network.traffic.update"
     ATC_MESSAGE = "network.atc.message"
 
+    # Avionics
+    TCAS_ALERT = "avionics.tcas.alert"
+
     # Collision
     COLLISION_DETECTED = "physics.collision_detected"
     TERRAIN_ELEVATION = "terrain.elevation"
