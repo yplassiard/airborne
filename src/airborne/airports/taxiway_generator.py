@@ -243,7 +243,10 @@ class TaxiwayGenerator:
         # Add terminal area connected to middle taxiway node
         terminal_offset = 0.002
         mid_node = taxiway_nodes[1]
-        mid_pos = graph.get_node(mid_node).position
+        mid_node_obj = graph.get_node(mid_node)
+        if mid_node_obj is None:
+            return
+        mid_pos = mid_node_obj.position
 
         terminal = self._add_node(
             graph,
@@ -383,7 +386,10 @@ class TaxiwayGenerator:
 
         for idx, pos in enumerate(terminal_positions):
             outer_node = outer_nodes[pos]
-            outer_pos = graph.get_node(outer_node).position
+            outer_node_obj = graph.get_node(outer_node)
+            if outer_node_obj is None:
+                continue
+            outer_pos = outer_node_obj.position
 
             terminal = self._add_node(
                 graph,
@@ -559,7 +565,10 @@ class TaxiwayGenerator:
         terminal_positions = [1, 3, 5]  # Three terminal areas
         for idx, pos in enumerate(terminal_positions):
             w3_node = w3_nodes[pos]
-            w3_pos = graph.get_node(w3_node).position
+            w3_node_obj = graph.get_node(w3_node)
+            if w3_node_obj is None:
+                continue
+            w3_pos = w3_node_obj.position
 
             terminal_offset = 0.0015
             terminal = self._add_node(
@@ -581,7 +590,10 @@ class TaxiwayGenerator:
             # Add parking stands at each terminal
             for stand_idx in range(3):
                 stand_offset = 0.0008 * (stand_idx - 1)  # Spread stands along terminal
-                terminal_pos = graph.get_node(terminal).position
+                terminal_obj = graph.get_node(terminal)
+                if terminal_obj is None:
+                    continue
+                terminal_pos = terminal_obj.position
 
                 stand = self._add_node(
                     graph,
@@ -631,18 +643,35 @@ class TaxiwayGenerator:
 
             # Connect secondary runway to W2 taxiway system
             # Find nearest W2 node to each runway end
-            rwy2_le_pos = graph.get_node(rwy2_le).position
-            nearest_to_le = min(
-                w2_nodes,
-                key=lambda n: self._distance(graph.get_node(n).position, rwy2_le_pos),
-            )
+            rwy2_le_obj = graph.get_node(rwy2_le)
+            rwy2_he_obj = graph.get_node(rwy2_he)
+            if rwy2_le_obj is None or rwy2_he_obj is None:
+                return
+
+            rwy2_le_pos = rwy2_le_obj.position
+
+            def distance_to_le(n: str) -> float:
+                node_obj = graph.get_node(n)
+                return (
+                    self._distance(node_obj.position, rwy2_le_pos)
+                    if node_obj is not None
+                    else float("inf")
+                )
+
+            nearest_to_le = min(w2_nodes, key=distance_to_le)
             graph.add_edge(rwy2_le, nearest_to_le, "taxiway", "X1", bidirectional=True)
 
-            rwy2_he_pos = graph.get_node(rwy2_he).position
-            nearest_to_he = min(
-                w2_nodes,
-                key=lambda n: self._distance(graph.get_node(n).position, rwy2_he_pos),
-            )
+            rwy2_he_pos = rwy2_he_obj.position
+
+            def distance_to_he(n: str) -> float:
+                node_obj = graph.get_node(n)
+                return (
+                    self._distance(node_obj.position, rwy2_he_pos)
+                    if node_obj is not None
+                    else float("inf")
+                )
+
+            nearest_to_he = min(w2_nodes, key=distance_to_he)
             graph.add_edge(rwy2_he, nearest_to_he, "taxiway", "X2", bidirectional=True)
 
     def _add_node(

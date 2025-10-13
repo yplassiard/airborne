@@ -437,7 +437,7 @@ class ControlPanelPlugin(IPlugin):
 
         # Send message to target plugin
         if control.target_plugin and control.message_topic:
-            message_data = {
+            message_data: dict[str, Any] = {
                 "control_id": control.id,
                 "control_name": control.name,
                 "state": current_state,

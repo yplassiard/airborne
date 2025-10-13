@@ -312,7 +312,10 @@ class ChecklistPlugin(IPlugin):
             self.active_checklist.current_index += 1
 
         # Check if checklist is complete
-        if self.active_checklist.current_index >= len(self.active_checklist.items):
+        if (
+            self.active_checklist.current_index is not None
+            and self.active_checklist.current_index >= len(self.active_checklist.items)
+        ):
             self._announce_checklist_complete()
             self.active_checklist = None
             return False
@@ -365,10 +368,10 @@ class ChecklistPlugin(IPlugin):
             logger.warning("Failed to check verify condition %s: %s", condition, e)
             return False
 
-    def _get_nested_value(self, data: dict, key: str) -> Any:
+    def _get_nested_value(self, data: dict[str, Any], key: str) -> Any:
         """Get nested value from dictionary using dot notation."""
         keys = key.split(".")
-        value = data
+        value: Any = data
         for k in keys:
             if isinstance(value, dict):
                 value = value.get(k)

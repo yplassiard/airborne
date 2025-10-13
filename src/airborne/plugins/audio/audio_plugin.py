@@ -89,7 +89,7 @@ class AudioPlugin(IPlugin):
         tts_config = context.config.get("tts", {})
 
         # Create audio engine and TTS provider
-        if AUDIO_ENGINE_AVAILABLE and PyBASSEngine:
+        if AUDIO_ENGINE_AVAILABLE and PyBASSEngine is not None:
             try:
                 self.audio_engine = PyBASSEngine()
                 logger.info("PyBASSEngine created successfully")

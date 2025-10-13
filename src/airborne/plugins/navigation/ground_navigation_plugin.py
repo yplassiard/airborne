@@ -161,7 +161,7 @@ class GroundNavigationPlugin(IPlugin):
             # Build spatial index
             logger.info("Building spatial index...")
             for icao, airport in self.airport_db.airports.items():
-                self.spatial_index.insert(icao, airport.position)
+                self.spatial_index.insert(airport.position, icao)
 
             logger.info(
                 "Loaded %d airports with spatial indexing", self.airport_db.get_airport_count()
@@ -202,7 +202,8 @@ class GroundNavigationPlugin(IPlugin):
         nearest_airports = self.spatial_index.query_radius(position, radius_nm=10.0)
 
         if nearest_airports:
-            nearest_icao = nearest_airports[0]  # Closest airport
+            # query_radius returns list of (data, distance) tuples
+            nearest_icao, _ = nearest_airports[0]  # Closest airport
 
             # Check if we've changed airports
             if nearest_icao != self.current_airport_icao:

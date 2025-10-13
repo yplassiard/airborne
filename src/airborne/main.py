@@ -23,6 +23,7 @@ from airborne.core.registry import ComponentRegistry
 
 if TYPE_CHECKING:
     from airborne.aircraft.aircraft import Aircraft
+    from airborne.plugins.audio.audio_plugin import AudioPlugin
     from airborne.plugins.core.physics_plugin import PhysicsPlugin
 
 logger = get_logger(__name__)
@@ -68,7 +69,7 @@ class AirBorne:
 
         # Core plugins
         self.physics_plugin: PhysicsPlugin | None = None
-        self.audio_plugin = None
+        self.audio_plugin: AudioPlugin | None = None
 
         # Aircraft
         self.aircraft: Aircraft | None = None

@@ -171,7 +171,8 @@ class BeepGenerator:
         Returns:
             Square wave samples
         """
-        return np.sign(np.sin(2 * np.pi * frequency_hz * t)).astype(np.float32)
+        result: np.ndarray = np.sign(np.sin(2 * np.pi * frequency_hz * t)).astype(np.float32)
+        return result
 
     def _generate_triangle(self, t: np.ndarray, frequency_hz: float) -> np.ndarray:
         """Generate triangle wave.
@@ -184,7 +185,10 @@ class BeepGenerator:
             Triangle wave samples
         """
         # Triangle wave using arcsin(sin(x))
-        return (2 / np.pi * np.arcsin(np.sin(2 * np.pi * frequency_hz * t))).astype(np.float32)
+        result: np.ndarray = (2 / np.pi * np.arcsin(np.sin(2 * np.pi * frequency_hz * t))).astype(
+            np.float32
+        )
+        return result
 
     def _generate_sawtooth(self, t: np.ndarray, frequency_hz: float) -> np.ndarray:
         """Generate sawtooth wave.
@@ -198,7 +202,8 @@ class BeepGenerator:
         """
         # Sawtooth wave: 2*(t*f - floor(t*f + 0.5))
         phase = frequency_hz * t
-        return (2 * (phase - np.floor(phase + 0.5))).astype(np.float32)
+        result: np.ndarray = (2 * (phase - np.floor(phase + 0.5))).astype(np.float32)
+        return result
 
     def _generate_chirp(self, t: np.ndarray, base_frequency_hz: float) -> np.ndarray:
         """Generate chirp (frequency sweep).
