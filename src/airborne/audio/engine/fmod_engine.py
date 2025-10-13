@@ -425,13 +425,37 @@ class FMODEngine(IAudioEngine):
             return
 
         try:
+            import math
+
+            # Validate all floats are valid (not NaN or infinite)
+            def is_valid_float(val: float) -> bool:
+                return not (math.isnan(val) or math.isinf(val))
+
+            # Check position
+            if not all(is_valid_float(v) for v in [position.x, position.y, position.z]):
+                logger.warning(f"Invalid position values: {position}")
+                return
+
+            # Check forward
+            if not all(is_valid_float(v) for v in [forward.x, forward.y, forward.z]):
+                logger.warning(f"Invalid forward values: {forward}")
+                return
+
+            # Check up
+            if not all(is_valid_float(v) for v in [up.x, up.y, up.z]):
+                logger.warning(f"Invalid up values: {up}")
+                return
+
             listener = self._system.listener()
             listener.position = [position.x, position.y, position.z]
             listener.forward = [forward.x, forward.y, forward.z]
             listener.up = [up.x, up.y, up.z]
 
             if velocity:
-                listener.velocity = [velocity.x, velocity.y, velocity.z]
+                if all(is_valid_float(v) for v in [velocity.x, velocity.y, velocity.z]):
+                    listener.velocity = [velocity.x, velocity.y, velocity.z]
+                else:
+                    listener.velocity = [0.0, 0.0, 0.0]
             else:
                 listener.velocity = [0.0, 0.0, 0.0]
 
@@ -490,15 +514,18 @@ class FMODEngine(IAudioEngine):
         if self._initialized and self._system:
             try:
                 self._system.update()
-
-                # Clean up stopped channels
-                stopped_ids = [
-                    source_id
-                    for source_id, channel in self._channels.items()
-                    if not channel or not channel.is_playing
-                ]
-                for source_id in stopped_ids:
-                    del self._channels[source_id]
-
             except Exception as e:
-                logger.warning(f"Error updating FMOD: {e}")
+                logger.warning(f"Error updating FMOD system: {e}")
+
+            # Clean up stopped channels (check each channel individually)
+            stopped_ids = []
+            for source_id, channel in list(self._channels.items()):
+                try:
+                    if not channel or not channel.is_playing:
+                        stopped_ids.append(source_id)
+                except Exception:
+                    # Channel is invalid, mark for removal
+                    stopped_ids.append(source_id)
+
+            for source_id in stopped_ids:
+                del self._channels[source_id]

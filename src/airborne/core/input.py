@@ -114,6 +114,13 @@ class InputAction(Enum):
     MENU_SELECT = "menu_select"
     MENU_BACK = "menu_back"
 
+    # Instrument readouts
+    READ_AIRSPEED = "read_airspeed"
+    READ_ALTITUDE = "read_altitude"
+    READ_HEADING = "read_heading"
+    READ_VSPEED = "read_vspeed"
+    READ_ATTITUDE = "read_attitude"  # Bank and pitch angles
+
     # System controls
     PAUSE = "pause"
     QUIT = "quit"
@@ -154,12 +161,12 @@ class InputConfig:
             pygame.K_DOWN: InputAction.PITCH_UP,
             pygame.K_LEFT: InputAction.ROLL_LEFT,
             pygame.K_RIGHT: InputAction.ROLL_RIGHT,
-            pygame.K_a: InputAction.YAW_LEFT,
-            pygame.K_d: InputAction.YAW_RIGHT,
-            pygame.K_EQUALS: InputAction.THROTTLE_INCREASE,  # Plus key
-            pygame.K_MINUS: InputAction.THROTTLE_DECREASE,
-            pygame.K_f: InputAction.THROTTLE_FULL,
-            pygame.K_i: InputAction.THROTTLE_IDLE,
+            pygame.K_q: InputAction.YAW_LEFT,
+            pygame.K_e: InputAction.YAW_RIGHT,
+            pygame.K_HOME: InputAction.THROTTLE_INCREASE,
+            pygame.K_END: InputAction.THROTTLE_DECREASE,
+            pygame.K_PAGEUP: InputAction.THROTTLE_FULL,
+            pygame.K_PAGEDOWN: InputAction.THROTTLE_IDLE,
             # Brakes and gear
             pygame.K_b: InputAction.BRAKES,
             pygame.K_p: InputAction.PARKING_BRAKE,
@@ -170,14 +177,20 @@ class InputConfig:
             # View
             pygame.K_v: InputAction.VIEW_NEXT,
             pygame.K_c: InputAction.VIEW_PREV,
+            # Instrument readouts
+            pygame.K_s: InputAction.READ_AIRSPEED,  # S for Speed
+            pygame.K_l: InputAction.READ_ALTITUDE,  # L for aLtitude
+            pygame.K_h: InputAction.READ_HEADING,  # H for Heading
+            pygame.K_w: InputAction.READ_VSPEED,  # W for Vertical speed (up/down)
+            pygame.K_t: InputAction.READ_ATTITUDE,  # T for aTtitude (bank/pitch)
             # TTS
-            pygame.K_t: InputAction.TTS_NEXT,
-            pygame.K_r: InputAction.TTS_REPEAT,
-            pygame.K_s: InputAction.TTS_INTERRUPT,
+            pygame.K_n: InputAction.TTS_NEXT,  # N for Next
+            pygame.K_r: InputAction.TTS_REPEAT,  # R for Repeat
+            pygame.K_i: InputAction.TTS_INTERRUPT,  # I for Interrupt
             # Menu
             pygame.K_TAB: InputAction.MENU_TOGGLE,
-            pygame.K_w: InputAction.MENU_UP,
-            pygame.K_x: InputAction.MENU_DOWN,
+            pygame.K_a: InputAction.MENU_UP,
+            pygame.K_z: InputAction.MENU_DOWN,
             pygame.K_RETURN: InputAction.MENU_SELECT,
             pygame.K_BACKSPACE: InputAction.MENU_BACK,
             # System
@@ -257,6 +270,19 @@ class InputManager:  # pylint: disable=too-many-instance-attributes
         self._keys_just_pressed: set[int] = set()
         self._keys_just_released: set[int] = set()
 
+        # Track which actions have been triggered during current key hold
+        # Used to prevent non-repeatable actions from repeating
+        self._actions_triggered: set[InputAction] = set()
+
+        # Define which actions allow key repeat (levers/sliders)
+        # All other actions are one-shot (switches)
+        self._repeatable_actions: set[InputAction] = {
+            InputAction.THROTTLE_INCREASE,
+            InputAction.THROTTLE_DECREASE,
+            InputAction.FLAPS_UP,
+            InputAction.FLAPS_DOWN,
+        }
+
         # Joystick support
         self.joystick: Any = None  # pygame.joystick.Joystick | None
         self._initialize_joystick()
@@ -314,15 +340,29 @@ class InputManager:  # pylint: disable=too-many-instance-attributes
         Args:
             key: Pygame key constant.
         """
-        if key in self._keys_pressed:
-            return  # Already pressed
+        is_repeat = key in self._keys_pressed
 
         self._keys_pressed.add(key)
-        self._keys_just_pressed.add(key)
+        if not is_repeat:
+            self._keys_just_pressed.add(key)
 
         # Check for bound action
         action = self.config.keyboard_bindings.get(key)
         if action:
+            # For key repeat events, only trigger repeatable actions
+            if is_repeat:
+                if action not in self._repeatable_actions:
+                    return  # Skip non-repeatable actions on repeat
+            else:
+                # First press: clear previous trigger state for this action
+                self._actions_triggered.discard(action)
+
+            # Check if this non-repeatable action was already triggered
+            if action not in self._repeatable_actions:
+                if action in self._actions_triggered:
+                    return  # Already triggered, don't repeat
+                self._actions_triggered.add(action)
+
             self._handle_action_pressed(action)
 
     def _handle_key_up(self, key: int) -> None:
@@ -340,6 +380,8 @@ class InputManager:  # pylint: disable=too-many-instance-attributes
         # Check for bound action
         action = self.config.keyboard_bindings.get(key)
         if action:
+            # Clear trigger state for non-repeatable actions
+            self._actions_triggered.discard(action)
             self._handle_action_released(action)
 
     def _handle_action_pressed(self, action: InputAction) -> None:
@@ -362,12 +404,24 @@ class InputManager:  # pylint: disable=too-many-instance-attributes
         # Discrete controls
         if action == InputAction.THROTTLE_INCREASE:
             self._target_throttle = min(1.0, self._target_throttle + self.config.throttle_increment)
+            self.event_bus.publish(
+                InputActionEvent(action=action.value, value=self._target_throttle)
+            )
         elif action == InputAction.THROTTLE_DECREASE:
             self._target_throttle = max(0.0, self._target_throttle - self.config.throttle_increment)
+            self.event_bus.publish(
+                InputActionEvent(action=action.value, value=self._target_throttle)
+            )
         elif action == InputAction.THROTTLE_FULL:
             self._target_throttle = 1.0
+            self.event_bus.publish(
+                InputActionEvent(action=action.value, value=self._target_throttle)
+            )
         elif action == InputAction.THROTTLE_IDLE:
             self._target_throttle = 0.0
+            self.event_bus.publish(
+                InputActionEvent(action=action.value, value=self._target_throttle)
+            )
         elif action == InputAction.GEAR_TOGGLE:
             self.state.gear = 0.0 if self.state.gear > 0.5 else 1.0
             self.event_bus.publish(InputActionEvent(action=action.value, value=self.state.gear))

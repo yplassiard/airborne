@@ -80,6 +80,15 @@ class AudioPlugin(IPlugin):
         self._last_brakes_state = 0.0
         self._engine_started = False
 
+        # Flight state for instrument readouts
+        self._airspeed = 0.0  # knots
+        self._groundspeed = 0.0  # knots
+        self._altitude = 0.0  # feet
+        self._heading = 0.0  # degrees
+        self._vspeed = 0.0  # feet per minute
+        self._bank = 0.0  # degrees
+        self._pitch = 0.0  # degrees
+
     def get_metadata(self) -> PluginMetadata:
         """Return plugin metadata.
 
@@ -281,6 +290,22 @@ class AudioPlugin(IPlugin):
             # Update listener position from aircraft position
             data = message.data
 
+            # Update flight state for instrument readouts
+            if "airspeed" in data:
+                self._airspeed = data["airspeed"]
+            if "groundspeed" in data:
+                self._groundspeed = data["groundspeed"]
+            if "altitude" in data:
+                self._altitude = data["altitude"]
+            if "heading" in data:
+                self._heading = data["heading"]
+            if "vspeed" in data:
+                self._vspeed = data["vspeed"]
+            if "bank" in data:
+                self._bank = data["bank"]
+            if "pitch" in data:
+                self._pitch = data["pitch"]
+
             # Update wind sound based on airspeed
             if "airspeed" in data and self.sound_manager:
                 airspeed = data["airspeed"]
@@ -351,26 +376,67 @@ class AudioPlugin(IPlugin):
         Args:
             event: Input action event from event bus.
         """
+        logger.debug(f"Input action received: {event.action}")
+
         if not self.tts_provider:
+            logger.warning("No TTS provider available for input action feedback")
             return
 
-        # Map actions to TTS announcements
-        action_messages = {
-            "gear_toggle": "Gear " + ("down" if self._last_gear_state > 0.5 else "up"),
-            "flaps_down": "Flaps extending",
-            "flaps_up": "Flaps retracting",
-            "throttle_increase": "Throttle increased",
-            "throttle_decrease": "Throttle decreased",
-            "throttle_full": "Full throttle",
-            "throttle_idle": "Throttle idle",
-            "brakes_on": "Brakes on",
-            "pause": "Paused",
-            "tts_next": "Next",
-            "tts_repeat": "Repeat",
-        }
+        message: str | None = None
 
-        message = action_messages.get(event.action)
-        if message:
-            from airborne.audio.tts.base import TTSPriority
+        # Handle instrument readouts
+        if event.action == "read_airspeed":
+            message = f"Airspeed {int(self._airspeed)} knots"
+        elif event.action == "read_altitude":
+            message = f"Altitude {int(self._altitude)} feet"
+        elif event.action == "read_heading":
+            message = f"Heading {int(self._heading)} degrees"
+        elif event.action == "read_vspeed":
+            # Format vertical speed with sign
+            vspeed_int = int(self._vspeed)
+            if vspeed_int > 0:
+                message = f"Climbing {vspeed_int} feet per minute"
+            elif vspeed_int < 0:
+                message = f"Descending {abs(vspeed_int)} feet per minute"
+            else:
+                message = "Level flight"
+        elif event.action == "read_attitude":
+            # Format bank and pitch angles
+            bank_int = int(self._bank)
+            pitch_int = int(self._pitch)
+            bank_dir = "left" if bank_int < 0 else "right" if bank_int > 0 else "level"
+            pitch_dir = "up" if pitch_int > 0 else "down" if pitch_int < 0 else "level"
+            if bank_int == 0 and pitch_int == 0:
+                message = "Level attitude"
+            elif bank_int == 0:
+                message = f"Pitch {abs(pitch_int)} degrees {pitch_dir}"
+            elif pitch_int == 0:
+                message = f"Bank {abs(bank_int)} degrees {bank_dir}"
+            else:
+                message = f"Bank {abs(bank_int)} {bank_dir}, pitch {abs(pitch_int)} {pitch_dir}"
+        else:
+            # Map actions to TTS announcements
+            action_messages = {
+                "gear_toggle": "Gear " + ("down" if self._last_gear_state > 0.5 else "up"),
+                "flaps_down": "Flaps extending",
+                "flaps_up": "Flaps retracting",
+                "throttle_increase": "Throttle increased",
+                "throttle_decrease": "Throttle decreased",
+                "throttle_full": "Full throttle",
+                "throttle_idle": "Throttle idle",
+                "brakes_on": "Brakes on",
+                "pause": "Paused",
+                "tts_next": "Next",
+                "tts_repeat": "Repeat",
+            }
 
-            self.tts_provider.speak(message, priority=TTSPriority.NORMAL)
+            message = action_messages.get(event.action)
+
+        if not message:
+            logger.debug(f"No TTS message for action: {event.action}")
+            return
+
+        from airborne.audio.tts.base import TTSPriority
+
+        logger.debug(f"Speaking: {message}")
+        self.tts_provider.speak(message, priority=TTSPriority.NORMAL)

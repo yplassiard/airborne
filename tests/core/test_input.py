@@ -192,7 +192,7 @@ class TestInputManagerKeyboard:
 
         keydown = Mock()
         keydown.type = pygame.KEYDOWN
-        keydown.key = pygame.K_EQUALS  # Plus key
+        keydown.key = pygame.K_HOME  # Throttle increase
         manager.process_events([keydown])
 
         # Throttle should target higher value
@@ -423,7 +423,7 @@ class TestInputManagerThrottle:
         """Test throttle full action."""
         keydown = Mock()
         keydown.type = pygame.KEYDOWN
-        keydown.key = pygame.K_f
+        keydown.key = pygame.K_PAGEUP  # Changed from K_f to K_PAGEUP
         manager.process_events([keydown])
 
         assert manager._target_throttle == 1.0
@@ -434,7 +434,7 @@ class TestInputManagerThrottle:
 
         keydown = Mock()
         keydown.type = pygame.KEYDOWN
-        keydown.key = pygame.K_i
+        keydown.key = pygame.K_PAGEDOWN  # Changed from K_i to K_PAGEDOWN
         manager.process_events([keydown])
 
         assert manager._target_throttle == 0.0
@@ -444,13 +444,13 @@ class TestInputManagerThrottle:
         for _ in range(5):
             keydown = Mock()
             keydown.type = pygame.KEYDOWN
-            keydown.key = pygame.K_EQUALS
+            keydown.key = pygame.K_HOME  # Changed from K_EQUALS to K_HOME
             manager.process_events([keydown])
 
             # Release key between presses
             keyup = Mock()
             keyup.type = pygame.KEYUP
-            keyup.key = pygame.K_EQUALS
+            keyup.key = pygame.K_HOME  # Changed from K_EQUALS to K_HOME
             manager.process_events([keyup])
 
         # Should be 5 * 0.05 = 0.25
@@ -462,7 +462,7 @@ class TestInputManagerThrottle:
 
         keydown = Mock()
         keydown.type = pygame.KEYDOWN
-        keydown.key = pygame.K_EQUALS
+        keydown.key = pygame.K_HOME  # Changed from K_EQUALS to K_HOME
         manager.process_events([keydown])
 
         assert manager._target_throttle == 1.0
@@ -513,7 +513,7 @@ class TestInputManagerEventPublishing:
 
         keydown = Mock()
         keydown.type = pygame.KEYDOWN
-        keydown.key = pygame.K_t  # TTS next (changed from SPACE to T)
+        keydown.key = pygame.K_n  # TTS next (changed from T to N)
         manager.process_events([keydown])
 
         assert len(received_events) > 0
