@@ -11,7 +11,6 @@ Typical usage:
 from typing import Any
 
 from airborne.audio.engine.base import IAudioEngine, Vector3
-from airborne.audio.engine.pybass_engine import PyBASSEngine
 from airborne.audio.sound_manager import SoundManager
 from airborne.audio.tts.base import ITTSProvider
 from airborne.audio.tts.pyttsx_provider import PyTTSXProvider
@@ -20,6 +19,16 @@ from airborne.core.messaging import Message, MessageTopic
 from airborne.core.plugin import IPlugin, PluginContext, PluginMetadata, PluginType
 
 logger = get_logger(__name__)
+
+# Try to import PyBASSEngine, fall back to None if not available
+try:
+    from airborne.audio.engine.pybass_engine import PyBASSEngine
+
+    AUDIO_ENGINE_AVAILABLE = True
+except (ImportError, OSError) as e:
+    logger.warning(f"PyBASSEngine not available: {e}. Audio plugin will run in stub mode.")
+    PyBASSEngine = None  # type: ignore[misc,assignment]
+    AUDIO_ENGINE_AVAILABLE = False
 
 
 class AudioPlugin(IPlugin):
@@ -80,22 +89,38 @@ class AudioPlugin(IPlugin):
         tts_config = context.config.get("tts", {})
 
         # Create audio engine and TTS provider
-        self.audio_engine = PyBASSEngine()
+        if AUDIO_ENGINE_AVAILABLE and PyBASSEngine:
+            try:
+                self.audio_engine = PyBASSEngine()
+                logger.info("PyBASSEngine created successfully")
+            except Exception as e:
+                logger.error(f"Failed to create PyBASSEngine: {e}")
+                self.audio_engine = None
+        else:
+            logger.warning("Audio engine not available, running without audio")
+            self.audio_engine = None
+
         self.tts_provider = PyTTSXProvider()
 
-        # Create sound manager
-        self.sound_manager = SoundManager()
-        self.sound_manager.initialize(
-            audio_engine=self.audio_engine,
-            tts_provider=self.tts_provider,
-            audio_config=audio_config,
-            tts_config=tts_config,
-        )
+        # Create sound manager only if audio engine is available
+        if self.audio_engine:
+            self.sound_manager = SoundManager()
+            self.sound_manager.initialize(
+                audio_engine=self.audio_engine,
+                tts_provider=self.tts_provider,
+                audio_config=audio_config,
+                tts_config=tts_config,
+            )
+        else:
+            logger.warning("Sound manager disabled due to missing audio engine")
+            self.sound_manager = None
 
         # Register components in registry
         if context.plugin_registry:
-            context.plugin_registry.register("audio_engine", self.audio_engine)
-            context.plugin_registry.register("sound_manager", self.sound_manager)
+            if self.audio_engine:
+                context.plugin_registry.register("audio_engine", self.audio_engine)
+            if self.sound_manager:
+                context.plugin_registry.register("sound_manager", self.sound_manager)
             context.plugin_registry.register("tts", self.tts_provider)
 
         # Subscribe to position updates

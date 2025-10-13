@@ -16,13 +16,26 @@ Typical usage example:
 from pathlib import Path
 from typing import Any
 
+# Load BASS libraries before importing pybass3
+try:
+    from airborne.audio.engine.bass_loader import load_bass_library
+
+    load_bass_library()
+except (FileNotFoundError, OSError) as e:
+    import warnings
+
+    warnings.warn(f"BASS library loading failed: {e}. Audio will be disabled.")
+
 try:
     import pybass3 as pybass  # type: ignore[import-untyped]
     from pybass3 import bass_3d
 
     PYBASS_AVAILABLE = True
-except ImportError:
+except ImportError as e:
     PYBASS_AVAILABLE = False
+    import warnings
+
+    warnings.warn(f"PyBASS3 import failed: {e}. Audio will be disabled.")
 
 from airborne.audio.engine.base import (
     AudioFormat,

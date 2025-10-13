@@ -94,7 +94,7 @@ class GroundNavigationPlugin(IPlugin):
         # Currently no message handling
         pass
 
-    def initialize(self, context: dict[str, Any]) -> None:
+    def initialize(self, context: Any) -> None:
         """Initialize the plugin.
 
         Args:
@@ -156,21 +156,22 @@ class GroundNavigationPlugin(IPlugin):
             self.beep_pattern.value,
         )
 
-    def update(self, delta_time: float, state: dict[str, Any]) -> None:
+    def update(self, dt: float) -> None:
         """Update ground navigation.
 
         Args:
-            delta_time: Time since last update (seconds)
-            state: Aircraft state
+            dt: Time since last update (seconds)
         """
         if not self.airport_db or not self.spatial_index:
             return
 
-        # Get aircraft position
-        position = state.get("position")
-        if not position:
+        # Get aircraft position from last known position
+        # Note: This plugin would need to subscribe to position updates
+        # For now, skip if no position is available
+        if not self.last_position:
             return
 
+        position = self.last_position
         if not isinstance(position, Vector3):
             # Convert from dict if necessary
             position = Vector3(position.get("x", 0), position.get("y", 0), position.get("z", 0))
