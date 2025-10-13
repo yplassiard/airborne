@@ -95,12 +95,12 @@ class TerrainPlugin(IPlugin):
         for provider_name in providers:
             if provider_name == "srtm":
                 use_fallback = terrain_config.get("srtm_fallback", True)
-                provider = SRTMProvider(use_fallback=use_fallback)
-                self.elevation_service.add_provider(provider)
+                srtm_provider = SRTMProvider(use_fallback=use_fallback)
+                self.elevation_service.add_provider(srtm_provider)
                 logger.info("Added SRTM elevation provider (fallback=%s)", use_fallback)
             elif provider_name == "simple_flat_earth":
-                provider = SimpleFlatEarthProvider()
-                self.elevation_service.add_provider(provider)
+                flat_earth_provider = SimpleFlatEarthProvider()
+                self.elevation_service.add_provider(flat_earth_provider)
                 logger.info("Added SimpleFlatEarth elevation provider")
 
         # Create OSM provider
