@@ -266,13 +266,16 @@ class AirBorne:
 
         # Draw title
         title_text = self.large_font.render("AirBorne", True, (255, 255, 255))
-        title_rect = title_text.get_rect(center=(self.screen.get_width() // 2, 100))
+        title_rect = title_text.get_rect(center=(self.screen.get_width() // 2, 50))
         self.screen.blit(title_text, title_rect)
 
         # Draw subtitle
         subtitle = self.font.render("Blind-Accessible Flight Simulator", True, (200, 200, 200))
-        subtitle_rect = subtitle.get_rect(center=(self.screen.get_width() // 2, 140))
+        subtitle_rect = subtitle.get_rect(center=(self.screen.get_width() // 2, 80))
         self.screen.blit(subtitle, subtitle_rect)
+
+        # Draw flight instruments (central display)
+        self._render_flight_instruments()
 
         if self.paused:
             # Draw paused indicator
@@ -288,6 +291,50 @@ class AirBorne:
 
         # Draw instructions
         self._render_instructions()
+
+    def _render_flight_instruments(self) -> None:
+        """Render primary flight instruments in center of screen."""
+        if not self.physics_plugin or not self.physics_plugin.flight_model:
+            return
+
+        flight_state = self.physics_plugin.flight_model.get_state()
+        center_x = self.screen.get_width() // 2
+        center_y = self.screen.get_height() // 2
+
+        # Convert to aviation units
+        airspeed_kts = flight_state.get_airspeed() * 1.94384  # m/s to knots
+        altitude_ft = flight_state.position.y * 3.28084  # meters to feet
+        vertical_speed_fpm = flight_state.velocity.y * 196.85  # m/s to feet per minute
+
+        # Primary instruments (large, centered)
+        instruments = [
+            f"AIRSPEED: {airspeed_kts:>6.0f} KTS",
+            f"ALTITUDE: {altitude_ft:>6.0f} FT",
+            f"VS: {vertical_speed_fpm:>+7.0f} FPM",
+        ]
+
+        # Render instruments
+        y_offset = center_y - 50
+        for instrument in instruments:
+            text = self.large_font.render(instrument, True, (0, 255, 0))
+            text_rect = text.get_rect(center=(center_x, y_offset))
+            self.screen.blit(text, text_rect)
+            y_offset += 40
+
+        # Control inputs (smaller, below instruments)
+        state = self.input_manager.get_state()
+        controls = [
+            f"Throttle: {state.throttle * 100:>3.0f}%  Flaps: {state.flaps * 100:>3.0f}%",
+            f"Gear: {'DOWN' if state.gear > 0.5 else 'UP  '}    "
+            f"Brakes: {'ON' if state.brakes > 0.1 else 'OFF'}",
+        ]
+
+        y_offset += 20
+        for control in controls:
+            text = self.font.render(control, True, (200, 200, 0))
+            text_rect = text.get_rect(center=(center_x, y_offset))
+            self.screen.blit(text, text_rect)
+            y_offset += 20
 
     def _render_debug_info(self) -> None:
         """Render debug information."""
