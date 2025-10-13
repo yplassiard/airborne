@@ -11,7 +11,6 @@ Typical usage:
 """
 
 import logging
-import math
 from enum import Enum
 
 import numpy as np
@@ -139,9 +138,11 @@ class BeepGenerator:
         if distance_range <= 0:
             normalized = 1.0
         else:
-            normalized = 1.0 - (
-                max(min_distance_m, min(distance_m, max_distance_m)) - min_distance_m
-            ) / distance_range
+            normalized = (
+                1.0
+                - (max(min_distance_m, min(distance_m, max_distance_m)) - min_distance_m)
+                / distance_range
+            )
 
         # Map to frequency range
         frequency = base_frequency_hz + (normalized * (max_frequency_hz - base_frequency_hz))
@@ -183,9 +184,7 @@ class BeepGenerator:
             Triangle wave samples
         """
         # Triangle wave using arcsin(sin(x))
-        return (2 / np.pi * np.arcsin(np.sin(2 * np.pi * frequency_hz * t))).astype(
-            np.float32
-        )
+        return (2 / np.pi * np.arcsin(np.sin(2 * np.pi * frequency_hz * t))).astype(np.float32)
 
     def _generate_sawtooth(self, t: np.ndarray, frequency_hz: float) -> np.ndarray:
         """Generate sawtooth wave.
@@ -213,9 +212,7 @@ class BeepGenerator:
         """
         # Sweep from base frequency to 1.5x base frequency
         end_frequency_hz = base_frequency_hz * 1.5
-        frequency_sweep = base_frequency_hz + (end_frequency_hz - base_frequency_hz) * (
-            t / t[-1]
-        )
+        frequency_sweep = base_frequency_hz + (end_frequency_hz - base_frequency_hz) * (t / t[-1])
 
         # Instantaneous phase
         phase = 2 * np.pi * np.cumsum(frequency_sweep) / self.sample_rate

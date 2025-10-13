@@ -282,7 +282,13 @@ class TestRealWorldScenarios:
         """Test parking stand approach."""
         plugin = GroundNavigationPlugin()
         plugin.initialize(
-            {"config": {"audio_enabled": True, "beep_pattern": "linear", "max_beep_frequency": 10.0}}
+            {
+                "config": {
+                    "audio_enabled": True,
+                    "beep_pattern": "linear",
+                    "max_beep_frequency": 10.0,
+                }
+            }
         )
 
         # Simulate slow approach to parking

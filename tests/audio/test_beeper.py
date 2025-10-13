@@ -25,9 +25,7 @@ class TestBeepGenerator:
 
     def test_generate_square_beep(self, generator: BeepGenerator) -> None:
         """Test generating square wave beep."""
-        samples = generator.generate_beep(
-            frequency_hz=1000, duration_s=0.1, style=BeepStyle.SQUARE
-        )
+        samples = generator.generate_beep(frequency_hz=1000, duration_s=0.1, style=BeepStyle.SQUARE)
 
         assert len(samples) == 4410
         # Square wave should have values near -1 or +1
@@ -60,9 +58,7 @@ class TestBeepGenerator:
 
     def test_amplitude_control(self, generator: BeepGenerator) -> None:
         """Test amplitude control."""
-        samples_quiet = generator.generate_beep(
-            frequency_hz=1000, duration_s=0.1, amplitude=0.1
-        )
+        samples_quiet = generator.generate_beep(frequency_hz=1000, duration_s=0.1, amplitude=0.1)
         samples_loud = generator.generate_beep(frequency_hz=1000, duration_s=0.1, amplitude=0.5)
 
         # Louder beep should have higher max amplitude
@@ -163,23 +159,17 @@ class TestProximityBeeper:
         """Test beep timing logic."""
         # At 2 Hz, should beep every 0.5 seconds
         # First call with 0.3s: no beep
-        samples = beeper.get_beep_if_ready(
-            distance_m=100, beep_frequency_hz=2.0, delta_time=0.3
-        )
+        samples = beeper.get_beep_if_ready(distance_m=100, beep_frequency_hz=2.0, delta_time=0.3)
         assert samples is None
 
         # Second call with 0.3s (total 0.6s): should beep
-        samples = beeper.get_beep_if_ready(
-            distance_m=100, beep_frequency_hz=2.0, delta_time=0.3
-        )
+        samples = beeper.get_beep_if_ready(distance_m=100, beep_frequency_hz=2.0, delta_time=0.3)
         assert samples is not None
         assert len(samples) > 0
 
     def test_no_beep_when_frequency_zero(self, beeper: ProximityBeeper) -> None:
         """Test no beep when frequency is zero."""
-        samples = beeper.get_beep_if_ready(
-            distance_m=100, beep_frequency_hz=0.0, delta_time=1.0
-        )
+        samples = beeper.get_beep_if_ready(distance_m=100, beep_frequency_hz=0.0, delta_time=1.0)
         assert samples is None
 
     def test_reset_timing(self, beeper: ProximityBeeper) -> None:
@@ -195,23 +185,17 @@ class TestProximityBeeper:
     def test_high_frequency_beeping(self, beeper: ProximityBeeper) -> None:
         """Test high frequency beeping (fast beeps)."""
         # At 10 Hz, should beep every 0.1 seconds
-        samples = beeper.get_beep_if_ready(
-            distance_m=50, beep_frequency_hz=10.0, delta_time=0.15
-        )
+        samples = beeper.get_beep_if_ready(distance_m=50, beep_frequency_hz=10.0, delta_time=0.15)
 
         assert samples is not None
 
     def test_low_frequency_beeping(self, beeper: ProximityBeeper) -> None:
         """Test low frequency beeping (slow beeps)."""
         # At 0.5 Hz, should beep every 2 seconds
-        samples = beeper.get_beep_if_ready(
-            distance_m=400, beep_frequency_hz=0.5, delta_time=1.0
-        )
+        samples = beeper.get_beep_if_ready(distance_m=400, beep_frequency_hz=0.5, delta_time=1.0)
         assert samples is None  # Not yet time
 
-        samples = beeper.get_beep_if_ready(
-            distance_m=400, beep_frequency_hz=0.5, delta_time=1.5
-        )
+        samples = beeper.get_beep_if_ready(distance_m=400, beep_frequency_hz=0.5, delta_time=1.5)
         assert samples is not None  # Now it's time
 
 
@@ -233,9 +217,7 @@ class TestWaveformCharacteristics:
 
     def test_square_wave_edges(self, generator: BeepGenerator) -> None:
         """Test that square wave has sharp edges."""
-        samples = generator.generate_beep(
-            frequency_hz=1000, duration_s=0.1, style=BeepStyle.SQUARE
-        )
+        samples = generator.generate_beep(frequency_hz=1000, duration_s=0.1, style=BeepStyle.SQUARE)
 
         # Square wave should have values near -amplitude or +amplitude
         # Most samples should be near the extremes
@@ -267,7 +249,7 @@ class TestRealWorldScenarios:
         distances = [50, 40, 30, 20, 10, 5]  # Getting closer
         frequencies = [1.0, 2.0, 4.0, 6.0, 8.0, 10.0]  # Beeping faster
 
-        for distance, frequency in zip(distances, frequencies):
+        for distance, frequency in zip(distances, frequencies, strict=False):
             beeper.reset_timing()
             samples = beeper.get_beep_if_ready(
                 distance_m=distance,

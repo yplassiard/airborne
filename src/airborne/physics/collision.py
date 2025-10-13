@@ -1,380 +1,358 @@
-"""Optimized collision detection for flight simulation.
+"""Terrain collision detection and prevention.
 
-This module provides efficient collision detection optimized for real-time
-performance at 60Hz. It uses spatial hashing and bounding volumes to minimize
-expensive distance calculations.
+Provides collision detection for terrain (ground/mountains) and other obstacles.
+Integrates with elevation service to prevent aircraft from flying below terrain.
 
-Performance optimizations:
-- Squared distance comparisons (avoid sqrt)
-- Early rejection tests
-- Spatial partitioning for multiple objects
-- Cached bounding volumes
+Typical usage:
+    from airborne.physics.collision import TerrainCollisionDetector
 
-Typical usage example:
-    from airborne.physics.collision import CollisionDetector
-
-    detector = CollisionDetector()
-    if detector.check_ground_collision(position, terrain_elevation):
-        print("Ground collision!")
+    detector = TerrainCollisionDetector(elevation_service)
+    collision = detector.check_terrain_collision(position, altitude_msl)
+    if collision.is_colliding:
+        print(f"TERRAIN WARNING: {collision.distance_to_terrain:.0f}m")
 """
 
-import math
-from dataclasses import dataclass, field
+import logging
+from dataclasses import dataclass
+from enum import Enum
+from typing import Any
 
-from airborne.physics.flight_model.base import AircraftState
 from airborne.physics.vectors import Vector3
 
+logger = logging.getLogger(__name__)
 
-@dataclass
-class BoundingSphere:
-    """Bounding sphere for fast collision detection.
 
-    Using spheres instead of boxes for faster distance checks.
+class CollisionType(Enum):
+    """Types of collisions."""
 
-    Attributes:
-        center: Center position.
-        radius: Sphere radius.
-    """
+    NONE = "none"  # No collision
+    TERRAIN = "terrain"  # Terrain collision (ground/mountain)
+    WATER = "water"  # Water collision (ocean/lake)
+    OBSTACLE = "obstacle"  # Obstacle collision (building, etc.)
 
-    center: Vector3
-    radius: float
 
-    def intersects(self, other: "BoundingSphere") -> bool:
-        """Check if this sphere intersects another.
+class CollisionSeverity(Enum):
+    """Collision severity levels."""
 
-        Uses squared distance for performance (avoids sqrt).
-
-        Args:
-            other: Other bounding sphere.
-
-        Returns:
-            True if spheres intersect.
-        """
-        # Distance squared between centers
-        dist_sq = self.center.distance_to_squared(other.center)
-
-        # Sum of radii squared
-        radii_sum = self.radius + other.radius
-        radii_sum_sq = radii_sum * radii_sum
-
-        return dist_sq <= radii_sum_sq
-
-    def contains_point(self, point: Vector3) -> bool:
-        """Check if point is inside sphere.
-
-        Args:
-            point: Point to check.
-
-        Returns:
-            True if point is inside.
-        """
-        dist_sq = self.center.distance_to_squared(point)
-        return dist_sq <= (self.radius * self.radius)
-
-    def distance_to_point(self, point: Vector3) -> float:
-        """Calculate distance from sphere surface to point.
-
-        Args:
-            point: Point to check.
-
-        Returns:
-            Distance (negative if inside sphere).
-        """
-        center_dist = self.center.distance_to(point)
-        return center_dist - self.radius
+    SAFE = "safe"  # Safe distance from terrain
+    WARNING = "warning"  # Warning zone (< 500ft AGL)
+    CAUTION = "caution"  # Caution zone (< 200ft AGL)
+    CRITICAL = "critical"  # Critical zone (< 100ft AGL)
+    COLLISION = "collision"  # Collision detected (< 0ft AGL)
 
 
 @dataclass
 class CollisionResult:
-    """Result of a collision check.
+    """Result of collision detection.
 
     Attributes:
-        collided: Whether collision occurred.
-        contact_point: Point of contact (if collided).
-        penetration_depth: How far objects overlap.
-        contact_normal: Normal vector at contact point.
+        is_colliding: True if collision detected
+        collision_type: Type of collision
+        severity: Collision severity
+        terrain_elevation_m: Terrain elevation at position (MSL)
+        aircraft_altitude_m: Aircraft altitude (MSL)
+        distance_to_terrain: Distance to terrain (negative = below terrain)
+        agl_altitude: Altitude above ground level (AGL)
+        position: Position where collision was checked
     """
 
-    collided: bool
-    contact_point: Vector3 = field(default_factory=Vector3.zero)
-    penetration_depth: float = 0.0
-    contact_normal: Vector3 = field(default_factory=Vector3.unit_y)
+    is_colliding: bool
+    collision_type: CollisionType
+    severity: CollisionSeverity
+    terrain_elevation_m: float
+    aircraft_altitude_m: float
+    distance_to_terrain: float
+    agl_altitude: float
+    position: Vector3
 
 
-class CollisionDetector:
-    """Efficient collision detection for flight simulation.
+class TerrainCollisionDetector:
+    """Terrain collision detector with elevation integration.
 
-    Optimized for real-time performance with minimal allocations.
+    Detects terrain collisions by comparing aircraft altitude with
+    terrain elevation from elevation service.
 
     Examples:
-        >>> detector = CollisionDetector()
-        >>> result = detector.check_ground_collision(
-        ...     Vector3(100, 50, 200), terrain_elevation=100.0
+        >>> from airborne.terrain import ElevationService, SimpleFlatEarthProvider
+        >>> service = ElevationService()
+        >>> service.add_provider(SimpleFlatEarthProvider())
+        >>> detector = TerrainCollisionDetector(service)
+        >>> result = detector.check_terrain_collision(
+        ...     Vector3(-122.4194, 100, 37.7749),  # Position
+        ...     100  # Altitude MSL
         ... )
-        >>> if result.collided:
-        ...     print("Hit ground!")
+        >>> if result.is_colliding:
+        ...     print("TERRAIN COLLISION!")
     """
 
-    def __init__(self) -> None:
-        """Initialize collision detector."""
-        # Default aircraft bounding sphere (10m radius)
-        self.aircraft_radius = 10.0
-
-        # Landing threshold (vertical speed for safe landing)
-        self.safe_landing_speed = 3.0  # m/s
-
-        # Ground proximity threshold for landing detection
-        self.landing_threshold = 2.0  # meters
-
-    def set_aircraft_radius(self, radius: float) -> None:
-        """Set aircraft bounding sphere radius.
+    def __init__(self, elevation_service: Any = None) -> None:
+        """Initialize terrain collision detector.
 
         Args:
-            radius: Radius in meters.
+            elevation_service: ElevationService for terrain elevation queries
         """
-        self.aircraft_radius = radius
+        self.elevation_service = elevation_service
+        self.collision_buffer_m = 0.0  # Safety buffer (default: ground level)
+        self.warning_threshold_ft = 500.0  # Warning at 500ft AGL
+        self.caution_threshold_ft = 200.0  # Caution at 200ft AGL
+        self.critical_threshold_ft = 100.0  # Critical at 100ft AGL
 
-    def check_ground_collision(
-        self, position: Vector3, terrain_elevation: float
+        logger.info("TerrainCollisionDetector initialized")
+
+    def check_terrain_collision(
+        self,
+        position: Vector3,
+        altitude_msl: float,
+        velocity: Vector3 | None = None,
     ) -> CollisionResult:
-        """Check for ground collision.
-
-        Optimized: Uses simple altitude check first, then detailed if needed.
+        """Check for terrain collision at current position.
 
         Args:
-            position: Aircraft position.
-            terrain_elevation: Ground elevation at aircraft position.
+            position: Aircraft position (x=lon, y=alt, z=lat in degrees)
+            altitude_msl: Aircraft altitude in meters (MSL)
+            velocity: Aircraft velocity (optional, for predictive collision)
 
         Returns:
-            Collision result.
+            CollisionResult with collision details
+
+        Examples:
+            >>> result = detector.check_terrain_collision(
+            ...     Vector3(-122.4194, 100, 37.7749),
+            ...     100
+            ... )
+            >>> print(f"AGL: {result.agl_altitude:.0f}m")
         """
-        # Quick rejection: altitude check
-        altitude_agl = position.y - terrain_elevation
+        # Get terrain elevation at position
+        terrain_elevation = 0.0
+        if self.elevation_service:
+            try:
+                terrain_elevation = self.elevation_service.get_elevation_at_position(position)
+            except Exception as e:
+                logger.warning("Failed to get terrain elevation: %s", e)
+                terrain_elevation = 0.0  # Default to sea level
 
-        if altitude_agl > self.aircraft_radius:
-            # Definitely no collision
-            return CollisionResult(collided=False)
+        # Calculate distance to terrain
+        distance_to_terrain = altitude_msl - terrain_elevation
+        agl_altitude = distance_to_terrain  # AGL = MSL - terrain elevation
 
-        # Potential collision - detailed check
-        if altitude_agl < self.aircraft_radius:
-            # Calculate penetration
-            penetration = self.aircraft_radius - altitude_agl
+        # Determine if colliding
+        is_colliding = distance_to_terrain <= self.collision_buffer_m
 
-            # Contact point on ground
-            contact = Vector3(position.x, terrain_elevation, position.z)
+        # Determine collision type
+        collision_type = CollisionType.NONE
+        if is_colliding:
+            if terrain_elevation <= 0:
+                collision_type = CollisionType.WATER
+            else:
+                collision_type = CollisionType.TERRAIN
 
-            # Normal points upward
-            normal = Vector3.unit_y()
-
-            return CollisionResult(
-                collided=True,
-                contact_point=contact,
-                penetration_depth=penetration,
-                contact_normal=normal,
-            )
-
-        return CollisionResult(collided=False)
-
-    def check_landing(self, state: AircraftState, terrain_elevation: float) -> CollisionResult:
-        """Check if aircraft is landing (vs crashing).
-
-        Landing requires low vertical speed and proximity to ground.
-
-        Args:
-            state: Aircraft state.
-            terrain_elevation: Ground elevation.
-
-        Returns:
-            Collision result indicating safe landing or crash.
-        """
-        altitude_agl = state.position.y - terrain_elevation
-
-        # Must be close to ground
-        if altitude_agl > self.landing_threshold:
-            return CollisionResult(collided=False)
-
-        # Check vertical speed (negative = descending)
-        vertical_speed = abs(state.velocity.y)
-
-        is_safe = vertical_speed <= self.safe_landing_speed
-
-        if altitude_agl <= 0.0 or (altitude_agl <= self.landing_threshold and is_safe):
-            contact = Vector3(state.position.x, terrain_elevation, state.position.z)
-
-            return CollisionResult(
-                collided=True, contact_point=contact, contact_normal=Vector3.unit_y()
-            )
-
-        return CollisionResult(collided=False)
-
-    def check_sphere_collision(
-        self, sphere1: BoundingSphere, sphere2: BoundingSphere
-    ) -> CollisionResult:
-        """Check collision between two bounding spheres.
-
-        Optimized for frequent checks.
-
-        Args:
-            sphere1: First sphere.
-            sphere2: Second sphere.
-
-        Returns:
-            Collision result.
-        """
-        # Quick check using squared distance
-        if not sphere1.intersects(sphere2):
-            return CollisionResult(collided=False)
-
-        # Calculate collision details
-        center_diff = sphere2.center - sphere1.center
-        distance = center_diff.magnitude()
-
-        if distance < 0.001:
-            # Spheres at same position - arbitrary normal
-            normal = Vector3.unit_y()
-            penetration = sphere1.radius + sphere2.radius
-        else:
-            normal = center_diff / distance  # Normalize
-            penetration = (sphere1.radius + sphere2.radius) - distance
-
-        # Contact point: on sphere1 surface toward sphere2
-        contact = sphere1.center + normal * sphere1.radius
+        # Determine severity
+        severity = self._calculate_severity(agl_altitude)
 
         return CollisionResult(
-            collided=True,
-            contact_point=contact,
-            penetration_depth=penetration,
-            contact_normal=normal,
+            is_colliding=is_colliding,
+            collision_type=collision_type,
+            severity=severity,
+            terrain_elevation_m=terrain_elevation,
+            aircraft_altitude_m=altitude_msl,
+            distance_to_terrain=distance_to_terrain,
+            agl_altitude=agl_altitude,
+            position=position,
         )
 
-    def get_terrain_proximity(self, position: Vector3, terrain_elevation: float) -> float:
-        """Get distance to terrain (AGL - Above Ground Level).
+    def check_flight_path_collision(
+        self,
+        position: Vector3,
+        altitude_msl: float,
+        velocity: Vector3,
+        lookahead_seconds: float = 30.0,
+        num_samples: int = 10,
+    ) -> list[CollisionResult]:
+        """Check for terrain collisions along flight path.
 
-        Fast proximity check without full collision detection.
+        Predictive collision detection by sampling positions along
+        the flight path.
 
         Args:
-            position: Aircraft position.
-            terrain_elevation: Ground elevation.
+            position: Current aircraft position
+            altitude_msl: Current altitude (MSL)
+            velocity: Aircraft velocity (m/s)
+            lookahead_seconds: How far ahead to check (seconds)
+            num_samples: Number of sample points along path
 
         Returns:
-            Altitude above ground level in meters.
+            List of CollisionResults along flight path
+
+        Examples:
+            >>> results = detector.check_flight_path_collision(
+            ...     Vector3(-122.4194, 100, 37.7749),
+            ...     1000,
+            ...     Vector3(0, -5, 50),  # Descending
+            ...     lookahead_seconds=60
+            ... )
+            >>> for result in results:
+            ...     if result.severity != CollisionSeverity.SAFE:
+            ...         print(f"Warning at {result.agl_altitude:.0f}m AGL")
         """
-        return position.y - terrain_elevation
+        results = []
+
+        for i in range(num_samples):
+            # Calculate future position
+            time_ahead = (lookahead_seconds / num_samples) * i
+            future_position = Vector3(
+                position.x + (velocity.x * time_ahead) / 111320,  # Approximate lon change
+                position.y + (velocity.y * time_ahead),
+                position.z + (velocity.z * time_ahead) / 110540,  # Approximate lat change
+            )
+            future_altitude = altitude_msl + (velocity.y * time_ahead)
+
+            # Check collision at future position
+            result = self.check_terrain_collision(future_position, future_altitude)
+            results.append(result)
+
+        return results
+
+    def get_minimum_safe_altitude(self, position: Vector3, buffer_ft: float = 1000.0) -> float:
+        """Get minimum safe altitude at position.
+
+        Returns terrain elevation plus safety buffer.
+
+        Args:
+            position: Position to check
+            buffer_ft: Safety buffer above terrain (feet)
+
+        Returns:
+            Minimum safe altitude in meters (MSL)
+
+        Examples:
+            >>> min_alt = detector.get_minimum_safe_altitude(
+            ...     Vector3(-122.4194, 0, 37.7749),
+            ...     buffer_ft=1000
+            ... )
+            >>> print(f"Minimum safe altitude: {min_alt:.0f}m MSL")
+        """
+        terrain_elevation = 0.0
+        if self.elevation_service:
+            try:
+                terrain_elevation = self.elevation_service.get_elevation_at_position(position)
+            except Exception as e:
+                logger.warning("Failed to get terrain elevation: %s", e)
+                terrain_elevation = 0.0
+
+        buffer_m = buffer_ft * 0.3048  # Convert feet to meters
+        return terrain_elevation + buffer_m
+
+    def is_safe_to_descend(
+        self,
+        position: Vector3,
+        current_altitude_msl: float,
+        target_altitude_msl: float,
+    ) -> bool:
+        """Check if it's safe to descend to target altitude.
+
+        Args:
+            position: Current position
+            current_altitude_msl: Current altitude (MSL)
+            target_altitude_msl: Target altitude (MSL)
+
+        Returns:
+            True if safe to descend, False otherwise
+
+        Examples:
+            >>> safe = detector.is_safe_to_descend(
+            ...     Vector3(-122.4194, 0, 37.7749),
+            ...     current_altitude_msl=3000,
+            ...     target_altitude_msl=1000
+            ... )
+            >>> if not safe:
+            ...     print("Unsafe to descend - terrain too high")
+        """
+        min_safe_altitude = self.get_minimum_safe_altitude(position)
+        return target_altitude_msl >= min_safe_altitude
+
+    def set_warning_thresholds(
+        self,
+        warning_ft: float = 500.0,
+        caution_ft: float = 200.0,
+        critical_ft: float = 100.0,
+    ) -> None:
+        """Set warning threshold altitudes.
+
+        Args:
+            warning_ft: Warning threshold in feet AGL
+            caution_ft: Caution threshold in feet AGL
+            critical_ft: Critical threshold in feet AGL
+
+        Examples:
+            >>> detector.set_warning_thresholds(
+            ...     warning_ft=1000,
+            ...     caution_ft=500,
+            ...     critical_ft=200
+            ... )
+        """
+        self.warning_threshold_ft = warning_ft
+        self.caution_threshold_ft = caution_ft
+        self.critical_threshold_ft = critical_ft
+
+    def _calculate_severity(self, agl_altitude: float) -> CollisionSeverity:
+        """Calculate collision severity based on AGL altitude.
+
+        Args:
+            agl_altitude: Altitude above ground level (meters)
+
+        Returns:
+            CollisionSeverity level
+        """
+        agl_feet = agl_altitude * 3.28084  # Convert to feet
+
+        if agl_feet <= 0:
+            return CollisionSeverity.COLLISION
+        elif agl_feet <= self.critical_threshold_ft:
+            return CollisionSeverity.CRITICAL
+        elif agl_feet <= self.caution_threshold_ft:
+            return CollisionSeverity.CAUTION
+        elif agl_feet <= self.warning_threshold_ft:
+            return CollisionSeverity.WARNING
+        else:
+            return CollisionSeverity.SAFE
 
 
-class SpatialGrid:
-    """Spatial partitioning grid for efficient collision detection.
+def prevent_terrain_collision(
+    position: Vector3,
+    altitude_msl: float,
+    terrain_elevation_m: float,
+    min_clearance_m: float = 10.0,
+) -> float:
+    """Prevent terrain collision by adjusting altitude.
 
-    Divides space into cells to reduce number of collision checks needed.
-    Useful when checking aircraft against many objects (AI traffic, obstacles).
+    Utility function to clamp altitude above terrain.
 
-    Performance: O(n) insertion, O(1) query for nearby objects.
+    Args:
+        position: Aircraft position
+        altitude_msl: Desired altitude (MSL)
+        terrain_elevation_m: Terrain elevation (MSL)
+        min_clearance_m: Minimum clearance above terrain
+
+    Returns:
+        Safe altitude (MSL) that maintains clearance
 
     Examples:
-        >>> grid = SpatialGrid(cell_size=1000.0)
-        >>> grid.insert(aircraft_id, position, radius)
-        >>> nearby = grid.query_nearby(position, search_radius)
+        >>> safe_alt = prevent_terrain_collision(
+        ...     Vector3(-122.4194, 0, 37.7749),
+        ...     altitude_msl=50,
+        ...     terrain_elevation_m=100,
+        ...     min_clearance_m=10
+        ... )
+        >>> print(f"Safe altitude: {safe_alt:.0f}m")
     """
+    min_safe_altitude = terrain_elevation_m + min_clearance_m
 
-    def __init__(self, cell_size: float = 1000.0) -> None:
-        """Initialize spatial grid.
-
-        Args:
-            cell_size: Size of each grid cell in meters.
-        """
-        self.cell_size = cell_size
-        self.grid: dict[tuple[int, int, int], list[tuple[int, Vector3, float]]] = {}
-
-    def _get_cell(self, position: Vector3) -> tuple[int, int, int]:
-        """Get grid cell for a position.
-
-        Args:
-            position: World position.
-
-        Returns:
-            Cell coordinates (x, y, z).
-        """
-        return (
-            int(math.floor(position.x / self.cell_size)),
-            int(math.floor(position.y / self.cell_size)),
-            int(math.floor(position.z / self.cell_size)),
+    if altitude_msl < min_safe_altitude:
+        logger.warning(
+            "Terrain collision prevented: adjusted altitude from %.1fm to %.1fm",
+            altitude_msl,
+            min_safe_altitude,
         )
+        return min_safe_altitude
 
-    def insert(self, object_id: int, position: Vector3, radius: float) -> None:
-        """Insert object into grid.
-
-        Args:
-            object_id: Unique object identifier.
-            position: Object position.
-            radius: Object bounding radius.
-        """
-        cell = self._get_cell(position)
-
-        if cell not in self.grid:
-            self.grid[cell] = []
-
-        self.grid[cell].append((object_id, position, radius))
-
-    def query_nearby(
-        self, position: Vector3, search_radius: float
-    ) -> list[tuple[int, Vector3, float]]:
-        """Query objects near a position.
-
-        Args:
-            position: Query position.
-            search_radius: Search radius.
-
-        Returns:
-            List of (object_id, position, radius) tuples.
-        """
-        # Determine which cells to check
-        cells_to_check = self._get_nearby_cells(position, search_radius)
-
-        # Collect objects from nearby cells
-        nearby: list[tuple[int, Vector3, float]] = []
-        search_radius_sq = search_radius * search_radius
-
-        for cell in cells_to_check:
-            if cell in self.grid:
-                for obj_id, obj_pos, obj_radius in self.grid[cell]:
-                    # Quick distance check
-                    dist_sq = position.distance_to_squared(obj_pos)
-                    if dist_sq <= search_radius_sq:
-                        nearby.append((obj_id, obj_pos, obj_radius))
-
-        return nearby
-
-    def _get_nearby_cells(
-        self, position: Vector3, search_radius: float
-    ) -> list[tuple[int, int, int]]:
-        """Get cells within search radius.
-
-        Args:
-            position: Center position.
-            search_radius: Search radius.
-
-        Returns:
-            List of cell coordinates.
-        """
-        center_cell = self._get_cell(position)
-
-        # How many cells to check in each direction
-        cell_range = int(math.ceil(search_radius / self.cell_size))
-
-        cells = []
-        for dx in range(-cell_range, cell_range + 1):
-            for dy in range(-cell_range, cell_range + 1):
-                for dz in range(-cell_range, cell_range + 1):
-                    cells.append(
-                        (
-                            center_cell[0] + dx,
-                            center_cell[1] + dy,
-                            center_cell[2] + dz,
-                        )
-                    )
-
-        return cells
-
-    def clear(self) -> None:
-        """Clear all objects from grid."""
-        self.grid.clear()
+    return altitude_msl

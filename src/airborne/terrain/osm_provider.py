@@ -463,9 +463,7 @@ class OSMProvider:
 
         return cities
 
-    def get_landmarks_near(
-        self, position: Vector3, radius_nm: float = 50.0
-    ) -> list[GeoFeature]:
+    def get_landmarks_near(self, position: Vector3, radius_nm: float = 50.0) -> list[GeoFeature]:
         """Get landmarks near a position.
 
         Args:
@@ -485,9 +483,7 @@ class OSMProvider:
             position, radius_nm=radius_nm, feature_types=[FeatureType.LANDMARK]
         )
 
-    def get_mountains_near(
-        self, position: Vector3, radius_nm: float = 100.0
-    ) -> list[GeoFeature]:
+    def get_mountains_near(self, position: Vector3, radius_nm: float = 100.0) -> list[GeoFeature]:
         """Get mountains near a position.
 
         Args:

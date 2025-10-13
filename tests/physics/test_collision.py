@@ -1,438 +1,477 @@
-"""Tests for collision detection system."""
+"""Tests for Terrain Collision Detection."""
 
 import pytest
 
 from airborne.physics.collision import (
-    BoundingSphere,
-    CollisionDetector,
     CollisionResult,
-    SpatialGrid,
+    CollisionSeverity,
+    CollisionType,
+    TerrainCollisionDetector,
+    prevent_terrain_collision,
 )
-from airborne.physics.flight_model.base import AircraftState
 from airborne.physics.vectors import Vector3
-
-
-class TestBoundingSphere:
-    """Test BoundingSphere class."""
-
-    def test_creation(self) -> None:
-        """Test creating a bounding sphere."""
-        center = Vector3(10.0, 20.0, 30.0)
-        radius = 5.0
-        sphere = BoundingSphere(center=center, radius=radius)
-        assert sphere.center == center
-        assert sphere.radius == radius
-
-    def test_intersects_overlapping(self) -> None:
-        """Test intersection detection for overlapping spheres."""
-        sphere1 = BoundingSphere(center=Vector3(0.0, 0.0, 0.0), radius=5.0)
-        sphere2 = BoundingSphere(center=Vector3(8.0, 0.0, 0.0), radius=5.0)
-        # Distance = 8, radii sum = 10, should intersect
-        assert sphere1.intersects(sphere2)
-        assert sphere2.intersects(sphere1)  # Symmetric
-
-    def test_intersects_touching(self) -> None:
-        """Test intersection detection for touching spheres."""
-        sphere1 = BoundingSphere(center=Vector3(0.0, 0.0, 0.0), radius=5.0)
-        sphere2 = BoundingSphere(center=Vector3(10.0, 0.0, 0.0), radius=5.0)
-        # Distance = 10, radii sum = 10, should intersect (touching)
-        assert sphere1.intersects(sphere2)
-
-    def test_intersects_separated(self) -> None:
-        """Test intersection detection for separated spheres."""
-        sphere1 = BoundingSphere(center=Vector3(0.0, 0.0, 0.0), radius=5.0)
-        sphere2 = BoundingSphere(center=Vector3(15.0, 0.0, 0.0), radius=5.0)
-        # Distance = 15, radii sum = 10, should not intersect
-        assert not sphere1.intersects(sphere2)
-
-    def test_contains_point_inside(self) -> None:
-        """Test point containment for point inside sphere."""
-        sphere = BoundingSphere(center=Vector3(0.0, 0.0, 0.0), radius=10.0)
-        point = Vector3(3.0, 4.0, 0.0)  # Distance = 5.0
-        assert sphere.contains_point(point)
-
-    def test_contains_point_on_surface(self) -> None:
-        """Test point containment for point on sphere surface."""
-        sphere = BoundingSphere(center=Vector3(0.0, 0.0, 0.0), radius=5.0)
-        point = Vector3(3.0, 4.0, 0.0)  # Distance = 5.0 (on surface)
-        assert sphere.contains_point(point)
-
-    def test_contains_point_outside(self) -> None:
-        """Test point containment for point outside sphere."""
-        sphere = BoundingSphere(center=Vector3(0.0, 0.0, 0.0), radius=5.0)
-        point = Vector3(10.0, 0.0, 0.0)  # Distance = 10.0
-        assert not sphere.contains_point(point)
-
-    def test_distance_to_point_outside(self) -> None:
-        """Test distance calculation for point outside sphere."""
-        sphere = BoundingSphere(center=Vector3(0.0, 0.0, 0.0), radius=5.0)
-        point = Vector3(10.0, 0.0, 0.0)
-        # Distance from center = 10.0, surface distance = 10.0 - 5.0 = 5.0
-        assert sphere.distance_to_point(point) == pytest.approx(5.0)
-
-    def test_distance_to_point_inside(self) -> None:
-        """Test distance calculation for point inside sphere (negative)."""
-        sphere = BoundingSphere(center=Vector3(0.0, 0.0, 0.0), radius=10.0)
-        point = Vector3(3.0, 4.0, 0.0)  # Distance from center = 5.0
-        # Surface distance = 5.0 - 10.0 = -5.0 (inside)
-        assert sphere.distance_to_point(point) == pytest.approx(-5.0)
-
-    def test_distance_to_point_at_center(self) -> None:
-        """Test distance calculation for point at sphere center."""
-        sphere = BoundingSphere(center=Vector3(0.0, 0.0, 0.0), radius=5.0)
-        point = Vector3(0.0, 0.0, 0.0)
-        # Distance from center = 0.0, surface distance = 0.0 - 5.0 = -5.0
-        assert sphere.distance_to_point(point) == pytest.approx(-5.0)
+from airborne.terrain.elevation_service import ElevationService
+from airborne.terrain.srtm_provider import ConstantElevationProvider, SimpleFlatEarthProvider
 
 
 class TestCollisionResult:
     """Test CollisionResult dataclass."""
 
-    def test_no_collision(self) -> None:
-        """Test creating result for no collision."""
-        result = CollisionResult(collided=False)
-        assert result.collided is False
-        assert result.contact_point == Vector3.zero()
-        assert result.penetration_depth == 0.0
-        assert result.contact_normal == Vector3.unit_y()
-
-    def test_collision_with_details(self) -> None:
-        """Test creating result with collision details."""
-        contact = Vector3(10.0, 0.0, 0.0)
-        normal = Vector3(0.0, 1.0, 0.0)
+    def test_create_collision_result(self) -> None:
+        """Test creating collision result."""
         result = CollisionResult(
-            collided=True, contact_point=contact, penetration_depth=2.5, contact_normal=normal
+            is_colliding=True,
+            collision_type=CollisionType.TERRAIN,
+            severity=CollisionSeverity.COLLISION,
+            terrain_elevation_m=100.0,
+            aircraft_altitude_m=50.0,
+            distance_to_terrain=-50.0,
+            agl_altitude=-50.0,
+            position=Vector3(-122.4194, 50, 37.7749),
         )
-        assert result.collided is True
-        assert result.contact_point == contact
-        assert result.penetration_depth == pytest.approx(2.5)
-        assert result.contact_normal == normal
+
+        assert result.is_colliding is True
+        assert result.collision_type == CollisionType.TERRAIN
+        assert result.severity == CollisionSeverity.COLLISION
+        assert result.terrain_elevation_m == 100.0
+        assert result.aircraft_altitude_m == 50.0
+        assert result.distance_to_terrain == -50.0
+        assert result.agl_altitude == -50.0
 
 
-class TestCollisionDetector:
-    """Test CollisionDetector class."""
+class TestTerrainCollisionDetector:
+    """Test terrain collision detector."""
 
     @pytest.fixture
-    def detector(self) -> CollisionDetector:
-        """Create a collision detector."""
-        return CollisionDetector()
-
-    def test_initialization(self, detector: CollisionDetector) -> None:
-        """Test detector initialization."""
-        assert detector.aircraft_radius == 10.0
-        assert detector.safe_landing_speed == 3.0
-        assert detector.landing_threshold == 2.0
-
-    def test_set_aircraft_radius(self, detector: CollisionDetector) -> None:
-        """Test setting aircraft radius."""
-        detector.set_aircraft_radius(15.0)
-        assert detector.aircraft_radius == 15.0
-
-    def test_check_ground_collision_no_collision(self, detector: CollisionDetector) -> None:
-        """Test ground collision detection with no collision."""
-        position = Vector3(0.0, 100.0, 0.0)  # 100m altitude
-        terrain_elevation = 0.0
-        result = detector.check_ground_collision(position, terrain_elevation)
-        assert result.collided is False
-
-    def test_check_ground_collision_with_collision(self, detector: CollisionDetector) -> None:
-        """Test ground collision detection with collision."""
-        position = Vector3(0.0, 5.0, 0.0)  # 5m altitude, radius = 10m
-        terrain_elevation = 0.0
-        result = detector.check_ground_collision(position, terrain_elevation)
-        assert result.collided is True
-        assert result.contact_point.y == 0.0  # On ground
-        assert result.contact_normal == Vector3.unit_y()  # Upward normal
-        assert result.penetration_depth > 0.0
-
-    def test_check_ground_collision_on_ground(self, detector: CollisionDetector) -> None:
-        """Test ground collision when aircraft is on ground."""
-        position = Vector3(0.0, 0.0, 0.0)  # On ground
-        terrain_elevation = 0.0
-        result = detector.check_ground_collision(position, terrain_elevation)
-        assert result.collided is True
-
-    def test_check_ground_collision_with_terrain(self, detector: CollisionDetector) -> None:
-        """Test ground collision with elevated terrain."""
-        position = Vector3(0.0, 105.0, 0.0)  # 5m above terrain
-        terrain_elevation = 100.0
-        result = detector.check_ground_collision(position, terrain_elevation)
-        assert result.collided is True  # Within radius
-        assert result.contact_point.y == 100.0  # On terrain
-
-    def test_get_terrain_proximity(self, detector: CollisionDetector) -> None:
-        """Test terrain proximity calculation (AGL)."""
-        position = Vector3(0.0, 150.0, 0.0)
-        terrain_elevation = 100.0
-        agl = detector.get_terrain_proximity(position, terrain_elevation)
-        assert agl == pytest.approx(50.0)
-
-    def test_get_terrain_proximity_on_ground(self, detector: CollisionDetector) -> None:
-        """Test terrain proximity when on ground."""
-        position = Vector3(0.0, 100.0, 0.0)
-        terrain_elevation = 100.0
-        agl = detector.get_terrain_proximity(position, terrain_elevation)
-        assert agl == pytest.approx(0.0)
-
-
-class TestCollisionDetectorLanding:
-    """Test landing detection."""
+    def elevation_service(self) -> ElevationService:
+        """Create elevation service with flat earth provider."""
+        service = ElevationService()
+        provider = SimpleFlatEarthProvider()
+        service.add_provider(provider)
+        return service
 
     @pytest.fixture
-    def detector(self) -> CollisionDetector:
-        """Create a collision detector."""
-        return CollisionDetector()
+    def detector(self, elevation_service: ElevationService) -> TerrainCollisionDetector:
+        """Create terrain collision detector."""
+        return TerrainCollisionDetector(elevation_service)
 
-    def test_check_landing_safe(self, detector: CollisionDetector) -> None:
-        """Test safe landing detection."""
-        state = AircraftState(
-            position=Vector3(0.0, 1.0, 0.0),  # Close to ground
-            velocity=Vector3(20.0, -2.0, 0.0),  # Low descent rate
+    def test_detector_initialization(self, detector: TerrainCollisionDetector) -> None:
+        """Test detector initializes correctly."""
+        assert detector.elevation_service is not None
+        assert detector.collision_buffer_m == 0.0
+        assert detector.warning_threshold_ft == 500.0
+        assert detector.caution_threshold_ft == 200.0
+        assert detector.critical_threshold_ft == 100.0
+
+    def test_no_collision_above_terrain(self, detector: TerrainCollisionDetector) -> None:
+        """Test no collision when well above terrain."""
+        position = Vector3(-122.4194, 0, 37.7749)
+        altitude_msl = 1000.0  # High altitude
+
+        result = detector.check_terrain_collision(position, altitude_msl)
+
+        assert result.is_colliding is False
+        assert result.collision_type == CollisionType.NONE
+        assert result.severity == CollisionSeverity.SAFE
+        assert result.aircraft_altitude_m == 1000.0
+        assert result.distance_to_terrain > 0
+
+    def test_collision_below_terrain(self) -> None:
+        """Test collision when below terrain."""
+        # Create service with constant 100m terrain
+        service = ElevationService()
+        service.add_provider(ConstantElevationProvider(elevation=100.0))
+        detector = TerrainCollisionDetector(service)
+
+        position = Vector3(-122.4194, 0, 37.7749)
+        altitude_msl = 50.0  # Below terrain
+
+        result = detector.check_terrain_collision(position, altitude_msl)
+
+        assert result.is_colliding is True
+        assert result.collision_type == CollisionType.TERRAIN
+        assert result.severity == CollisionSeverity.COLLISION
+        assert result.terrain_elevation_m == 100.0
+        assert result.aircraft_altitude_m == 50.0
+        assert result.distance_to_terrain == -50.0
+        assert result.agl_altitude == -50.0
+
+    def test_collision_at_terrain_level(self) -> None:
+        """Test collision at terrain level."""
+        service = ElevationService()
+        service.add_provider(ConstantElevationProvider(elevation=100.0))
+        detector = TerrainCollisionDetector(service)
+
+        position = Vector3(-122.4194, 0, 37.7749)
+        altitude_msl = 100.0  # At terrain level
+
+        result = detector.check_terrain_collision(position, altitude_msl)
+
+        assert result.is_colliding is True
+        assert result.severity == CollisionSeverity.COLLISION
+
+    def test_water_collision_detection(self) -> None:
+        """Test water collision when terrain is at/below sea level."""
+        service = ElevationService()
+        service.add_provider(ConstantElevationProvider(elevation=0.0))  # Sea level
+        detector = TerrainCollisionDetector(service)
+
+        position = Vector3(-122.4194, 0, 37.7749)
+        altitude_msl = -10.0  # Below sea level
+
+        result = detector.check_terrain_collision(position, altitude_msl)
+
+        assert result.is_colliding is True
+        assert result.collision_type == CollisionType.WATER
+
+    def test_severity_safe(self, detector: TerrainCollisionDetector) -> None:
+        """Test SAFE severity at high altitude."""
+        position = Vector3(-122.4194, 0, 37.7749)
+        altitude_msl = 1000.0
+
+        result = detector.check_terrain_collision(position, altitude_msl)
+
+        assert result.severity == CollisionSeverity.SAFE
+        assert result.is_colliding is False
+
+    def test_severity_warning(self) -> None:
+        """Test WARNING severity at 400ft AGL."""
+        service = ElevationService()
+        service.add_provider(ConstantElevationProvider(elevation=0.0))
+        detector = TerrainCollisionDetector(service)
+
+        position = Vector3(-122.4194, 0, 37.7749)
+        altitude_msl = 400.0 * 0.3048  # 400ft in meters (~122m)
+
+        result = detector.check_terrain_collision(position, altitude_msl)
+
+        assert result.severity == CollisionSeverity.WARNING
+        assert result.is_colliding is False
+
+    def test_severity_caution(self) -> None:
+        """Test CAUTION severity at 150ft AGL."""
+        service = ElevationService()
+        service.add_provider(ConstantElevationProvider(elevation=0.0))
+        detector = TerrainCollisionDetector(service)
+
+        position = Vector3(-122.4194, 0, 37.7749)
+        altitude_msl = 150.0 * 0.3048  # 150ft in meters (~46m)
+
+        result = detector.check_terrain_collision(position, altitude_msl)
+
+        assert result.severity == CollisionSeverity.CAUTION
+        assert result.is_colliding is False
+
+    def test_severity_critical(self) -> None:
+        """Test CRITICAL severity at 50ft AGL."""
+        service = ElevationService()
+        service.add_provider(ConstantElevationProvider(elevation=0.0))
+        detector = TerrainCollisionDetector(service)
+
+        position = Vector3(-122.4194, 0, 37.7749)
+        altitude_msl = 50.0 * 0.3048  # 50ft in meters (~15m)
+
+        result = detector.check_terrain_collision(position, altitude_msl)
+
+        assert result.severity == CollisionSeverity.CRITICAL
+        assert result.is_colliding is False
+
+    def test_agl_calculation(self) -> None:
+        """Test AGL altitude calculation."""
+        service = ElevationService()
+        service.add_provider(ConstantElevationProvider(elevation=500.0))
+        detector = TerrainCollisionDetector(service)
+
+        position = Vector3(-122.4194, 0, 37.7749)
+        altitude_msl = 1500.0  # 1500m MSL
+
+        result = detector.check_terrain_collision(position, altitude_msl)
+
+        # AGL = MSL - terrain elevation
+        assert result.agl_altitude == 1000.0  # 1500 - 500
+        assert result.terrain_elevation_m == 500.0
+        assert result.distance_to_terrain == 1000.0
+
+    def test_check_terrain_collision_without_service(self) -> None:
+        """Test collision check without elevation service."""
+        detector = TerrainCollisionDetector(elevation_service=None)
+
+        position = Vector3(-122.4194, 0, 37.7749)
+        altitude_msl = 100.0
+
+        result = detector.check_terrain_collision(position, altitude_msl)
+
+        # Should assume sea level (0m) terrain
+        assert result.terrain_elevation_m == 0.0
+        assert result.agl_altitude == 100.0
+        assert result.is_colliding is False
+
+    def test_get_minimum_safe_altitude(self) -> None:
+        """Test minimum safe altitude calculation."""
+        service = ElevationService()
+        service.add_provider(ConstantElevationProvider(elevation=500.0))
+        detector = TerrainCollisionDetector(service)
+
+        position = Vector3(-122.4194, 0, 37.7749)
+        min_safe_alt = detector.get_minimum_safe_altitude(position, buffer_ft=1000.0)
+
+        # Should be terrain (500m) + 1000ft buffer
+        buffer_m = 1000.0 * 0.3048  # ~304.8m
+        expected = 500.0 + buffer_m  # ~804.8m
+        assert min_safe_alt == pytest.approx(expected, abs=1.0)
+
+    def test_is_safe_to_descend_safe(self) -> None:
+        """Test safe descent check."""
+        service = ElevationService()
+        service.add_provider(ConstantElevationProvider(elevation=100.0))
+        detector = TerrainCollisionDetector(service)
+
+        position = Vector3(-122.4194, 0, 37.7749)
+        current_altitude = 2000.0
+        target_altitude = 1000.0
+
+        is_safe = detector.is_safe_to_descend(position, current_altitude, target_altitude)
+
+        assert is_safe is True
+
+    def test_is_safe_to_descend_unsafe(self) -> None:
+        """Test unsafe descent check."""
+        service = ElevationService()
+        service.add_provider(ConstantElevationProvider(elevation=500.0))
+        detector = TerrainCollisionDetector(service)
+
+        position = Vector3(-122.4194, 0, 37.7749)
+        current_altitude = 2000.0
+        target_altitude = 300.0  # Below terrain
+
+        is_safe = detector.is_safe_to_descend(position, current_altitude, target_altitude)
+
+        assert is_safe is False
+
+    def test_set_warning_thresholds(self, detector: TerrainCollisionDetector) -> None:
+        """Test setting custom warning thresholds."""
+        detector.set_warning_thresholds(warning_ft=1000.0, caution_ft=500.0, critical_ft=200.0)
+
+        assert detector.warning_threshold_ft == 1000.0
+        assert detector.caution_threshold_ft == 500.0
+        assert detector.critical_threshold_ft == 200.0
+
+    def test_check_flight_path_collision(self) -> None:
+        """Test predictive flight path collision."""
+        service = ElevationService()
+        service.add_provider(ConstantElevationProvider(elevation=500.0))
+        detector = TerrainCollisionDetector(service)
+
+        position = Vector3(-122.4194, 0, 37.7749)
+        altitude_msl = 1000.0
+        velocity = Vector3(0, -10, 0)  # Descending at 10 m/s
+
+        results = detector.check_flight_path_collision(
+            position, altitude_msl, velocity, lookahead_seconds=30, num_samples=5
         )
-        terrain_elevation = 0.0
-        result = detector.check_landing(state, terrain_elevation)
-        assert result.collided is True  # Landing detected
 
-    def test_check_landing_too_fast(self, detector: CollisionDetector) -> None:
-        """Test landing detection with excessive descent rate (crash)."""
-        state = AircraftState(
-            position=Vector3(0.0, 0.5, 0.0),
-            velocity=Vector3(20.0, -10.0, 0.0),  # Too fast
+        assert len(results) == 5
+
+        # Should show increasing collision risk as aircraft descends
+        # First sample should be safe, later samples should show warnings
+        assert results[0].severity in [CollisionSeverity.SAFE, CollisionSeverity.WARNING]
+
+    def test_flight_path_collision_level_flight(self) -> None:
+        """Test flight path collision with level flight."""
+        service = ElevationService()
+        service.add_provider(ConstantElevationProvider(elevation=100.0))
+        detector = TerrainCollisionDetector(service)
+
+        position = Vector3(-122.4194, 0, 37.7749)
+        altitude_msl = 1000.0
+        velocity = Vector3(50, 0, 0)  # Level flight, moving east
+
+        results = detector.check_flight_path_collision(
+            position, altitude_msl, velocity, lookahead_seconds=60, num_samples=10
         )
-        terrain_elevation = 0.0
-        result = detector.check_landing(state, terrain_elevation)
-        # With high descent rate and not at ground level, won't trigger landing
-        # Landing requires either altitude <= 0 OR (altitude <= threshold AND safe speed)
-        # Since altitude is 0.5m and speed is unsafe, result is False
-        assert result.collided is False
 
-    def test_check_landing_too_high(self, detector: CollisionDetector) -> None:
-        """Test landing detection when too high above ground."""
-        state = AircraftState(
-            position=Vector3(0.0, 10.0, 0.0),  # Too high
-            velocity=Vector3(20.0, -2.0, 0.0),
+        # All results should be safe (level flight at high altitude)
+        for result in results:
+            assert result.severity == CollisionSeverity.SAFE
+            assert result.is_colliding is False
+
+
+class TestPreventTerrainCollision:
+    """Test terrain collision prevention utility."""
+
+    def test_prevent_collision_when_below_terrain(self) -> None:
+        """Test altitude adjustment when below terrain."""
+        position = Vector3(-122.4194, 0, 37.7749)
+        altitude_msl = 50.0
+        terrain_elevation_m = 100.0
+        min_clearance_m = 10.0
+
+        safe_altitude = prevent_terrain_collision(
+            position, altitude_msl, terrain_elevation_m, min_clearance_m
         )
-        terrain_elevation = 0.0
-        result = detector.check_landing(state, terrain_elevation)
-        assert result.collided is False
 
-    def test_check_landing_on_ground(self, detector: CollisionDetector) -> None:
-        """Test landing detection when already on ground."""
-        state = AircraftState(
-            position=Vector3(0.0, 0.0, 0.0),
-            velocity=Vector3(20.0, 0.0, 0.0),
+        # Should be adjusted to terrain + clearance
+        assert safe_altitude == 110.0  # 100 + 10
+
+    def test_prevent_collision_when_too_close(self) -> None:
+        """Test altitude adjustment when too close to terrain."""
+        position = Vector3(-122.4194, 0, 37.7749)
+        altitude_msl = 105.0
+        terrain_elevation_m = 100.0
+        min_clearance_m = 10.0
+
+        safe_altitude = prevent_terrain_collision(
+            position, altitude_msl, terrain_elevation_m, min_clearance_m
         )
-        terrain_elevation = 0.0
-        result = detector.check_landing(state, terrain_elevation)
-        assert result.collided is True
 
-    def test_check_landing_with_terrain(self, detector: CollisionDetector) -> None:
-        """Test landing detection on elevated terrain."""
-        state = AircraftState(
-            position=Vector3(0.0, 101.0, 0.0),
-            velocity=Vector3(20.0, -2.0, 0.0),
+        # Should be adjusted to maintain clearance
+        assert safe_altitude == 110.0
+
+    def test_prevent_collision_when_safe(self) -> None:
+        """Test no adjustment when altitude is safe."""
+        position = Vector3(-122.4194, 0, 37.7749)
+        altitude_msl = 500.0
+        terrain_elevation_m = 100.0
+        min_clearance_m = 10.0
+
+        safe_altitude = prevent_terrain_collision(
+            position, altitude_msl, terrain_elevation_m, min_clearance_m
         )
-        terrain_elevation = 100.0
-        result = detector.check_landing(state, terrain_elevation)
-        assert result.collided is True
-        assert result.contact_point.y == pytest.approx(100.0)
+
+        # Should remain unchanged
+        assert safe_altitude == 500.0
 
 
-class TestCollisionDetectorSpheres:
-    """Test sphere-sphere collision detection."""
+class TestRealWorldScenarios:
+    """Test real-world collision scenarios."""
 
-    @pytest.fixture
-    def detector(self) -> CollisionDetector:
-        """Create a collision detector."""
-        return CollisionDetector()
+    def test_mountain_approach_scenario(self) -> None:
+        """Test approaching mountainous terrain."""
+        # Simulate approaching 2000m mountain
+        service = ElevationService()
+        service.add_provider(ConstantElevationProvider(elevation=2000.0))
+        detector = TerrainCollisionDetector(service)
 
-    def test_check_sphere_collision_no_collision(self, detector: CollisionDetector) -> None:
-        """Test sphere collision with no intersection."""
-        sphere1 = BoundingSphere(center=Vector3(0.0, 0.0, 0.0), radius=5.0)
-        sphere2 = BoundingSphere(center=Vector3(20.0, 0.0, 0.0), radius=5.0)
-        result = detector.check_sphere_collision(sphere1, sphere2)
-        assert result.collided is False
+        # Aircraft at 2500m MSL (500m AGL)
+        position = Vector3(-122.4194, 0, 37.7749)
+        altitude_msl = 2500.0
 
-    def test_check_sphere_collision_with_collision(self, detector: CollisionDetector) -> None:
-        """Test sphere collision with intersection."""
-        sphere1 = BoundingSphere(center=Vector3(0.0, 0.0, 0.0), radius=5.0)
-        sphere2 = BoundingSphere(center=Vector3(8.0, 0.0, 0.0), radius=5.0)
-        result = detector.check_sphere_collision(sphere1, sphere2)
-        assert result.collided is True
-        assert result.penetration_depth > 0.0
-        # Normal should point from sphere1 toward sphere2
-        assert result.contact_normal.x > 0.0
+        result = detector.check_terrain_collision(position, altitude_msl)
 
-    def test_check_sphere_collision_same_position(self, detector: CollisionDetector) -> None:
-        """Test sphere collision when spheres are at same position."""
-        sphere1 = BoundingSphere(center=Vector3(0.0, 0.0, 0.0), radius=5.0)
-        sphere2 = BoundingSphere(center=Vector3(0.0, 0.0, 0.0), radius=5.0)
-        result = detector.check_sphere_collision(sphere1, sphere2)
-        assert result.collided is True
-        # Should handle zero distance case with arbitrary normal
-        assert result.contact_normal != Vector3.zero()
-        assert result.penetration_depth == pytest.approx(10.0)  # Sum of radii
+        # 500m = ~1640ft AGL, should be safe but might trigger warning
+        assert result.agl_altitude == pytest.approx(500.0, abs=1.0)
+        assert result.is_colliding is False
+        assert result.severity in [CollisionSeverity.SAFE, CollisionSeverity.WARNING]
 
-    def test_check_sphere_collision_contact_point(self, detector: CollisionDetector) -> None:
-        """Test sphere collision contact point calculation."""
-        sphere1 = BoundingSphere(center=Vector3(0.0, 0.0, 0.0), radius=5.0)
-        sphere2 = BoundingSphere(center=Vector3(10.0, 0.0, 0.0), radius=5.0)
-        result = detector.check_sphere_collision(sphere1, sphere2)
-        # Contact should be on sphere1 surface toward sphere2
-        assert result.contact_point.x == pytest.approx(5.0)
-        assert result.contact_point.y == pytest.approx(0.0)
-        assert result.contact_point.z == pytest.approx(0.0)
+    def test_high_altitude_airport_takeoff(self) -> None:
+        """Test takeoff from high-altitude airport."""
+        # Denver airport at ~1650m elevation
+        service = ElevationService()
+        service.add_provider(ConstantElevationProvider(elevation=1650.0))
+        detector = TerrainCollisionDetector(service)
 
+        # Aircraft just after takeoff at 1700m MSL (50m AGL)
+        position = Vector3(-104.9903, 0, 39.7392)
+        altitude_msl = 1700.0
 
-class TestSpatialGrid:
-    """Test SpatialGrid spatial partitioning."""
+        result = detector.check_terrain_collision(position, altitude_msl)
 
-    def test_initialization(self) -> None:
-        """Test grid initialization."""
-        grid = SpatialGrid(cell_size=1000.0)
-        assert grid.cell_size == 1000.0
-        assert len(grid.grid) == 0
+        # 50m = ~164ft AGL, should be CAUTION or CRITICAL
+        assert result.agl_altitude == pytest.approx(50.0, abs=1.0)
+        assert result.severity in [CollisionSeverity.CAUTION, CollisionSeverity.CRITICAL]
 
-    def test_insert_object(self) -> None:
-        """Test inserting object into grid."""
-        grid = SpatialGrid(cell_size=100.0)
-        position = Vector3(50.0, 50.0, 50.0)
-        grid.insert(object_id=1, position=position, radius=10.0)
-        # Grid should have one cell with one object
-        assert len(grid.grid) == 1
+    def test_landing_approach_scenario(self) -> None:
+        """Test landing approach."""
+        service = ElevationService()
+        service.add_provider(ConstantElevationProvider(elevation=10.0))  # Airport near sea level
+        detector = TerrainCollisionDetector(service)
 
-    def test_insert_multiple_objects_same_cell(self) -> None:
-        """Test inserting multiple objects into same cell."""
-        grid = SpatialGrid(cell_size=100.0)
-        grid.insert(1, Vector3(10.0, 10.0, 10.0), 5.0)
-        grid.insert(2, Vector3(20.0, 20.0, 20.0), 5.0)
-        # Both in same cell
-        assert len(grid.grid) == 1
-        # Cell should have 2 objects
-        cell = list(grid.grid.values())[0]
-        assert len(cell) == 2
+        # Aircraft on final approach at 50ft AGL (CRITICAL threshold)
+        position = Vector3(-122.4194, 0, 37.7749)
+        altitude_msl = 10.0 + (50.0 * 0.3048)  # 10m + 50ft
 
-    def test_insert_multiple_objects_different_cells(self) -> None:
-        """Test inserting objects into different cells."""
-        grid = SpatialGrid(cell_size=100.0)
-        grid.insert(1, Vector3(50.0, 50.0, 50.0), 5.0)
-        grid.insert(2, Vector3(150.0, 150.0, 150.0), 5.0)
-        # Should be in different cells
-        assert len(grid.grid) == 2
+        result = detector.check_terrain_collision(position, altitude_msl)
 
-    def test_query_nearby_empty_grid(self) -> None:
-        """Test querying empty grid returns no results."""
-        grid = SpatialGrid(cell_size=100.0)
-        nearby = grid.query_nearby(Vector3(0.0, 0.0, 0.0), search_radius=50.0)
-        assert len(nearby) == 0
+        # Should be CRITICAL (< 100ft)
+        agl_ft = result.agl_altitude * 3.28084
+        assert 40 < agl_ft < 60  # Approximately 50ft
+        assert result.severity == CollisionSeverity.CRITICAL
 
-    def test_query_nearby_finds_close_object(self) -> None:
-        """Test query finds nearby object."""
-        grid = SpatialGrid(cell_size=100.0)
-        grid.insert(1, Vector3(10.0, 10.0, 10.0), 5.0)
+    def test_cfit_scenario(self) -> None:
+        """Test Controlled Flight Into Terrain (CFIT) scenario."""
+        service = ElevationService()
+        service.add_provider(ConstantElevationProvider(elevation=1000.0))
+        detector = TerrainCollisionDetector(service)
 
-        # Query near the object
-        nearby = grid.query_nearby(Vector3(15.0, 15.0, 15.0), search_radius=20.0)
-        assert len(nearby) == 1
-        assert nearby[0][0] == 1  # object_id
+        # Aircraft descending into terrain
+        position = Vector3(-122.4194, 0, 37.7749)
+        altitude_msl = 950.0  # 50m below terrain
+        velocity = Vector3(50, -5, 0)  # Descending
 
-    def test_query_nearby_excludes_far_objects(self) -> None:
-        """Test query excludes objects outside search radius."""
-        grid = SpatialGrid(cell_size=100.0)
-        grid.insert(1, Vector3(10.0, 10.0, 10.0), 5.0)
-        grid.insert(2, Vector3(1000.0, 1000.0, 1000.0), 5.0)
+        result = detector.check_terrain_collision(position, altitude_msl, velocity)
 
-        # Query near first object
-        nearby = grid.query_nearby(Vector3(10.0, 10.0, 10.0), search_radius=50.0)
-        assert len(nearby) == 1
-        assert nearby[0][0] == 1  # Only first object
+        # Should detect collision
+        assert result.is_colliding is True
+        assert result.collision_type == CollisionType.TERRAIN
+        assert result.severity == CollisionSeverity.COLLISION
+        assert result.distance_to_terrain < 0
 
-    def test_query_nearby_multiple_cells(self) -> None:
-        """Test query searches multiple cells."""
-        grid = SpatialGrid(cell_size=100.0)
-        # Insert objects in adjacent cells
-        grid.insert(1, Vector3(50.0, 50.0, 50.0), 5.0)
-        grid.insert(2, Vector3(150.0, 50.0, 50.0), 5.0)
+    def test_terrain_avoidance_maneuver(self) -> None:
+        """Test terrain avoidance maneuver."""
+        service = ElevationService()
+        service.add_provider(ConstantElevationProvider(elevation=1000.0))
+        detector = TerrainCollisionDetector(service)
 
-        # Query at boundary, large radius
-        nearby = grid.query_nearby(Vector3(100.0, 50.0, 50.0), search_radius=100.0)
-        # Should find both
-        assert len(nearby) == 2
+        # Aircraft approaching terrain
+        position = Vector3(-122.4194, 0, 37.7749)
+        altitude_msl = 1050.0  # 50m above terrain
+        terrain_elevation = 1000.0
 
-    def test_query_nearby_returns_position_and_radius(self) -> None:
-        """Test query returns object position and radius."""
-        grid = SpatialGrid(cell_size=100.0)
-        position = Vector3(25.0, 35.0, 45.0)
-        radius = 7.5
-        grid.insert(1, position, radius)
+        # Check if it's safe to descend
+        is_safe = detector.is_safe_to_descend(position, altitude_msl, 950.0)
+        assert is_safe is False
 
-        nearby = grid.query_nearby(Vector3(25.0, 35.0, 45.0), search_radius=10.0)
-        assert len(nearby) == 1
-        obj_id, obj_pos, obj_radius = nearby[0]
-        assert obj_id == 1
-        assert obj_pos == position
-        assert obj_radius == pytest.approx(radius)
+        # Calculate safe altitude
+        min_safe_alt = detector.get_minimum_safe_altitude(position, buffer_ft=500.0)
+        assert min_safe_alt > terrain_elevation
 
-    def test_clear_grid(self) -> None:
-        """Test clearing all objects from grid."""
-        grid = SpatialGrid(cell_size=100.0)
-        grid.insert(1, Vector3(10.0, 10.0, 10.0), 5.0)
-        grid.insert(2, Vector3(20.0, 20.0, 20.0), 5.0)
+        # Apply terrain avoidance
+        safe_altitude = prevent_terrain_collision(position, altitude_msl, terrain_elevation, 50.0)
+        assert safe_altitude >= 1050.0  # Should maintain current altitude
 
-        grid.clear()
+    def test_ocean_flight_scenario(self) -> None:
+        """Test flight over ocean."""
+        service = ElevationService()
+        service.add_provider(ConstantElevationProvider(elevation=0.0))  # Sea level
+        detector = TerrainCollisionDetector(service)
 
-        assert len(grid.grid) == 0
-        nearby = grid.query_nearby(Vector3(10.0, 10.0, 10.0), search_radius=50.0)
-        assert len(nearby) == 0
+        # Aircraft at cruise altitude over ocean
+        position = Vector3(-155.0, 0, 20.0)  # Mid-Pacific
+        altitude_msl = 10000.0  # 10km altitude
 
-    def test_spatial_hashing_consistency(self) -> None:
-        """Test same position always hashes to same cell."""
-        grid = SpatialGrid(cell_size=100.0)
-        position = Vector3(125.0, 225.0, 325.0)
+        result = detector.check_terrain_collision(position, altitude_msl)
 
-        # Insert same position multiple times (different IDs)
-        grid.insert(1, position, 5.0)
-        grid.insert(2, position, 5.0)
+        assert result.is_colliding is False
+        assert result.severity == CollisionSeverity.SAFE
+        assert result.terrain_elevation_m == 0.0
 
-        # Should be in same cell
-        assert len(grid.grid) == 1
-        cell = list(grid.grid.values())[0]
-        assert len(cell) == 2
+    def test_varying_terrain_flight_path(self) -> None:
+        """Test flight path over varying terrain."""
+        service = ElevationService()
+        service.add_provider(SimpleFlatEarthProvider())
+        detector = TerrainCollisionDetector(service)
 
-    def test_query_large_search_radius(self) -> None:
-        """Test query with very large search radius."""
-        grid = SpatialGrid(cell_size=100.0)
-        # Insert objects far apart
-        grid.insert(1, Vector3(0.0, 0.0, 0.0), 5.0)
-        grid.insert(2, Vector3(500.0, 500.0, 500.0), 5.0)
-        grid.insert(3, Vector3(-500.0, -500.0, -500.0), 5.0)
+        # Aircraft flying level over varying terrain
+        position = Vector3(-122.4194, 0, 37.7749)
+        altitude_msl = 500.0
+        velocity = Vector3(50, 0, 50)  # Moving northeast
 
-        # Large search radius should find all
-        nearby = grid.query_nearby(Vector3(0.0, 0.0, 0.0), search_radius=1000.0)
-        assert len(nearby) == 3
+        results = detector.check_flight_path_collision(
+            position, altitude_msl, velocity, lookahead_seconds=60, num_samples=10
+        )
 
-
-class TestCollisionPerformance:
-    """Test performance-related collision features."""
-
-    def test_sphere_intersection_uses_squared_distance(self) -> None:
-        """Test sphere intersection uses squared distance (performance)."""
-        sphere1 = BoundingSphere(center=Vector3(0.0, 0.0, 0.0), radius=5.0)
-        sphere2 = BoundingSphere(center=Vector3(8.0, 0.0, 0.0), radius=5.0)
-
-        # This should use distance_squared internally (no sqrt)
-        result = sphere1.intersects(sphere2)
-        assert result is True
-
-    def test_spatial_grid_reduces_checks(self) -> None:
-        """Test spatial grid reduces number of collision checks needed."""
-        grid = SpatialGrid(cell_size=100.0)
-
-        # Insert many objects in different regions
-        for i in range(10):
-            grid.insert(i, Vector3(float(i * 200), 0.0, 0.0), 5.0)
-
-        # Query in specific region should only return nearby objects
-        nearby = grid.query_nearby(Vector3(200.0, 0.0, 0.0), search_radius=50.0)
-        # Should only find object near position 200 (not all 10)
-        assert len(nearby) < 10
+        # Should get varying collision results as terrain changes
+        assert len(results) == 10
+        for result in results:
+            # Terrain elevation should vary with position
+            assert result.terrain_elevation_m >= 0

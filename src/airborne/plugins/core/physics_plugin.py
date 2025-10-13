@@ -13,7 +13,7 @@ from typing import Any
 from airborne.core.logging_system import get_logger
 from airborne.core.messaging import Message, MessagePriority, MessageTopic
 from airborne.core.plugin import IPlugin, PluginContext, PluginMetadata, PluginType
-from airborne.physics.collision import CollisionDetector
+from airborne.physics.collision import TerrainCollisionDetector
 from airborne.physics.flight_model.base import AircraftState, ControlInputs, IFlightModel
 from airborne.physics.flight_model.simple_6dof import Simple6DOFFlightModel
 
@@ -29,14 +29,14 @@ class PhysicsPlugin(IPlugin):
 
     The plugin provides:
     - flight_model: IFlightModel instance
-    - collision_detector: CollisionDetector instance
+    - collision_detector: TerrainCollisionDetector instance
     """
 
     def __init__(self) -> None:
         """Initialize physics plugin."""
         self.context: PluginContext | None = None
         self.flight_model: IFlightModel | None = None
-        self.collision_detector: CollisionDetector | None = None
+        self.collision_detector: TerrainCollisionDetector | None = None
 
         # Control inputs (updated via messages)
         self.control_inputs = ControlInputs()
@@ -87,8 +87,9 @@ class PhysicsPlugin(IPlugin):
         # Initialize flight model with config
         self.flight_model.initialize(flight_model_config)
 
-        # Create collision detector
-        self.collision_detector = CollisionDetector()
+        # Create collision detector (without elevation service for now)
+        # Elevation service will be provided by terrain plugin if available
+        self.collision_detector = TerrainCollisionDetector(elevation_service=None)
 
         # Register components in registry
         if context.plugin_registry:
@@ -118,15 +119,15 @@ class PhysicsPlugin(IPlugin):
         # Get current state
         state = self.flight_model.get_state()
 
-        # Check for ground collision
+        # Check for terrain collision
         if self.collision_detector:
-            ground_collision = self.collision_detector.check_ground_collision(
-                state.position, self._terrain_elevation
+            collision_result = self.collision_detector.check_terrain_collision(
+                state.position, state.position.y, state.velocity
             )
 
-            if ground_collision.collided:
+            if collision_result.is_colliding:
                 # Handle ground collision
-                self._handle_ground_collision(state, ground_collision)
+                self._handle_ground_collision(state, collision_result)
 
                 # Publish collision event
                 self.context.message_queue.publish(
@@ -135,18 +136,16 @@ class PhysicsPlugin(IPlugin):
                         recipients=["*"],
                         topic=MessageTopic.COLLISION_DETECTED,
                         data={
-                            "type": "ground",
+                            "type": collision_result.collision_type.value,
+                            "severity": collision_result.severity.value,
                             "position": {
                                 "x": state.position.x,
                                 "y": state.position.y,
                                 "z": state.position.z,
                             },
-                            "contact_point": {
-                                "x": ground_collision.contact_point.x,
-                                "y": ground_collision.contact_point.y,
-                                "z": ground_collision.contact_point.z,
-                            },
-                            "penetration_depth": ground_collision.penetration_depth,
+                            "terrain_elevation": collision_result.terrain_elevation_m,
+                            "agl_altitude": collision_result.agl_altitude,
+                            "distance_to_terrain": collision_result.distance_to_terrain,
                         },
                         priority=MessagePriority.HIGH,
                     )
@@ -225,12 +224,11 @@ class PhysicsPlugin(IPlugin):
 
         Args:
             state: Aircraft state.
-            collision: Collision result (unused for now).
+            collision: Collision result from terrain collision detector.
         """
-        _ = collision  # Mark as intentionally unused
         # Prevent aircraft from going below ground
-        if state.position.y < self._terrain_elevation:
-            state.position.y = self._terrain_elevation
+        if state.position.y < collision.terrain_elevation_m:
+            state.position.y = collision.terrain_elevation_m
             state.on_ground = True
 
             # Stop vertical velocity

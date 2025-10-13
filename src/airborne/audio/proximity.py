@@ -12,7 +12,6 @@ Typical usage:
 """
 
 import logging
-import math
 from dataclasses import dataclass
 from enum import Enum
 

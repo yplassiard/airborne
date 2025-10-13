@@ -129,9 +129,7 @@ class TestOSMProvider:
     def test_get_closest_city(self, provider: OSMProvider) -> None:
         """Test finding closest city."""
         position = Vector3(-122.5, 0, 37.8)  # Near San Francisco
-        feature, distance = provider.get_closest_feature(
-            position, feature_types=[FeatureType.CITY]
-        )
+        feature, distance = provider.get_closest_feature(position, feature_types=[FeatureType.CITY])
 
         assert feature is not None
         assert feature.feature_type == FeatureType.CITY
@@ -358,9 +356,7 @@ class TestRealWorldScenarios:
         # Mid-Pacific position
         position = Vector3(-155.0, 0, 20.0)
 
-        closest_ocean, _ = provider.get_closest_feature(
-            position, feature_types=[FeatureType.OCEAN]
-        )
+        closest_ocean, _ = provider.get_closest_feature(position, feature_types=[FeatureType.OCEAN])
 
         if closest_ocean:
             callout = f"Over {closest_ocean.name}"

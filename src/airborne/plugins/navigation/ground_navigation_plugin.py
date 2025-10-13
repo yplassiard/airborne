@@ -19,7 +19,7 @@ from typing import Any
 from airborne.airports.database import AirportDatabase
 from airborne.airports.spatial_index import SpatialIndex
 from airborne.airports.taxiway_generator import TaxiwayGenerator
-from airborne.audio.beeper import BeepGenerator, BeepStyle, ProximityBeeper
+from airborne.audio.beeper import BeepStyle, ProximityBeeper
 from airborne.audio.proximity import BeepPattern, ProximityCueManager
 from airborne.core.plugin import IPlugin, PluginMetadata, PluginType
 from airborne.physics.ground_physics import GroundContact, GroundPhysics
@@ -224,9 +224,7 @@ class GroundNavigationPlugin(IPlugin):
             velocity = state.get("velocity", Vector3(0, 0, 0))
 
             if not isinstance(velocity, Vector3):
-                velocity = Vector3(
-                    velocity.get("x", 0), velocity.get("y", 0), velocity.get("z", 0)
-                )
+                velocity = Vector3(velocity.get("x", 0), velocity.get("y", 0), velocity.get("z", 0))
 
             contact = GroundContact(
                 on_ground=True,
@@ -328,7 +326,5 @@ class GroundNavigationPlugin(IPlugin):
             "current_frequency": (
                 self.proximity_manager.get_current_frequency() if self.proximity_manager else 0.0
             ),
-            "target_count": (
-                len(self.proximity_manager.targets) if self.proximity_manager else 0
-            ),
+            "target_count": (len(self.proximity_manager.targets) if self.proximity_manager else 0),
         }

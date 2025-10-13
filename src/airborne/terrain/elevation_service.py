@@ -316,16 +316,18 @@ class ElevationService:
                 return elevation
             except Exception as e:
                 logger.warning(
-                    "Provider %s failed for (%f, %f): %s", provider.get_name(), latitude, longitude, e
+                    "Provider %s failed for (%f, %f): %s",
+                    provider.get_name(),
+                    latitude,
+                    longitude,
+                    e,
                 )
                 continue
 
         # All providers failed
         raise RuntimeError(f"All elevation providers failed for ({latitude}, {longitude})")
 
-    def get_elevations(
-        self, coordinates: list[tuple[float, float]]
-    ) -> list[ElevationQuery]:
+    def get_elevations(self, coordinates: list[tuple[float, float]]) -> list[ElevationQuery]:
         """Get elevations for multiple coordinates.
 
         Args:
