@@ -14,6 +14,7 @@ Typical usage:
     nearby = db.get_airports_near(position, radius_nm=50)
 """
 
+from airborne.airports.classifier import AirportCategory, AirportClassifier
 from airborne.airports.database import (
     Airport,
     AirportDatabase,
@@ -26,6 +27,8 @@ from airborne.airports.database import (
 
 __all__ = [
     "Airport",
+    "AirportCategory",
+    "AirportClassifier",
     "AirportDatabase",
     "AirportType",
     "Frequency",
