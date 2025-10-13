@@ -96,11 +96,13 @@ panels:
       - id: throttle_lever
         name: Throttle
         type: slider
-        states: [IDLE, PARTIAL, FULL]
-        default_index: 0
+        min_value: 0.0
+        max_value: 100.0
+        default_value: 0.0
+        step_size: 5.0
         target_plugin: engine
         message_topic: engine.throttle
-        description: Engine throttle lever
+        description: Engine throttle lever (0-100%)
 
       # Fuel Controls
       - id: fuel_selector_valve

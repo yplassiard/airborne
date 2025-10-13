@@ -41,37 +41,65 @@ class PanelControl:
         id: Unique identifier for this control
         name: Display name (announced via TTS)
         control_type: Type of control (switch, button, etc.)
-        states: List of possible states (e.g., ["OFF", "ON"])
-        current_state_index: Index of current state
+        states: List of possible states (e.g., ["OFF", "ON"]) - used for discrete controls
+        current_state_index: Index of current state (for discrete controls)
         target_plugin: Plugin that handles this control
         message_topic: Message topic to publish on state change
         description: Optional description for TTS
+        min_value: Minimum value for continuous controls (SLIDER)
+        max_value: Maximum value for continuous controls (SLIDER)
+        continuous_value: Current value for continuous controls (SLIDER)
+        step_size: Step size for continuous control adjustments
     """
 
     id: str
     name: str
     control_type: ControlType
-    states: list[str]
+    states: list[str] = field(default_factory=list)
     current_state_index: int = 0
     target_plugin: str = ""
     message_topic: str = ""
     description: str = ""
+    # Continuous control fields (for SLIDER type)
+    min_value: float = 0.0
+    max_value: float = 100.0
+    continuous_value: float = 0.0
+    step_size: float = 1.0
+
+    def is_continuous(self) -> bool:
+        """Check if this is a continuous control.
+
+        Returns:
+            True if control type is SLIDER and has no discrete states.
+        """
+        return self.control_type == ControlType.SLIDER and not self.states
 
     def get_current_state(self) -> str:
-        """Get current state value."""
+        """Get current state value.
+
+        Returns:
+            For discrete controls: state name from states list.
+            For continuous controls: formatted percentage value.
+        """
+        if self.is_continuous():
+            return f"{self.continuous_value:.1f}%"
         if 0 <= self.current_state_index < len(self.states):
             return self.states[self.current_state_index]
         return "UNKNOWN"
 
     def next_state(self) -> str:
-        """Advance to next state (wraps around)."""
-        if self.states:
+        """Advance to next state (wraps around for discrete, increments for continuous)."""
+        if self.is_continuous():
+            self.continuous_value = min(self.max_value, self.continuous_value + self.step_size)
+        elif self.states:
             self.current_state_index = (self.current_state_index + 1) % len(self.states)
         return self.get_current_state()
 
     def previous_state(self) -> str:
-        """Go to previous state (wraps around)."""
-        if self.states:
+        """Go to previous state (wraps around for discrete, decrements for continuous)."""
+        if self.is_continuous():
+            self.continuous_value = max(self.min_value, self.continuous_value - self.step_size)
+        elif self.states:
             self.current_state_index = (self.current_state_index - 1) % len(self.states)
         return self.get_current_state()
 
@@ -79,11 +107,20 @@ class PanelControl:
         """Set state by name.
 
         Args:
-            state: State name to set.
+            state: State name to set (or numeric value for continuous controls).
 
         Returns:
             True if state was set successfully.
         """
+        # For continuous controls, try to parse as number
+        if self.is_continuous():
+            try:
+                value = float(state.rstrip("%"))
+                return self.set_value(value)
+            except ValueError:
+                return False
+
+        # For discrete controls, find state in list
         try:
             self.current_state_index = self.states.index(state)
             return True
@@ -103,6 +140,33 @@ class PanelControl:
             self.current_state_index = index
             return True
         return False
+
+    def set_value(self, value: float) -> bool:
+        """Set continuous control value.
+
+        Args:
+            value: Value to set (must be within min_value to max_value range).
+
+        Returns:
+            True if value was set successfully.
+        """
+        if not self.is_continuous():
+            return False
+
+        if self.min_value <= value <= self.max_value:
+            self.continuous_value = value
+            return True
+        return False
+
+    def get_value(self) -> float:
+        """Get continuous control value.
+
+        Returns:
+            Current continuous value, or 0.0 if not a continuous control.
+        """
+        if self.is_continuous():
+            return self.continuous_value
+        return 0.0
 
 
 @dataclass
@@ -234,6 +298,11 @@ class ControlPanelPlugin(IPlugin):
                 target_plugin=control_data.get("target_plugin", ""),
                 message_topic=control_data.get("message_topic", ""),
                 description=control_data.get("description", ""),
+                # Continuous control fields
+                min_value=control_data.get("min_value", 0.0),
+                max_value=control_data.get("max_value", 100.0),
+                continuous_value=control_data.get("default_value", 0.0),
+                step_size=control_data.get("step_size", 1.0),
             )
             controls.append(control)
 
@@ -368,17 +437,26 @@ class ControlPanelPlugin(IPlugin):
 
         # Send message to target plugin
         if control.target_plugin and control.message_topic:
+            message_data = {
+                "control_id": control.id,
+                "control_name": control.name,
+                "state": current_state,
+            }
+
+            # Add continuous value or discrete index
+            if control.is_continuous():
+                message_data["value"] = control.continuous_value
+                message_data["min_value"] = control.min_value
+                message_data["max_value"] = control.max_value
+            else:
+                message_data["state_index"] = control.current_state_index
+
             self.context.message_queue.publish(
                 Message(
                     sender="control_panel_plugin",
                     recipients=[control.target_plugin],
                     topic=control.message_topic,
-                    data={
-                        "control_id": control.id,
-                        "control_name": control.name,
-                        "state": current_state,
-                        "state_index": control.current_state_index,
-                    },
+                    data=message_data,
                     priority=MessagePriority.HIGH,
                 )
             )

@@ -18,6 +18,101 @@ from airborne.plugins.panel import (
 class TestPanelControl:
     """Test PanelControl dataclass."""
 
+    def test_create_continuous_control(self) -> None:
+        """Test creating a continuous slider control."""
+        control = PanelControl(
+            id="throttle",
+            name="Throttle",
+            control_type=ControlType.SLIDER,
+            target_plugin="engine",
+            message_topic="engine.throttle",
+            min_value=0.0,
+            max_value=100.0,
+            continuous_value=0.0,
+            step_size=5.0,
+        )
+
+        assert control.is_continuous() is True
+        assert control.get_value() == 0.0
+        assert control.get_current_state() == "0.0%"
+
+    def test_continuous_control_increment(self) -> None:
+        """Test incrementing continuous control."""
+        control = PanelControl(
+            id="throttle",
+            name="Throttle",
+            control_type=ControlType.SLIDER,
+            min_value=0.0,
+            max_value=100.0,
+            continuous_value=50.0,
+            step_size=10.0,
+        )
+
+        control.next_state()
+        assert control.get_value() == 60.0
+        assert control.get_current_state() == "60.0%"
+
+        # Test max clamping
+        control.continuous_value = 95.0
+        control.next_state()
+        assert control.get_value() == 100.0
+
+    def test_continuous_control_decrement(self) -> None:
+        """Test decrementing continuous control."""
+        control = PanelControl(
+            id="throttle",
+            name="Throttle",
+            control_type=ControlType.SLIDER,
+            min_value=0.0,
+            max_value=100.0,
+            continuous_value=50.0,
+            step_size=10.0,
+        )
+
+        control.previous_state()
+        assert control.get_value() == 40.0
+        assert control.get_current_state() == "40.0%"
+
+        # Test min clamping
+        control.continuous_value = 5.0
+        control.previous_state()
+        assert control.get_value() == 0.0
+
+    def test_set_continuous_value(self) -> None:
+        """Test setting continuous control value directly."""
+        control = PanelControl(
+            id="throttle",
+            name="Throttle",
+            control_type=ControlType.SLIDER,
+            min_value=0.0,
+            max_value=100.0,
+            continuous_value=0.0,
+        )
+
+        assert control.set_value(75.5) is True
+        assert control.get_value() == 75.5
+
+        # Test out of range
+        assert control.set_value(150.0) is False
+        assert control.get_value() == 75.5  # Unchanged
+
+    def test_set_continuous_state_by_string(self) -> None:
+        """Test setting continuous control via set_state with string."""
+        control = PanelControl(
+            id="throttle",
+            name="Throttle",
+            control_type=ControlType.SLIDER,
+            min_value=0.0,
+            max_value=100.0,
+            continuous_value=0.0,
+        )
+
+        assert control.set_state("80.5") is True
+        assert control.get_value() == 80.5
+
+        assert control.set_state("50%") is True
+        assert control.get_value() == 50.0
+
     def test_create_control(self) -> None:
         """Test creating a panel control."""
         control = PanelControl(
