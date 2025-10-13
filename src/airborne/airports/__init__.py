@@ -24,6 +24,7 @@ from airborne.airports.database import (
     Runway,
     SurfaceType,
 )
+from airborne.airports.spatial_index import SpatialIndex
 
 __all__ = [
     "Airport",
@@ -34,5 +35,6 @@ __all__ = [
     "Frequency",
     "FrequencyType",
     "Runway",
+    "SpatialIndex",
     "SurfaceType",
 ]
