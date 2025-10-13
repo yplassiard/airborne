@@ -21,7 +21,8 @@ from airborne.airports.spatial_index import SpatialIndex
 from airborne.airports.taxiway_generator import TaxiwayGenerator
 from airborne.audio.beeper import BeepStyle, ProximityBeeper
 from airborne.audio.proximity import BeepPattern, ProximityCueManager
-from airborne.core.plugin import IPlugin, PluginMetadata, PluginType
+from airborne.core.messaging import Message, MessageTopic
+from airborne.core.plugin import IPlugin, PluginContext, PluginMetadata, PluginType
 from airborne.physics.ground_physics import GroundPhysics
 from airborne.physics.vectors import Vector3
 
@@ -51,6 +52,9 @@ class GroundNavigationPlugin(IPlugin):
     def __init__(self) -> None:
         """Initialize ground navigation plugin."""
         super().__init__()
+
+        # Context
+        self.context: PluginContext | None = None
 
         # Components
         self.airport_db: AirportDatabase | None = None
@@ -85,22 +89,38 @@ class GroundNavigationPlugin(IPlugin):
             provides=["ground_navigation", "proximity_audio", "taxiway_routing"],
         )
 
-    def handle_message(self, message: Any) -> None:
+    def handle_message(self, message: Message) -> None:
         """Handle plugin messages.
 
         Args:
             message: Message from plugin system
         """
-        # Currently no message handling
-        pass
+        if message.topic == MessageTopic.POSITION_UPDATED:
+            # Update last known position from physics
+            data = message.data
+            if "position" in data:
+                pos = data["position"]
+                if isinstance(pos, dict):
+                    self.last_position = Vector3(
+                        pos.get("x", 0.0), pos.get("y", 0.0), pos.get("z", 0.0)
+                    )
+                elif isinstance(pos, (tuple, list)) and len(pos) >= 3:
+                    self.last_position = Vector3(float(pos[0]), float(pos[1]), float(pos[2]))
 
-    def initialize(self, context: Any) -> None:
+    def initialize(self, context: PluginContext | dict[str, Any]) -> None:
         """Initialize the plugin.
 
         Args:
-            context: Plugin context with configuration
+            context: Plugin context with configuration (or dict for legacy tests)
         """
-        config = context.get("config", {})
+        # Support both PluginContext and dict for backward compatibility with tests
+        if isinstance(context, dict):
+            config = context.get("config", {})
+        else:
+            self.context = context
+            config = context.config.get("ground_navigation", {})
+            # Subscribe to position updates
+            context.message_queue.subscribe(MessageTopic.POSITION_UPDATED, self.handle_message)
 
         # Load configuration
         self.audio_enabled = config.get("audio_enabled", True)
@@ -224,6 +244,12 @@ class GroundNavigationPlugin(IPlugin):
 
     def shutdown(self) -> None:
         """Shutdown the plugin."""
+        if self.context:
+            # Unsubscribe from messages
+            self.context.message_queue.unsubscribe(
+                MessageTopic.POSITION_UPDATED, self.handle_message
+            )
+
         if self.proximity_manager:
             self.proximity_manager.clear_targets()
 
