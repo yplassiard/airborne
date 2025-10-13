@@ -101,6 +101,7 @@ class AudioPlugin(IPlugin):
             self.audio_engine = None
 
         self.tts_provider = PyTTSXProvider()
+        self.tts_provider.initialize(tts_config)
 
         # Create sound manager only if audio engine is available
         if self.audio_engine:
