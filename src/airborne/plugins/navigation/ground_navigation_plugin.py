@@ -190,7 +190,7 @@ class GroundNavigationPlugin(IPlugin):
 
             # Update proximity cues
             if self.audio_enabled and self.proximity_manager:
-                should_beep = self.proximity_manager.update(position, delta_time)
+                should_beep = self.proximity_manager.update(position, dt)
 
                 # Generate beep if needed
                 if should_beep and self.beeper:
@@ -203,7 +203,7 @@ class GroundNavigationPlugin(IPlugin):
                         beep_samples = self.beeper.get_beep_if_ready(
                             distance_m=distance,
                             beep_frequency_hz=min(frequency, self.max_beep_frequency),
-                            delta_time=delta_time,
+                            delta_time=dt,
                             style=self.beep_style,
                         )
 
@@ -217,36 +217,10 @@ class GroundNavigationPlugin(IPlugin):
                                 frequency,
                             )
 
-        # Calculate ground forces if on ground
-        on_ground = state.get("on_ground", False)
-        if on_ground and self.ground_physics:
-            ground_speed = state.get("ground_speed_mps", 0.0)
-            heading = state.get("heading_deg", 0.0)
-            velocity = state.get("velocity", Vector3(0, 0, 0))
-
-            if not isinstance(velocity, Vector3):
-                velocity = Vector3(velocity.get("x", 0), velocity.get("y", 0), velocity.get("z", 0))
-
-            contact = GroundContact(
-                on_ground=True,
-                gear_compression=0.9,  # TODO: Get from aircraft state
-                surface_type="asphalt",  # TODO: Get from airport data
-                ground_speed_mps=ground_speed,
-                heading_deg=heading,
-            )
-
-            # Get control inputs
-            rudder = state.get("rudder_input", 0.0)
-            brake = state.get("brake_input", 0.0)
-
-            # Calculate ground forces
-            forces = self.ground_physics.calculate_ground_forces(
-                contact, rudder_input=rudder, brake_input=brake, velocity=velocity
-            )
-
-            # TODO: Apply forces to flight model
-            # For now, just log
-            logger.debug("Ground forces: total=%.1fN", forces.total_force.magnitude())
+        # TODO: Ground forces calculation
+        # In real implementation, would subscribe to aircraft state messages
+        # to get on_ground, velocity, heading, control inputs, etc.
+        # For now, this functionality is stubbed out
 
     def shutdown(self) -> None:
         """Shutdown the plugin."""
