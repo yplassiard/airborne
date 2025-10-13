@@ -147,9 +147,9 @@ def main() -> None:
         if copy_sound(src, dst):
             copied += 1
 
-    print(f"\n✅ Import complete!")
+    print("\n✅ Import complete!")
     print(f"   Copied: {copied}/{total} files")
-    print(f"\nNote: Keep placeholder WAV files for engine sounds.")
+    print("\nNote: Keep placeholder WAV files for engine sounds.")
     print("      Eurofly uses more complex engine audio system.")
 
 

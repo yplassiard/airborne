@@ -38,7 +38,9 @@ class PhraseContext:
 # Pilot phraseology templates
 PILOT_PHRASES = {
     # Ground operations
-    "taxi_request": "{airport} Ground, {callsign}, at {location} with information {atis}, request taxi",
+    "taxi_request": (
+        "{airport} Ground, {callsign}, at {location} with information {atis}, request taxi"
+    ),
     "taxi_ready": "{airport} Ground, {callsign}, ready to taxi",
     "pushback_request": "{airport} Ground, {callsign}, request pushback",
     "taxi_complete": "{airport} Ground, {callsign}, holding short of runway {runway}",
@@ -69,7 +71,9 @@ ATC_PHRASES = {
     # Tower clearances
     "takeoff_clearance": "{callsign}, runway {runway}, cleared for takeoff",
     "takeoff_hold": "{callsign}, runway {runway}, line up and wait",
-    "departure_clearance": "{callsign}, fly runway heading, maintain {altitude}, departure frequency {frequency}",
+    "departure_clearance": (
+        "{callsign}, fly runway heading, maintain {altitude}, departure frequency {frequency}"
+    ),
     "landing_clearance": "{callsign}, runway {runway}, cleared to land",
     "pattern_clearance": "{callsign}, cleared {pattern} runway {runway}",
     "go_around_instruction": "{callsign}, go around",
@@ -85,7 +89,9 @@ ATC_PHRASES = {
     "say_again": "{callsign}, say again",
     "radio_check_ok": "{callsign}, loud and clear",
     # Traffic advisories
-    "traffic_advisory": "{callsign}, traffic, {distance} o'clock, {range} miles, {type}, {altitude}",
+    "traffic_advisory": (
+        "{callsign}, traffic, {distance} o'clock, {range} miles, {type}, {altitude}"
+    ),
     "traffic_in_sight": "{callsign}, traffic in sight",
     # Squawk codes
     "squawk_code": "{callsign}, squawk {squawk}",
@@ -191,7 +197,7 @@ class PhraseMaker:
         try:
             return template.format(**values)
         except KeyError as e:
-            raise ValueError(f"Missing required context value: {e}")
+            raise ValueError(f"Missing required context value: {e}") from e
 
     def add_pilot_phrase(self, phrase_type: str, template: str) -> None:
         """Add a custom pilot phrase template.

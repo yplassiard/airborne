@@ -2,7 +2,7 @@
 
 import pytest
 
-from airborne.plugins.radio.phraseology import PhraseMaker, PhraseContext
+from airborne.plugins.radio.phraseology import PhraseContext, PhraseMaker
 
 
 class TestPhraseContext:
@@ -127,7 +127,7 @@ class TestPhraseMakerATC:
             type="Cessna",
             altitude="1500 feet",
         )
-        assert "Cessna 123AB, traffic, 2 o'clock, 3 miles, Cessna, 1500 feet" == phrase
+        assert phrase == "Cessna 123AB, traffic, 2 o'clock, 3 miles, Cessna, 1500 feet"
 
     def test_squawk_code(self) -> None:
         """Test generating squawk code assignment."""
