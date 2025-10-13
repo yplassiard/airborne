@@ -157,7 +157,7 @@ class TaxiwayGenerator:
         """Generate taxiway network for medium airport.
 
         Medium airports have parallel taxiways along runways with multiple
-        access points and a dedicated apron area.
+        access points and a single terminal area.
 
         Args:
             graph: Graph to populate
@@ -221,25 +221,25 @@ class TaxiwayGenerator:
         graph.add_edge(rwy_le, taxiway_nodes[0], "taxiway", "L1", bidirectional=True)
         graph.add_edge(taxiway_nodes[-1], rwy_he, "taxiway", "L2", bidirectional=True)
 
-        # Add apron connected to middle taxiway node
-        apron_offset = 0.002
+        # Add terminal area connected to middle taxiway node
+        terminal_offset = 0.002
         mid_node = taxiway_nodes[1]
         mid_pos = graph.get_node(mid_node).position
 
-        apron = self._add_node(
+        terminal = self._add_node(
             graph,
             airport,
-            "APRON",
+            "T1",
             Vector3(
-                mid_pos.x + apron_offset * math.cos(heading_rad + math.pi / 2),
+                mid_pos.x + terminal_offset * math.cos(heading_rad + math.pi / 2),
                 mid_pos.y,
-                mid_pos.z + apron_offset * math.sin(heading_rad + math.pi / 2),
+                mid_pos.z + terminal_offset * math.sin(heading_rad + math.pi / 2),
             ),
-            "parking",
-            "Apron",
+            "gate",
+            "Terminal 1",
         )
 
-        graph.add_edge(mid_node, apron, "taxiway", "L3", bidirectional=True)
+        graph.add_edge(mid_node, terminal, "taxiway", "L3", bidirectional=True)
 
     def _generate_large_airport(
         self,
@@ -250,7 +250,7 @@ class TaxiwayGenerator:
         """Generate taxiway network for large airport.
 
         Large airports have multiple parallel taxiways, high-speed exits,
-        and dedicated terminal areas. Inspired by airports like KSJC.
+        and 2 dedicated terminal areas. Inspired by airports like KSJC.
 
         Args:
             graph: Graph to populate
@@ -356,25 +356,28 @@ class TaxiwayGenerator:
                 inner_nodes[i], outer_nodes[i], "taxiway", f"L{i+3}", bidirectional=True
             )
 
-        # Add terminal area connected to middle outer taxiway
-        mid_outer = outer_nodes[len(outer_nodes) // 2]
-        mid_pos = graph.get_node(mid_outer).position
-
+        # Add 2 terminal areas connected to outer taxiway
         terminal_offset = 0.002
-        terminal = self._add_node(
-            graph,
-            airport,
-            "TERM",
-            Vector3(
-                mid_pos.x + terminal_offset * math.cos(heading_rad + math.pi / 2),
-                mid_pos.y,
-                mid_pos.z + terminal_offset * math.sin(heading_rad + math.pi / 2),
-            ),
-            "gate",
-            "Terminal",
-        )
+        terminal_positions = [1, 3]  # Two terminals for large airports
 
-        graph.add_edge(mid_outer, terminal, "taxiway", "W3", bidirectional=True)
+        for idx, pos in enumerate(terminal_positions):
+            outer_node = outer_nodes[pos]
+            outer_pos = graph.get_node(outer_node).position
+
+            terminal = self._add_node(
+                graph,
+                airport,
+                f"T{idx+1}",
+                Vector3(
+                    outer_pos.x + terminal_offset * math.cos(heading_rad + math.pi / 2),
+                    outer_pos.y,
+                    outer_pos.z + terminal_offset * math.sin(heading_rad + math.pi / 2),
+                ),
+                "gate",
+                f"Terminal {idx+1}",
+            )
+
+            graph.add_edge(outer_node, terminal, "taxiway", f"G{idx+1}", bidirectional=True)
 
     def _generate_xl_airport(
         self,

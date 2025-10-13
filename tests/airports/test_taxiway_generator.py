@@ -81,8 +81,11 @@ class TestTaxiwayGeneratorBasics:
         graph = generator.generate(sample_airport, [sample_runway], AirportCategory.MEDIUM)
 
         # Medium airport should have more nodes than small
-        assert graph.get_node_count() >= 5  # Runway ends + taxiway nodes + apron
+        assert graph.get_node_count() >= 5  # Runway ends + taxiway nodes + terminal
         assert graph.get_edge_count() >= 4
+
+        # Should have 1 terminal
+        assert graph.get_node("KTEST_T1") is not None
 
     def test_generate_large_airport(
         self, generator: TaxiwayGenerator, sample_airport: Airport, sample_runway: Runway
@@ -99,6 +102,10 @@ class TestTaxiwayGeneratorBasics:
         w2_nodes = [n for n in graph.nodes.keys() if "W2" in n]
         assert len(w1_nodes) > 0
         assert len(w2_nodes) > 0
+
+        # Should have 2 terminals
+        assert graph.get_node("KTEST_T1") is not None
+        assert graph.get_node("KTEST_T2") is not None
 
     def test_generate_xl_airport(
         self, generator: TaxiwayGenerator, sample_airport: Airport, sample_runway: Runway
@@ -186,12 +193,12 @@ class TestTaxiwayGeneratorConnectivity:
         """Test that terminals are connected to runways."""
         graph = generator.generate(sample_airport, [sample_runway], AirportCategory.LARGE)
 
-        # Find terminal node
-        terminal = graph.get_node("KTEST_TERM")
+        # Find terminal node (large airports have T1, T2)
+        terminal = graph.get_node("KTEST_T1")
         assert terminal is not None
 
         # Should be able to reach runway from terminal
-        path = graph.find_path("KTEST_TERM", "KTEST_RWY13")
+        path = graph.find_path("KTEST_T1", "KTEST_RWY13")
         assert path is not None
 
     def test_xl_airport_all_terminals_connected(
