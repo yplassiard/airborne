@@ -380,9 +380,13 @@ class FMODEngine(IAudioEngine):
         channel = self._channels.get(source_id)
         if channel:
             try:
-                channel.volume = volume * self._master_volume
-            except Exception as e:
-                logger.warning(f"Error updating source {source_id} volume: {e}")
+                # Check if channel is still valid
+                if channel.is_playing:
+                    channel.volume = volume * self._master_volume
+            except Exception:
+                # Remove invalid channel
+                if source_id in self._channels:
+                    del self._channels[source_id]
 
     def update_source_pitch(self, source_id: int, pitch: float) -> None:
         """Update a source's pitch.
@@ -394,9 +398,13 @@ class FMODEngine(IAudioEngine):
         channel = self._channels.get(source_id)
         if channel:
             try:
-                channel.pitch = pitch
-            except Exception as e:
-                logger.warning(f"Error updating source {source_id} pitch: {e}")
+                # Check if channel is still valid
+                if channel.is_playing:
+                    channel.pitch = pitch
+            except Exception:
+                # Remove invalid channel
+                if source_id in self._channels:
+                    del self._channels[source_id]
 
     def set_listener(
         self,

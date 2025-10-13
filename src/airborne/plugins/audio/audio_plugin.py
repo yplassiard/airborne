@@ -8,7 +8,10 @@ Typical usage:
     audio services to other plugins via the component registry.
 """
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from airborne.core.input import InputActionEvent
 
 from airborne.audio.engine.base import IAudioEngine, Vector3
 from airborne.audio.sound_manager import SoundManager
@@ -151,10 +154,16 @@ class AudioPlugin(IPlugin):
                 context.plugin_registry.register("sound_manager", self.sound_manager)
             context.plugin_registry.register("tts", self.tts_provider)
 
-        # Subscribe to position updates, TTS requests, and control inputs
+        # Subscribe to position updates, TTS requests, control inputs, and input actions
         context.message_queue.subscribe(MessageTopic.POSITION_UPDATED, self.handle_message)
         context.message_queue.subscribe(MessageTopic.TTS_SPEAK, self.handle_message)
         context.message_queue.subscribe(MessageTopic.CONTROL_INPUT, self.handle_message)
+
+        # Subscribe to input action events from event bus for TTS feedback
+        if context.event_bus:
+            from airborne.core.input import InputActionEvent
+
+            context.event_bus.subscribe(InputActionEvent, self._handle_input_action)
 
         # Start engine and wind sounds if sound manager available
         if self.sound_manager:
@@ -335,3 +344,33 @@ class AudioPlugin(IPlugin):
                 self.tts_provider.set_volume(audio_config["volume"])
 
         logger.info("Audio plugin configuration updated")
+
+    def _handle_input_action(self, event: "InputActionEvent") -> None:
+        """Handle input action events and provide TTS feedback.
+
+        Args:
+            event: Input action event from event bus.
+        """
+        if not self.tts_provider:
+            return
+
+        # Map actions to TTS announcements
+        action_messages = {
+            "gear_toggle": "Gear " + ("down" if self._last_gear_state > 0.5 else "up"),
+            "flaps_down": "Flaps extending",
+            "flaps_up": "Flaps retracting",
+            "throttle_increase": "Throttle increased",
+            "throttle_decrease": "Throttle decreased",
+            "throttle_full": "Full throttle",
+            "throttle_idle": "Throttle idle",
+            "brakes_on": "Brakes on",
+            "pause": "Paused",
+            "tts_next": "Next",
+            "tts_repeat": "Repeat",
+        }
+
+        message = action_messages.get(event.action)
+        if message:
+            from airborne.audio.tts.base import TTSPriority
+
+            self.tts_provider.speak(message, priority=TTSPriority.NORMAL)
