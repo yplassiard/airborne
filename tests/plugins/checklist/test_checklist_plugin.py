@@ -1,12 +1,10 @@
 """Tests for checklist plugin."""
 
-from pathlib import Path
 from unittest.mock import Mock
 
 import pytest
 
 from airborne.core.event_bus import EventBus
-from airborne.core.messaging import Message, MessageTopic
 from airborne.core.plugin import PluginContext, PluginType
 from airborne.plugins.checklist import (
     Checklist,
