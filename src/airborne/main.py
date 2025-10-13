@@ -11,11 +11,15 @@ import sys
 
 import pygame
 
+from airborne.aircraft.builder import AircraftBuilder
 from airborne.core.event_bus import EventBus
 from airborne.core.game_loop import GameLoop  # noqa: F401
 from airborne.core.input import InputActionEvent, InputManager, InputStateEvent  # noqa: F401
 from airborne.core.logging_system import get_logger, initialize_logging
-from airborne.core.messaging import MessageQueue
+from airborne.core.messaging import Message, MessagePriority, MessageQueue, MessageTopic
+from airborne.core.plugin import PluginContext
+from airborne.core.plugin_loader import PluginLoader
+from airborne.core.registry import ComponentRegistry
 
 logger = get_logger(__name__)
 
@@ -44,11 +48,29 @@ class AirBorne:
         # Initialize core systems
         self.event_bus = EventBus()
         self.message_queue = MessageQueue()
-        # TODO: Load actual config file when needed
-        # self.config = ConfigLoader.load("config/settings.yaml")
+        self.registry = ComponentRegistry()
 
         # Initialize input system
         self.input_manager = InputManager(self.event_bus)
+
+        # Plugin system
+        self.plugin_loader = PluginLoader(["src/airborne/plugins"])
+        self.plugin_context = PluginContext(
+            event_bus=self.event_bus,
+            message_queue=self.message_queue,
+            config={},  # Will be populated by plugins
+            plugin_registry=self.registry,
+        )
+
+        # Core plugins
+        self.physics_plugin = None
+        self.audio_plugin = None
+
+        # Aircraft
+        self.aircraft = None
+
+        # Load plugins and aircraft
+        self._initialize_plugins()
 
         # Subscribe to quit events
         self.event_bus.subscribe(InputActionEvent, self._handle_input_action)
@@ -66,6 +88,33 @@ class AirBorne:
         self.max_frame_samples = 60
 
         logger.info("AirBorne initialized successfully")
+
+    def _initialize_plugins(self) -> None:
+        """Initialize core plugins and load aircraft."""
+        try:
+            # Load physics plugin (without initializing - will load via aircraft builder)
+            logger.info("Loading physics plugin...")
+            from airborne.plugins.core.physics_plugin import PhysicsPlugin
+
+            self.physics_plugin = PhysicsPlugin()
+            self.physics_plugin.initialize(self.plugin_context)
+
+            # Load audio plugin (commented out until audio assets are available)
+            # logger.info("Loading audio plugin...")
+            # from airborne.plugins.audio.audio_plugin import AudioPlugin
+            # self.audio_plugin = AudioPlugin()
+            # self.audio_plugin.initialize(self.plugin_context)
+
+            # Load aircraft
+            logger.info("Loading aircraft...")
+            builder = AircraftBuilder(self.plugin_loader, self.plugin_context)
+            self.aircraft = builder.build("config/aircraft/cessna172.yaml")
+
+            logger.info("All plugins and aircraft loaded successfully")
+
+        except Exception as e:
+            logger.error("Failed to initialize plugins: %s", e)
+            raise
 
     def _handle_input_action(self, event: InputActionEvent) -> None:
         """Handle input action events.
@@ -127,10 +176,50 @@ class AirBorne:
         Args:
             dt: Delta time in seconds.
         """
+        # Send control inputs to physics
+        self._send_control_inputs()
+
+        # Update physics plugin
+        if self.physics_plugin:
+            self.physics_plugin.update(dt)
+
+        # Update aircraft systems
+        if self.aircraft:
+            self.aircraft.update(dt)
+
+        # Update audio plugin
+        if self.audio_plugin:
+            self.audio_plugin.update(dt)
+
         # Process message queue
         self.message_queue.process()
 
-        # TODO: Update plugins, physics, etc.
+    def _send_control_inputs(self) -> None:
+        """Send control inputs to physics plugin."""
+        if not self.physics_plugin:
+            return
+
+        # Get current input state
+        state = self.input_manager.get_state()
+
+        # Publish control input message
+        self.message_queue.publish(
+            Message(
+                sender="main",
+                recipients=["physics_plugin"],
+                topic=MessageTopic.CONTROL_INPUT,
+                data={
+                    "pitch": state.pitch,
+                    "roll": state.roll,
+                    "yaw": state.yaw,
+                    "throttle": state.throttle,
+                    "flaps": state.flaps,
+                    "brakes": state.brakes,
+                    "gear": state.gear,
+                },
+                priority=MessagePriority.HIGH,
+            )
+        )
 
     def _render(self) -> None:
         """Render the current frame."""
@@ -173,6 +262,12 @@ class AirBorne:
         self.screen.blit(fps_text, (10, y_offset))
         y_offset += line_height
 
+        # Aircraft info
+        if self.aircraft:
+            aircraft_text = self.font.render(f"Aircraft: {self.aircraft.name}", True, (0, 255, 255))
+            self.screen.blit(aircraft_text, (10, y_offset))
+            y_offset += line_height
+
         # Input state
         state = self.input_manager.get_state()
         inputs = [
@@ -189,6 +284,23 @@ class AirBorne:
             text = self.font.render(input_line, True, (0, 255, 0))
             self.screen.blit(text, (10, y_offset))
             y_offset += line_height
+
+        # Physics state
+        if self.physics_plugin and self.physics_plugin.flight_model:
+            flight_state = self.physics_plugin.flight_model.get_state()
+            physics_info = [
+                "",  # Blank line
+                "FLIGHT STATE:",
+                f"Pos: ({flight_state.position.x:.1f}, {flight_state.position.y:.1f}, {flight_state.position.z:.1f})",
+                f"Vel: {flight_state.get_airspeed():.1f} m/s",
+                f"Alt: {flight_state.position.y:.1f} m",
+                f"Mass: {flight_state.mass:.0f} kg",
+            ]
+
+            for info_line in physics_info:
+                text = self.font.render(info_line, True, (255, 255, 0))
+                self.screen.blit(text, (10, y_offset))
+                y_offset += line_height
 
     def _render_instructions(self) -> None:
         """Render control instructions."""
@@ -225,6 +337,21 @@ class AirBorne:
     def _shutdown(self) -> None:
         """Clean shutdown of all systems."""
         logger.info("AirBorne shutting down...")
+
+        # Shutdown aircraft
+        if self.aircraft:
+            logger.info("Shutting down aircraft...")
+            self.aircraft.shutdown()
+
+        # Shutdown plugins
+        if self.audio_plugin:
+            logger.info("Shutting down audio plugin...")
+            self.audio_plugin.shutdown()
+
+        if self.physics_plugin:
+            logger.info("Shutting down physics plugin...")
+            self.physics_plugin.shutdown()
+
         pygame.quit()
         logger.info("Shutdown complete")
 
