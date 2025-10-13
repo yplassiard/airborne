@@ -52,18 +52,35 @@ The aircraft will:
 3. Climb/descend based on physics
 4. Display real-time flight data on screen
 
-### Automatic Autopilot Demo (Planned)
+### Automatic Autopilot Demo ✅
 
-A fully automatic demo script (`scripts/demo_autopilot.py`) is under development that will:
+A fully automatic demo script (`scripts/demo_autopilot.py`) executes a complete flight sequence:
 
-1. **Startup & Taxi** (5s) - Engine startup, taxi power
+```bash
+# From project root
+uv run python scripts/demo_autopilot.py
+```
+
+**Demo Sequence (~110 seconds):**
+
+1. **Engine Startup & Taxi Prep** (5s) - Engine spools to idle power
 2. **Takeoff Roll** (15s) - Full throttle, autopilot takeoff mode
 3. **Climb to 3000ft** (30s) - Altitude hold autopilot engaged
 4. **Cruise Flight** (20s) - Level flight, heading hold (270°)
-5. **Descent** (25s) - Vertical speed mode, descend to 1500ft
-6. **Approach** (15s) - Auto-land mode engaged
+5. **Descent** (25s) - Vertical speed mode (-500 fpm)
+6. **Final Approach** (15s) - Auto-land mode engaged
 
-**Current Status:** Demo script written but needs integration with main app infrastructure. Will be completed in next iteration.
+**Controls:**
+- `SPACE`: Pause/Resume
+- `ESC`: Exit demo
+
+**What You'll See:**
+- Phase indicator and progress bar (top left)
+- Real-time flight data (altitude, airspeed, heading, VS, throttle)
+- Aircraft responds automatically to autopilot commands
+- Smooth phase transitions logged to console
+
+**Status:** ✅ Fully functional and tested!
 
 ## What You'll See
 
