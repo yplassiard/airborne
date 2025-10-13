@@ -132,6 +132,13 @@ class AirBorne:
             self.audio_plugin = AudioPlugin()
             self.audio_plugin.initialize(self.plugin_context)
 
+            # Load autopilot plugin
+            logger.info("Loading autopilot plugin...")
+            from airborne.plugins.avionics.autopilot_plugin import AutopilotPlugin
+
+            self.autopilot_plugin = AutopilotPlugin()
+            self.autopilot_plugin.initialize(self.plugin_context)
+
             # Build aircraft with systems
             builder = AircraftBuilder(self.plugin_loader, self.plugin_context)
             self.aircraft = builder.build(aircraft_config_path)
@@ -212,6 +219,10 @@ class AirBorne:
         # Update aircraft systems
         if self.aircraft:
             self.aircraft.update(dt)
+
+        # Update autopilot
+        if hasattr(self, "autopilot_plugin") and self.autopilot_plugin:
+            self.autopilot_plugin.update(dt)
 
         # Update audio plugin
         if self.audio_plugin:
@@ -370,6 +381,10 @@ class AirBorne:
             self.aircraft.shutdown()
 
         # Shutdown plugins
+        if hasattr(self, "autopilot_plugin") and self.autopilot_plugin:
+            logger.info("Shutting down autopilot plugin...")
+            self.autopilot_plugin.shutdown()
+
         if self.audio_plugin:
             logger.info("Shutting down audio plugin...")
             self.audio_plugin.shutdown()

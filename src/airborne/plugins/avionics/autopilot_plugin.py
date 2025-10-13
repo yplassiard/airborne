@@ -163,8 +163,11 @@ class AutopilotPlugin(IPlugin):
         logger.info("Autopilot plugin initializing...")
 
         # Subscribe to messages
-        context.message_queue.subscribe(MessageTopic.POSITION_UPDATED, self)
-        context.message_queue.subscribe("input.autopilot", self)
+        context.message_queue.subscribe(MessageTopic.POSITION_UPDATED, self.handle_message)
+        context.message_queue.subscribe("input.autopilot", self.handle_message)
+        context.message_queue.subscribe(
+            "autopilot.command", self.handle_message
+        )  # For demo commands
 
         # Register in registry
         if context.plugin_registry:
@@ -192,8 +195,11 @@ class AutopilotPlugin(IPlugin):
     def shutdown(self) -> None:
         """Shutdown the autopilot plugin."""
         if self.context:
-            self.context.message_queue.unsubscribe(MessageTopic.POSITION_UPDATED, self)
-            self.context.message_queue.unsubscribe("input.autopilot", self)
+            self.context.message_queue.unsubscribe(
+                MessageTopic.POSITION_UPDATED, self.handle_message
+            )
+            self.context.message_queue.unsubscribe("input.autopilot", self.handle_message)
+            self.context.message_queue.unsubscribe("autopilot.command", self.handle_message)
 
         logger.info("Autopilot plugin shutdown")
 
@@ -204,7 +210,7 @@ class AutopilotPlugin(IPlugin):
 
         if message.topic == MessageTopic.POSITION_UPDATED:
             self._handle_position_update(message)
-        elif message.topic == "input.autopilot":
+        elif message.topic in ("input.autopilot", "autopilot.command"):
             self._handle_autopilot_command(message)
 
     def _handle_position_update(self, message: Message) -> None:
@@ -228,12 +234,22 @@ class AutopilotPlugin(IPlugin):
             self.engage(data.get("mode", "heading_hold"))
         elif command == "disengage":
             self.disengage()
-        elif command == "set_target_heading":
-            self.set_target_heading(data.get("heading", 0))
-        elif command == "set_target_altitude":
-            self.set_target_altitude(data.get("altitude", 0))
+        elif command == "set_mode":
+            # Handle direct mode setting (from demo)
+            mode = data.get("mode", "")
+            if mode:
+                self.engage(mode)
+        elif command == "set_target_heading" or command == "set_heading_target":
+            self.set_target_heading(data.get("heading", data.get("heading_deg", 0)))
+        elif command == "set_target_altitude" or command == "set_altitude_target":
+            self.set_target_altitude(data.get("altitude", data.get("altitude_ft", 0)))
         elif command == "set_target_speed":
             self.set_target_speed(data.get("speed", 80))
+        elif command == "set_vertical_speed_target":
+            self.target_vertical_speed = data.get("vs_fpm", 0)
+            if self.mode != AutopilotMode.VERTICAL_SPEED:
+                self.engage(AutopilotMode.VERTICAL_SPEED.value)
+            logger.info("Target vertical speed set to %.0f fpm", self.target_vertical_speed)
 
     def engage(self, mode_str: str) -> None:
         """Engage autopilot in specified mode."""
