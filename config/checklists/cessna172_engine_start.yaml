@@ -1,0 +1,67 @@
+# Cessna 172 Engine Start Checklist
+# Engine start procedures for the Cessna 172 Skyhawk
+
+id: cessna172_engine_start
+name: Engine Start
+description: Engine start checklist for Cessna 172 Skyhawk
+
+items:
+  - challenge: Throttle
+    response: OPEN 1/4 INCH
+    verify_condition: null
+
+  - challenge: Propeller Area
+    response: CLEAR
+    verify_condition: null
+
+  - challenge: Master Switch
+    response: ON
+    verify_condition: electrical.master == ON
+
+  - challenge: Beacon Light
+    response: ON
+    verify_condition: electrical.beacon == ON
+
+  - challenge: Mixture
+    response: RICH
+    verify_condition: engine.mixture == RICH
+
+  - challenge: Carburetor Heat
+    response: COLD
+    verify_condition: engine.carb_heat == COLD
+
+  - challenge: Primer
+    response: AS REQUIRED (2-6 strokes)
+    verify_condition: null
+
+  - challenge: Primer
+    response: IN AND LOCKED
+    verify_condition: null
+
+  - challenge: Magnetos
+    response: BOTH
+    verify_condition: engine.magnetos == BOTH
+
+  - challenge: Engine Start
+    response: ENGAGE STARTER
+    verify_condition: null
+
+  - challenge: Oil Pressure
+    response: CHECK (within 30 seconds)
+    verify_condition: null
+
+  - challenge: Engine Instruments
+    response: CHECK
+    verify_condition: null
+
+  - challenge: Navigation Lights
+    response: AS REQUIRED
+    verify_condition: null
+
+  - challenge: Avionics Master Switch
+    response: ON
+    verify_condition: electrical.avionics_master == ON
+
+  - challenge: Radios
+    response: SET FREQUENCIES
+    verify_condition: null

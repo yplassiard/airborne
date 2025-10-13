@@ -1,0 +1,43 @@
+# Cessna 172 Engine Shutdown Checklist
+# Engine shutdown and securing procedures for Cessna 172 Skyhawk
+
+id: cessna172_shutdown
+name: Engine Shutdown
+description: Engine shutdown and securing checklist for Cessna 172 Skyhawk
+
+items:
+  - challenge: Parking Brake
+    response: SET
+    verify_condition: null
+
+  - challenge: Electrical Equipment
+    response: OFF
+    verify_condition: null
+
+  - challenge: Avionics Master Switch
+    response: OFF
+    verify_condition: electrical.avionics_master == OFF
+
+  - challenge: Mixture
+    response: IDLE CUTOFF (pull full out)
+    verify_condition: engine.mixture == IDLE_CUTOFF
+
+  - challenge: Magnetos
+    response: OFF (after engine stops)
+    verify_condition: engine.magnetos == OFF
+
+  - challenge: Master Switch
+    response: OFF
+    verify_condition: electrical.master == OFF
+
+  - challenge: Hobbs/Tach Time
+    response: RECORD
+    verify_condition: null
+
+  - challenge: Control Lock
+    response: INSTALL
+    verify_condition: null
+
+  - challenge: Fuel Selector Valve
+    response: LEFT or RIGHT
+    verify_condition: null

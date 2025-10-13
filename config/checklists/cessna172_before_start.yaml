@@ -1,0 +1,63 @@
+# Cessna 172 Before Engine Start Checklist
+# Standard pre-start procedures for the Cessna 172 Skyhawk
+
+id: cessna172_before_start
+name: Before Engine Start
+description: Pre-start checklist for Cessna 172 Skyhawk
+
+items:
+  - challenge: Preflight Inspection
+    response: COMPLETE
+    verify_condition: null
+
+  - challenge: Passenger Briefing
+    response: COMPLETE
+    verify_condition: null
+
+  - challenge: Seats and Seat Belts
+    response: ADJUSTED AND LOCKED
+    verify_condition: null
+
+  - challenge: Fuel Quantity
+    response: CHECK
+    verify_condition: null
+
+  - challenge: Fuel Selector Valve
+    response: BOTH
+    verify_condition: fuel.selector == BOTH
+
+  - challenge: Fuel Shutoff Valve
+    response: ON
+    verify_condition: fuel.shutoff == ON
+
+  - challenge: Brakes
+    response: TEST AND SET
+    verify_condition: null
+
+  - challenge: Circuit Breakers
+    response: CHECK IN
+    verify_condition: null
+
+  - challenge: Electrical Equipment
+    response: OFF
+    verify_condition: null
+
+  - challenge: Avionics Master Switch
+    response: OFF
+    verify_condition: electrical.avionics_master == OFF
+
+  - challenge: Master Switch
+    response: ON
+    verify_condition: electrical.master == ON
+
+  - challenge: Fuel Quantity Indicators
+    response: CHECK
+    verify_condition: null
+
+  - challenge: Master Switch
+    response: OFF
+    verify_condition: electrical.master == OFF
+
+  - challenge: Parking Brake
+    response: SET
+    verify_condition: null

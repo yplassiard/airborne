@@ -1,0 +1,27 @@
+# Cessna 172 After Landing Checklist
+# Post-landing procedures for Cessna 172 Skyhawk
+
+id: cessna172_after_landing
+name: After Landing
+description: After landing checklist for Cessna 172 Skyhawk
+
+items:
+  - challenge: Wing Flaps
+    response: UP
+    verify_condition: null
+
+  - challenge: Carburetor Heat
+    response: COLD
+    verify_condition: engine.carb_heat == COLD
+
+  - challenge: Transponder
+    response: STANDBY
+    verify_condition: null
+
+  - challenge: Landing Light
+    response: OFF (as required)
+    verify_condition: null
+
+  - challenge: Strobe Lights
+    response: OFF (as required)
+    verify_condition: null

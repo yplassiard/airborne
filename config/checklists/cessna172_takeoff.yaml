@@ -1,0 +1,35 @@
+# Cessna 172 Normal Takeoff Checklist
+# Normal takeoff procedures for Cessna 172 Skyhawk
+
+id: cessna172_takeoff
+name: Normal Takeoff
+description: Normal takeoff checklist for Cessna 172 Skyhawk
+
+items:
+  - challenge: Wing Flaps
+    response: 0-10 degrees
+    verify_condition: null
+
+  - challenge: Carburetor Heat
+    response: COLD
+    verify_condition: engine.carb_heat == COLD
+
+  - challenge: Throttle
+    response: FULL OPEN
+    verify_condition: null
+
+  - challenge: Mixture
+    response: RICH (below 3000 ft)
+    verify_condition: engine.mixture == RICH
+
+  - challenge: Elevator Control
+    response: LIFT NOSE WHEEL at 55 KIAS
+    verify_condition: null
+
+  - challenge: Climb Speed
+    response: 70-80 KIAS
+    verify_condition: null
+
+  - challenge: After Takeoff
+    response: Wing Flaps UP
+    verify_condition: null

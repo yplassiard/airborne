@@ -1,0 +1,71 @@
+# Cessna 172 Before Takeoff Checklist
+# Pre-takeoff run-up and system checks for Cessna 172 Skyhawk
+
+id: cessna172_before_takeoff
+name: Before Takeoff
+description: Before takeoff run-up checklist for Cessna 172 Skyhawk
+
+items:
+  - challenge: Cabin Doors
+    response: CLOSED AND LOCKED
+    verify_condition: null
+
+  - challenge: Flight Controls
+    response: FREE AND CORRECT
+    verify_condition: null
+
+  - challenge: Flight Instruments
+    response: SET
+    verify_condition: null
+
+  - challenge: Fuel Selector Valve
+    response: BOTH
+    verify_condition: fuel.selector == BOTH
+
+  - challenge: Mixture
+    response: RICH (below 3000 ft)
+    verify_condition: engine.mixture == RICH
+
+  - challenge: Elevator Trim
+    response: TAKEOFF
+    verify_condition: null
+
+  - challenge: Throttle
+    response: 1700 RPM
+    verify_condition: null
+
+  - challenge: Magnetos
+    response: CHECK (RPM drop < 150, diff < 50)
+    verify_condition: null
+
+  - challenge: Carburetor Heat
+    response: CHECK (RPM drop expected)
+    verify_condition: null
+
+  - challenge: Engine Instruments
+    response: GREEN
+    verify_condition: null
+
+  - challenge: Throttle
+    response: 1000 RPM or less
+    verify_condition: null
+
+  - challenge: Annunciator Panel
+    response: CHECK
+    verify_condition: null
+
+  - challenge: Strobes and Landing Light
+    response: ON
+    verify_condition: null
+
+  - challenge: Transponder
+    response: ALT
+    verify_condition: null
+
+  - challenge: Flaps
+    response: AS REQUIRED (0-10 degrees)
+    verify_condition: null
+
+  - challenge: Brakes
+    response: RELEASE
+    verify_condition: null

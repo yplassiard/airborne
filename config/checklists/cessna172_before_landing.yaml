@@ -1,0 +1,47 @@
+# Cessna 172 Before Landing Checklist
+# Pre-landing preparations for Cessna 172 Skyhawk
+
+id: cessna172_before_landing
+name: Before Landing
+description: Before landing checklist for Cessna 172 Skyhawk
+
+items:
+  - challenge: Seats and Seat Belts
+    response: SECURE
+    verify_condition: null
+
+  - challenge: Fuel Selector Valve
+    response: BOTH
+    verify_condition: fuel.selector == BOTH
+
+  - challenge: Mixture
+    response: RICH
+    verify_condition: engine.mixture == RICH
+
+  - challenge: Carburetor Heat
+    response: ON (apply full heat before closing throttle)
+    verify_condition: null
+
+  - challenge: Landing Light
+    response: ON
+    verify_condition: null
+
+  - challenge: Airspeed
+    response: 60-70 KIAS (flaps UP)
+    verify_condition: null
+
+  - challenge: Wing Flaps
+    response: AS DESIRED (0-30 degrees below 85 KIAS)
+    verify_condition: null
+
+  - challenge: Airspeed
+    response: 55-65 KIAS (flaps DOWN)
+    verify_condition: null
+
+  - challenge: Trim
+    response: ADJUST
+    verify_condition: null
+
+  - challenge: Master Switch
+    response: ON
+    verify_condition: electrical.master == ON
