@@ -1,0 +1,73 @@
+# Cessna 172 Skyhawk Configuration
+# Realistic configuration for the popular Cessna 172 training aircraft
+
+aircraft:
+  name: "Cessna 172 Skyhawk"
+  icao_code: "C172"
+  manufacturer: "Cessna"
+
+  # Flight model configuration
+  flight_model: "Simple6DOF"
+  flight_model_config:
+    wing_area_sqft: 174.0        # Wing area in square feet
+    weight_lbs: 2450.0            # Empty weight + pilot + fuel
+    max_thrust_lbs: 180.0         # Maximum thrust from engine (HP converted)
+    drag_coefficient: 0.027       # Cd0 - zero-lift drag coefficient
+    lift_coefficient_slope: 0.09  # Cl_alpha - lift curve slope
+
+  # Aircraft systems plugins
+  plugins:
+    # Piston engine - Lycoming O-360
+    - plugin: "simple_piston_engine"
+      instance_id: "engine"
+      config:
+        max_power_hp: 180           # 180 HP Lycoming O-360
+        max_rpm: 2700               # Maximum RPM
+        idle_rpm: 600               # Idle RPM
+        fuel_consumption_base_gph: 9.5  # Base fuel consumption at full power
+        displacement_liters: 5.9    # Engine displacement
+        cylinders: 4                # Number of cylinders
+        aspiration: "naturally_aspirated"
+
+    # Electrical system - 28V system
+    - plugin: "simple_electrical_system"
+      instance_id: "electrical"
+      config:
+        battery_voltage: 12.6       # 12V lead-acid battery (resting voltage)
+        battery_capacity_ah: 35.0   # 35 Ah capacity
+        alternator_voltage: 14.0    # Regulated alternator voltage
+        alternator_amps: 60.0       # 60A alternator
+        base_load_amps: 5.0         # Base electrical load
+
+    # Fuel system - Two wing tanks
+    - plugin: "simple_fuel_system"
+      instance_id: "fuel"
+      config:
+        left_tank_capacity: 26.0    # Left tank capacity in gallons
+        right_tank_capacity: 26.0   # Right tank capacity in gallons
+        unusable_fuel: 2.0          # Unusable fuel per tank
+        fuel_selector: "both"       # Initial selector position
+
+  # Audio configuration
+  audio:
+    engine_sounds:
+      idle: "sounds/engines/piston_idle.wav"
+      cruise: "sounds/engines/piston_cruise.wav"
+      full_power: "sounds/engines/piston_full.wav"
+
+  # Initial state
+  initial_state:
+    position:
+      latitude: 37.615223          # San Francisco area
+      longitude: -122.389977
+      altitude_ft: 0                # On ground
+    fuel:
+      left_tank_gallons: 26.0       # Start with full tanks
+      right_tank_gallons: 26.0
+    electrical:
+      battery_master: false         # Start with battery off
+      alternator_switch: false      # Start with alternator off
+    engine:
+      running: false                # Engine not running
+      mixture: 1.0                  # Full rich
+      throttle: 0.0                 # Idle

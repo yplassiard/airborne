@@ -81,9 +81,7 @@ class PhysicsPlugin(IPlugin):
         if flight_model_type == "simple_6dof":
             self.flight_model = Simple6DOFFlightModel()
         else:
-            logger.warning(
-                "Unknown flight model type: %s, using Simple6DOF", flight_model_type
-            )
+            logger.warning("Unknown flight model type: %s, using Simple6DOF", flight_model_type)
             self.flight_model = Simple6DOFFlightModel()
 
         # Initialize flight model with config
