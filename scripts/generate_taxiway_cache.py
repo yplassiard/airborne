@@ -67,7 +67,7 @@ def serialize_taxiway_graph(graph):
 def generate_taxiway_cache(
     data_dir: Path,
     output_file: Path,
-    min_runway_length_ft: float = 2000.0,
+    min_runway_length_ft: float = 0.0,
     max_airports: int | None = None,
 ) -> None:
     """Generate taxiway cache for all airports.
@@ -75,7 +75,7 @@ def generate_taxiway_cache(
     Args:
         data_dir: Directory containing OurAirports CSV files
         output_file: Output file for cached taxiway data
-        min_runway_length_ft: Minimum runway length to include airport
+        min_runway_length_ft: Minimum runway length to include airport (0 = include all)
         max_airports: Maximum number of airports to process (for testing)
     """
     logger.info("Starting taxiway cache generation...")
@@ -105,8 +105,7 @@ def generate_taxiway_cache(
 
     # Process airports
     processed_count = 0
-    skipped_no_runways = 0
-    skipped_short_runways = 0
+    skipped_count = 0
 
     for icao, airport in db.airports.items():
         # Check if we've hit the limit
@@ -117,15 +116,17 @@ def generate_taxiway_cache(
         # Get runways for this airport
         runways = db.get_runways(icao)
 
-        # Skip airports with no runways
+        # For airports without runways, create basic parking area
         if not runways:
-            skipped_no_runways += 1
+            # Skip airports without runways for now
+            # (would need special handling to create just parking without runway)
+            skipped_count += 1
             continue
 
-        # Skip airports with only very short runways
+        # Filter by minimum runway length if specified
         longest_runway = max(runways, key=lambda r: r.length_ft)
-        if longest_runway.length_ft < min_runway_length_ft:
-            skipped_short_runways += 1
+        if min_runway_length_ft > 0 and longest_runway.length_ft < min_runway_length_ft:
+            skipped_count += 1
             continue
 
         # Classify airport
@@ -159,7 +160,7 @@ def generate_taxiway_cache(
                 logger.info(
                     "Processed %d airports (%d skipped)",
                     processed_count,
-                    skipped_no_runways + skipped_short_runways,
+                    skipped_count,
                 )
 
         except Exception as e:
@@ -168,8 +169,7 @@ def generate_taxiway_cache(
 
     # Update final statistics
     cache["statistics"]["total_processed"] = processed_count
-    cache["statistics"]["skipped"]["no_runways"] = skipped_no_runways
-    cache["statistics"]["skipped"]["short_runways"] = skipped_short_runways
+    cache["statistics"]["skipped"]["total"] = skipped_count
 
     # Write cache to disk
     logger.info("Writing cache to %s", output_file)
@@ -183,8 +183,7 @@ def generate_taxiway_cache(
     logger.info("Taxiway Cache Generation Complete")
     logger.info("=" * 80)
     logger.info("Total airports processed: %d", processed_count)
-    logger.info("Skipped (no runways): %d", skipped_no_runways)
-    logger.info("Skipped (short runways): %d", skipped_short_runways)
+    logger.info("Skipped: %d", skipped_count)
     logger.info("")
     logger.info("By category:")
     for category, count in cache["statistics"]["by_category"].items():
@@ -212,7 +211,7 @@ def main():
     generate_taxiway_cache(
         data_dir=data_dir,
         output_file=output_file,
-        min_runway_length_ft=2000.0,
+        min_runway_length_ft=0.0,  # Include all airports, even short runways
         max_airports=None,  # Process all airports (use a number for testing)
     )
 

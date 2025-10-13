@@ -148,6 +148,24 @@ class TaxiwayGenerator:
         graph.add_edge(rwy_le, apron, "taxiway", "A", bidirectional=True)
         graph.add_edge(apron, rwy_he, "taxiway", "A", bidirectional=True)
 
+        # Add hangar for small airports
+        hangar_offset = 0.0008  # ~80m from apron
+        hangar = self._add_node(
+            graph,
+            airport,
+            "HANGAR",
+            Vector3(
+                mid_lon + apron_offset + hangar_offset,
+                mid_elev,
+                mid_lat + apron_offset + hangar_offset,
+            ),
+            "hangar",
+            "Hangar",
+        )
+
+        # Connect hangar to apron
+        graph.add_edge(apron, hangar, "taxiway", "", bidirectional=True)
+
     def _generate_medium_airport(
         self,
         graph: TaxiwayGraph,
