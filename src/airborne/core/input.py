@@ -171,7 +171,7 @@ class InputConfig:
             pygame.K_v: InputAction.VIEW_NEXT,
             pygame.K_c: InputAction.VIEW_PREV,
             # TTS
-            pygame.K_SPACE: InputAction.TTS_NEXT,
+            pygame.K_t: InputAction.TTS_NEXT,
             pygame.K_r: InputAction.TTS_REPEAT,
             pygame.K_s: InputAction.TTS_INTERRUPT,
             # Menu
@@ -181,7 +181,7 @@ class InputConfig:
             pygame.K_RETURN: InputAction.MENU_SELECT,
             pygame.K_BACKSPACE: InputAction.MENU_BACK,
             # System
-            pygame.K_PAUSE: InputAction.PAUSE,
+            pygame.K_SPACE: InputAction.PAUSE,
             pygame.K_ESCAPE: InputAction.QUIT,
         }
 

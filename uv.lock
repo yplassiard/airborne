@@ -13,6 +13,7 @@ source = { editable = "." }
 dependencies = [
     { name = "numpy" },
     { name = "pybass3" },
+    { name = "pyfmodex" },
     { name = "pygame" },
     { name = "python-dateutil" },
     { name = "pyttsx3" },
@@ -36,6 +37,7 @@ requires-dist = [
     { name = "numpy", specifier = ">=1.24.0" },
     { name = "pre-commit", marker = "extra == 'dev'", specifier = ">=3.0.0" },
     { name = "pybass3", specifier = ">=0.2.0" },
+    { name = "pyfmodex", specifier = ">=0.7.2" },
     { name = "pygame", specifier = ">=2.5.0" },
     { name = "pylint", marker = "extra == 'dev'", specifier = ">=3.0.0" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=7.4.0" },
@@ -435,6 +437,15 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/f0/64/846abd06e17ba90929db62143139ed9e904393b73a83619687fcb4bd23f0/PyBASS3-0.2.0.tar.gz", hash = "sha256:ee2438480f1413cd04df10f083cae7260cb5e5ac0aa5a6b24ebdc99dafe1e894", size = 213513, upload-time = "2021-12-24T19:36:38.643Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/68/68/3e454bec43a57d9f589456ca28c89c6be133f09281010090b3d36c310c74/PyBASS3-0.2.0-py3-none-any.whl", hash = "sha256:2515f5390dc38591361448d730455d9906b4c89c912f214077ff57d4c1e75948", size = 218810, upload-time = "2021-12-24T19:36:35.225Z" },
+]
+
+[[package]]
+name = "pyfmodex"
+version = "0.7.2"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/0a/ed/6106a55d98868c0edb82aa8ee4fa5fa89712acbe2ab5a307adf962ac67fb/pyfmodex-0.7.2.tar.gz", hash = "sha256:d9ad3d7841a1c4cf4733cbedc69389f84c58a640d23d0ffa083ad6080f35103c", size = 111830, upload-time = "2024-03-08T07:41:32.687Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/2c/7b/f7fdcdf6a6e8fd951c41e91baae8c1cecfffc2ed3199157afd6ab5728716/pyfmodex-0.7.2-py3-none-any.whl", hash = "sha256:1c42112b788e80ee7b4b57ae25bbbc0a98eb1e32a8e7c9e1246698cdf72efa9d", size = 126703, upload-time = "2024-03-08T07:41:30.326Z" },
 ]
 
 [[package]]

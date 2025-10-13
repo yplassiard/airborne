@@ -41,8 +41,10 @@ When the game starts, you'll see:
 - **B**: Apply brakes (hold for continuous braking)
 
 ### General
-- **Space**: Pause/Resume
-- **Esc**: Quit simulator
+- **SPACE**: Pause/Resume
+- **T**: TTS Next (read next item)
+- **R**: TTS Repeat (repeat last message)
+- **ESC**: Quit simulator
 
 ## Your First Flight
 

@@ -20,15 +20,29 @@ from airborne.core.plugin import IPlugin, PluginContext, PluginMetadata, PluginT
 
 logger = get_logger(__name__)
 
-# Try to import PyBASSEngine, fall back to None if not available
+# Try to import audio engines, prioritizing FMOD
+AUDIO_ENGINE_AVAILABLE = False
+PyBASSEngine: type | None = None
+FMODEngine: type | None = None
+
+# Try FMOD first (preferred, cross-platform)
 try:
-    from airborne.audio.engine.pybass_engine import PyBASSEngine
+    from airborne.audio.engine.fmod_engine import FMODEngine
 
     AUDIO_ENGINE_AVAILABLE = True
+    logger.info("FMODEngine available")
 except (ImportError, OSError) as e:
-    logger.warning(f"PyBASSEngine not available: {e}. Audio plugin will run in stub mode.")
-    PyBASSEngine = None  # type: ignore[misc,assignment]
-    AUDIO_ENGINE_AVAILABLE = False
+    logger.info(f"FMODEngine not available: {e}. Trying PyBASSEngine...")
+
+# Fall back to PyBASS if FMOD not available
+if not AUDIO_ENGINE_AVAILABLE:
+    try:
+        from airborne.audio.engine.pybass_engine import PyBASSEngine
+
+        AUDIO_ENGINE_AVAILABLE = True
+        logger.info("PyBASSEngine available")
+    except (ImportError, OSError) as e:
+        logger.warning(f"PyBASSEngine not available: {e}. Audio plugin will run in stub mode.")
 
 
 class AudioPlugin(IPlugin):
@@ -56,6 +70,12 @@ class AudioPlugin(IPlugin):
         self._listener_forward = Vector3(0.0, 0.0, 1.0)
         self._listener_up = Vector3(0.0, 1.0, 0.0)
         self._listener_velocity = Vector3(0.0, 0.0, 0.0)
+
+        # Aircraft state tracking for sounds
+        self._last_gear_state = 1.0  # Start with gear down
+        self._last_flaps_state = 0.0
+        self._last_brakes_state = 0.0
+        self._engine_started = False
 
     def get_metadata(self) -> PluginMetadata:
         """Return plugin metadata.
@@ -89,12 +109,19 @@ class AudioPlugin(IPlugin):
         tts_config = context.config.get("tts", {})
 
         # Create audio engine and TTS provider
-        if AUDIO_ENGINE_AVAILABLE and PyBASSEngine is not None:
+        if AUDIO_ENGINE_AVAILABLE:
             try:
-                self.audio_engine = PyBASSEngine()
-                logger.info("PyBASSEngine created successfully")
+                # Try FMOD first, fall back to PyBASS
+                if FMODEngine is not None:
+                    self.audio_engine = FMODEngine()
+                    logger.info("FMODEngine created successfully")
+                elif PyBASSEngine is not None:
+                    self.audio_engine = PyBASSEngine()
+                    logger.info("PyBASSEngine created successfully")
+                else:
+                    self.audio_engine = None
             except Exception as e:
-                logger.error(f"Failed to create PyBASSEngine: {e}")
+                logger.error(f"Failed to create audio engine: {e}")
                 self.audio_engine = None
         else:
             logger.warning("Audio engine not available, running without audio")
@@ -124,9 +151,16 @@ class AudioPlugin(IPlugin):
                 context.plugin_registry.register("sound_manager", self.sound_manager)
             context.plugin_registry.register("tts", self.tts_provider)
 
-        # Subscribe to position updates and TTS requests
+        # Subscribe to position updates, TTS requests, and control inputs
         context.message_queue.subscribe(MessageTopic.POSITION_UPDATED, self.handle_message)
         context.message_queue.subscribe(MessageTopic.TTS_SPEAK, self.handle_message)
+        context.message_queue.subscribe(MessageTopic.CONTROL_INPUT, self.handle_message)
+
+        # Start engine and wind sounds if sound manager available
+        if self.sound_manager:
+            self.sound_manager.start_engine_sound()
+            self.sound_manager.start_wind_sound()
+            self._engine_started = True
 
         logger.info("Audio plugin initialized")
 
@@ -136,6 +170,10 @@ class AudioPlugin(IPlugin):
         Args:
             dt: Delta time in seconds since last update.
         """
+        # Update FMOD system if using FMODEngine
+        if self.audio_engine and hasattr(self.audio_engine, "update"):
+            self.audio_engine.update()
+
         if not self.sound_manager:
             return
 
@@ -155,6 +193,7 @@ class AudioPlugin(IPlugin):
                 MessageTopic.POSITION_UPDATED, self.handle_message
             )
             self.context.message_queue.unsubscribe(MessageTopic.TTS_SPEAK, self.handle_message)
+            self.context.message_queue.unsubscribe(MessageTopic.CONTROL_INPUT, self.handle_message)
 
             # Unregister components (only if they were registered)
             if self.context.plugin_registry:
@@ -176,7 +215,38 @@ class AudioPlugin(IPlugin):
         Args:
             message: Message from the queue.
         """
-        if message.topic == MessageTopic.TTS_SPEAK:
+        if message.topic == MessageTopic.CONTROL_INPUT:
+            # Handle control input changes for sound effects
+            data = message.data
+
+            # Gear change
+            if "gear" in data and self.sound_manager:
+                gear = data["gear"]
+                if gear != self._last_gear_state:
+                    self.sound_manager.play_gear_sound(gear > 0.5)
+                    self._last_gear_state = gear
+
+            # Flaps change
+            if "flaps" in data and self.sound_manager:
+                flaps = data["flaps"]
+                if flaps != self._last_flaps_state:
+                    extending = flaps > self._last_flaps_state
+                    self.sound_manager.play_flaps_sound(extending)
+                    self._last_flaps_state = flaps
+
+            # Brakes change
+            if "brakes" in data and self.sound_manager:
+                brakes = data["brakes"]
+                if brakes != self._last_brakes_state:
+                    self.sound_manager.play_brakes_sound(brakes > 0.0)
+                    self._last_brakes_state = brakes
+
+            # Update engine sound based on throttle
+            if "throttle" in data and self.sound_manager:
+                throttle = data["throttle"]
+                self.sound_manager.update_engine_sound(throttle)
+
+        elif message.topic == MessageTopic.TTS_SPEAK:
             # Handle TTS speak requests
             if self.tts_provider:
                 text = message.data.get("text", "")
@@ -201,6 +271,11 @@ class AudioPlugin(IPlugin):
         elif message.topic == MessageTopic.POSITION_UPDATED:
             # Update listener position from aircraft position
             data = message.data
+
+            # Update wind sound based on airspeed
+            if "airspeed" in data and self.sound_manager:
+                airspeed = data["airspeed"]
+                self.sound_manager.update_wind_sound(airspeed)
 
             if "position" in data:
                 pos = data["position"]

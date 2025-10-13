@@ -45,6 +45,10 @@ class SoundManager:
         self._master_volume = 1.0
         self._tts_enabled = True
 
+        # Active sound sources (for continuous sounds like engine)
+        self._engine_source_id: int | None = None
+        self._wind_source_id: int | None = None
+
     def initialize(
         self,
         audio_engine: IAudioEngine,
@@ -245,3 +249,125 @@ class SoundManager:
         if self._tts_provider:
             return self._tts_provider.is_speaking()
         return False
+
+    def start_engine_sound(self, path: str = "assets/sounds/aircraft/engine.wav") -> None:
+        """Start looping engine sound.
+
+        Args:
+            path: Path to engine sound file.
+        """
+        if not self._audio_engine:
+            return
+
+        # Stop existing engine sound
+        if self._engine_source_id is not None:
+            self._audio_engine.stop_source(self._engine_source_id)
+
+        # Start new looping engine sound at low pitch/volume (idle)
+        try:
+            self._engine_source_id = self.play_sound_2d(path, volume=0.3, pitch=0.5, loop=True)
+            logger.debug("Engine sound started")
+        except FileNotFoundError:
+            logger.warning(f"Engine sound not found: {path}")
+
+    def update_engine_sound(self, throttle: float) -> None:
+        """Update engine sound based on throttle.
+
+        Args:
+            throttle: Throttle position (0.0 to 1.0).
+        """
+        if not self._audio_engine or self._engine_source_id is None:
+            return
+
+        # Map throttle to pitch (0.5 at idle to 2.0 at full throttle)
+        pitch = 0.5 + (throttle * 1.5)
+        # Map throttle to volume (0.3 at idle to 1.0 at full throttle)
+        volume = 0.3 + (throttle * 0.7)
+
+        self._audio_engine.update_source_pitch(self._engine_source_id, pitch)
+        self._audio_engine.update_source_volume(self._engine_source_id, volume)
+
+    def start_wind_sound(self, path: str = "assets/sounds/aircraft/wind.mp3") -> None:
+        """Start looping wind sound.
+
+        Args:
+            path: Path to wind sound file.
+        """
+        if not self._audio_engine:
+            return
+
+        # Stop existing wind sound
+        if self._wind_source_id is not None:
+            self._audio_engine.stop_source(self._wind_source_id)
+
+        # Start new looping wind sound at low volume (stopped)
+        try:
+            self._wind_source_id = self.play_sound_2d(path, volume=0.0, pitch=1.0, loop=True)
+            logger.debug("Wind sound started")
+        except FileNotFoundError:
+            logger.warning(f"Wind sound not found: {path}")
+
+    def update_wind_sound(self, airspeed: float) -> None:
+        """Update wind sound based on airspeed.
+
+        Args:
+            airspeed: Airspeed in knots.
+        """
+        if not self._audio_engine or self._wind_source_id is None:
+            return
+
+        # Map airspeed to volume (0 at 0 knots, 1.0 at 100+ knots)
+        volume = min(airspeed / 100.0, 1.0)
+        # Map airspeed to pitch (0.8 at low speed, 1.5 at high speed)
+        pitch = 0.8 + (min(airspeed / 200.0, 1.0) * 0.7)
+
+        self._audio_engine.update_source_volume(self._wind_source_id, volume)
+        self._audio_engine.update_source_pitch(self._wind_source_id, pitch)
+
+    def play_gear_sound(self, gear_down: bool) -> None:
+        """Play gear up/down sound.
+
+        Args:
+            gear_down: True for gear down, False for gear up.
+        """
+        if gear_down:
+            path = "assets/sounds/aircraft/geardown1.mp3"
+        else:
+            path = "assets/sounds/aircraft/gearup1.mp3"
+
+        try:
+            self.play_sound_2d(path, volume=0.8)
+        except FileNotFoundError:
+            logger.warning(f"Gear sound not found: {path}")
+
+    def play_flaps_sound(self, extending: bool) -> None:
+        """Play flaps sound.
+
+        Args:
+            extending: True for extending, False for retracting.
+        """
+        if extending:
+            path = "assets/sounds/aircraft/flapson1.mp3"
+        else:
+            path = "assets/sounds/aircraft/flapsoff1.mp3"
+
+        try:
+            self.play_sound_2d(path, volume=0.6)
+        except FileNotFoundError:
+            logger.warning(f"Flaps sound not found: {path}")
+
+    def play_brakes_sound(self, brakes_on: bool) -> None:
+        """Play brakes sound.
+
+        Args:
+            brakes_on: True for brakes on, False for brakes off.
+        """
+        if brakes_on:
+            path = "assets/sounds/aircraft/brakeson.mp3"
+        else:
+            path = "assets/sounds/aircraft/brakesoff.mp3"
+
+        try:
+            self.play_sound_2d(path, volume=0.7)
+        except FileNotFoundError:
+            logger.warning(f"Brakes sound not found: {path}")

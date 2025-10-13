@@ -513,7 +513,7 @@ class TestInputManagerEventPublishing:
 
         keydown = Mock()
         keydown.type = pygame.KEYDOWN
-        keydown.key = pygame.K_SPACE  # TTS next
+        keydown.key = pygame.K_t  # TTS next (changed from SPACE to T)
         manager.process_events([keydown])
 
         assert len(received_events) > 0
