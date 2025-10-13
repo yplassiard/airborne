@@ -1,6 +1,5 @@
 """Tests for radio frequency manager."""
 
-
 from airborne.plugins.radio.frequency_manager import FrequencyManager
 
 
