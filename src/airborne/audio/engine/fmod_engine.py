@@ -164,22 +164,18 @@ class FMODEngine(IAudioEngine):
             }
             audio_format = format_map.get(ext, AudioFormat.UNKNOWN)
 
-            # Get sound properties
-            length_ms = fmod_sound.get_length(pyfmodex.flags.TIMEUNIT_MS)
-            duration = length_ms / 1000.0  # Convert to seconds
-
-            # Create Sound object
+            # Create Sound object (duration not critical for playback)
             sound = Sound(
                 path=path,
                 format=audio_format,
-                duration=duration,
+                duration=0.0,  # Duration not needed for looping sounds
                 sample_rate=44100,  # FMOD default
                 channels=2,  # Assume stereo
                 handle=fmod_sound,
             )
 
             self._sounds[path] = sound
-            logger.info(f"Loaded sound: {path} ({duration:.2f}s)")
+            logger.info(f"Loaded sound: {path}")
             return sound
 
         except Exception as e:
