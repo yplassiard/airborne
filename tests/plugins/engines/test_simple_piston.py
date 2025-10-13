@@ -7,7 +7,7 @@ import pytest
 from airborne.core.event_bus import EventBus
 from airborne.core.messaging import Message, MessageTopic
 from airborne.core.plugin import PluginContext, PluginType
-from airborne.plugins.engines.simple_piston import EngineStateEvent, SimplePistonEngine
+from airborne.plugins.engines.simple_piston_plugin import EngineStateEvent, SimplePistonEngine
 
 
 class TestSimplePistonEngineMetadata:

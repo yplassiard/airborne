@@ -35,26 +35,34 @@ class ComponentRegistry:
 
     def __init__(self) -> None:
         """Initialize an empty registry."""
-        self._components: dict[str, type] = {}
+        self._components: dict[str, type | Any] = {}
 
-    def register(self, name: str, implementation: type) -> None:
+    def register(self, name: str, implementation: type | Any) -> None:
         """Register an implementation for a component type.
 
         Args:
             name: Component type name (e.g., "audio_cue").
-            implementation: Class to use for this component type.
+            implementation: Class or instance to register.
 
         Raises:
             RegistryError: If name is already registered.
 
         Examples:
             >>> registry.register("proximity_cue", BeepingProximityCue)
+            >>> registry.register("flight_model", flight_model_instance)
         """
         if name in self._components:
             raise RegistryError(f"Component already registered: {name}")
 
         self._components[name] = implementation
-        logger.info("Registered component: %s -> %s", name, implementation.__name__)
+
+        # Get name for logging (handle both classes and instances)
+        if isinstance(implementation, type):
+            impl_name = implementation.__name__
+        else:
+            impl_name = type(implementation).__name__
+
+        logger.info("Registered component: %s -> %s", name, impl_name)
 
     def unregister(self, name: str) -> None:
         """Unregister a component type.
@@ -95,6 +103,26 @@ class ComponentRegistry:
             return implementation(config)
         except Exception as e:
             raise RegistryError(f"Failed to create component {name}: {e}") from e
+
+    def get(self, name: str) -> Any:
+        """Get a registered component (class or instance).
+
+        Args:
+            name: Component type name.
+
+        Returns:
+            The registered component (class or instance).
+
+        Raises:
+            RegistryError: If name is not registered.
+
+        Examples:
+            >>> flight_model = registry.get("flight_model")
+        """
+        if name not in self._components:
+            raise RegistryError(f"Component not registered: {name}")
+
+        return self._components[name]
 
     def is_registered(self, name: str) -> bool:
         """Check if a component type is registered.

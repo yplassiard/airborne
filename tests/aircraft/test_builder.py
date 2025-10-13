@@ -117,9 +117,7 @@ class TestAircraftBuilderBuild:
         return Mock()
 
     @pytest.fixture
-    def context(
-        self, event_bus: EventBus, message_queue: Mock, registry: Mock
-    ) -> PluginContext:
+    def context(self, event_bus: EventBus, message_queue: Mock, registry: Mock) -> PluginContext:
         """Create plugin context."""
         return PluginContext(
             event_bus=event_bus,

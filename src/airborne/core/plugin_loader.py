@@ -48,13 +48,13 @@ class PluginLoader:
         >>> loader.unload_plugin("engine_plugin")
     """
 
-    def __init__(self, plugin_dirs: list[Path]) -> None:
+    def __init__(self, plugin_dirs: list[Path] | list[str]) -> None:
         """Initialize the plugin loader.
 
         Args:
             plugin_dirs: List of directories to search for plugins.
         """
-        self.plugin_dirs = plugin_dirs
+        self.plugin_dirs = [Path(d) if isinstance(d, str) else d for d in plugin_dirs]
         self.loaded_plugins: dict[str, PluginInfo] = {}
         self.plugin_classes: dict[str, type[IPlugin]] = {}
         self._metadata_cache: dict[str, PluginMetadata] = {}

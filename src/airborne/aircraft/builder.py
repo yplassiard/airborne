@@ -223,7 +223,7 @@ class AircraftBuilder:
 
         try:
             with open(config_path, encoding="utf-8") as f:
-                config = yaml.safe_load(f)
+                config: dict[str, Any] = yaml.safe_load(f)
 
             if not config:
                 raise ValueError("Empty configuration file")

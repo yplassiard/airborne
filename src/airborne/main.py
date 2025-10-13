@@ -8,10 +8,10 @@ Typical usage:
 """
 
 import sys
+from typing import TYPE_CHECKING
 
 import pygame
 
-from airborne.aircraft.builder import AircraftBuilder
 from airborne.core.event_bus import EventBus
 from airborne.core.game_loop import GameLoop  # noqa: F401
 from airborne.core.input import InputActionEvent, InputManager, InputStateEvent  # noqa: F401
@@ -20,6 +20,10 @@ from airborne.core.messaging import Message, MessagePriority, MessageQueue, Mess
 from airborne.core.plugin import PluginContext
 from airborne.core.plugin_loader import PluginLoader
 from airborne.core.registry import ComponentRegistry
+
+if TYPE_CHECKING:
+    from airborne.aircraft.aircraft import Aircraft
+    from airborne.plugins.core.physics_plugin import PhysicsPlugin
 
 logger = get_logger(__name__)
 
@@ -63,11 +67,11 @@ class AirBorne:
         )
 
         # Core plugins
-        self.physics_plugin = None
+        self.physics_plugin: PhysicsPlugin | None = None
         self.audio_plugin = None
 
         # Aircraft
-        self.aircraft = None
+        self.aircraft: Aircraft | None = None
 
         # Load plugins and aircraft
         self._initialize_plugins()
@@ -92,7 +96,29 @@ class AirBorne:
     def _initialize_plugins(self) -> None:
         """Initialize core plugins and load aircraft."""
         try:
-            # Load physics plugin (without initializing - will load via aircraft builder)
+            # Discover available plugins
+            logger.info("Discovering plugins...")
+            discovered = self.plugin_loader.discover_plugins()
+            logger.info("Discovered %d plugins", len(discovered))
+
+            # Load aircraft first to get flight model config
+            logger.info("Loading aircraft...")
+
+            # Load aircraft config to get flight model params
+            from airborne.aircraft.builder import AircraftBuilder
+
+            aircraft_config_path = "config/aircraft/cessna172.yaml"
+            config = AircraftBuilder.load_config(aircraft_config_path)
+
+            # Extract flight model config from aircraft config
+            flight_model_config = config.get("aircraft", {}).get("flight_model_config", {})
+
+            # Update plugin context with flight model config
+            self.plugin_context.config["physics"] = {
+                "flight_model": {"type": "simple_6dof", **flight_model_config}
+            }
+
+            # Load physics plugin
             logger.info("Loading physics plugin...")
             from airborne.plugins.core.physics_plugin import PhysicsPlugin
 
@@ -105,10 +131,9 @@ class AirBorne:
             # self.audio_plugin = AudioPlugin()
             # self.audio_plugin.initialize(self.plugin_context)
 
-            # Load aircraft
-            logger.info("Loading aircraft...")
+            # Build aircraft with systems
             builder = AircraftBuilder(self.plugin_loader, self.plugin_context)
-            self.aircraft = builder.build("config/aircraft/cessna172.yaml")
+            self.aircraft = builder.build(aircraft_config_path)
 
             logger.info("All plugins and aircraft loaded successfully")
 

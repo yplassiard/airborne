@@ -7,7 +7,7 @@ import pytest
 from airborne.core.event_bus import EventBus
 from airborne.core.messaging import Message, MessageTopic
 from airborne.core.plugin import PluginContext, PluginType
-from airborne.plugins.systems.simple_electrical import (
+from airborne.plugins.systems.simple_electrical_plugin import (
     ElectricalStateEvent,
     SimpleElectricalSystem,
 )
