@@ -22,7 +22,7 @@ from airborne.airports.taxiway_generator import TaxiwayGenerator
 from airborne.audio.beeper import BeepStyle, ProximityBeeper
 from airborne.audio.proximity import BeepPattern, ProximityCueManager
 from airborne.core.plugin import IPlugin, PluginMetadata, PluginType
-from airborne.physics.ground_physics import GroundContact, GroundPhysics
+from airborne.physics.ground_physics import GroundPhysics
 from airborne.physics.vectors import Vector3
 
 logger = logging.getLogger(__name__)

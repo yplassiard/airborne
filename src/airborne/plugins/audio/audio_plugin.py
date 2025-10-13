@@ -153,10 +153,12 @@ class AudioPlugin(IPlugin):
                 MessageTopic.POSITION_UPDATED, self.handle_message
             )
 
-            # Unregister components
+            # Unregister components (only if they were registered)
             if self.context.plugin_registry:
-                self.context.plugin_registry.unregister("audio_engine")
-                self.context.plugin_registry.unregister("sound_manager")
+                if self.audio_engine:
+                    self.context.plugin_registry.unregister("audio_engine")
+                if self.sound_manager:
+                    self.context.plugin_registry.unregister("sound_manager")
                 self.context.plugin_registry.unregister("tts")
 
         # Shutdown sound manager (which shutdowns engine and TTS)
