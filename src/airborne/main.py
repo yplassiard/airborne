@@ -94,6 +94,20 @@ class AirBorne:
 
         logger.info("AirBorne initialized successfully")
 
+        # Send startup announcement via TTS
+        self.message_queue.publish(
+            Message(
+                sender="main",
+                recipients=["*"],
+                topic=MessageTopic.TTS_SPEAK,
+                data={
+                    "text": "AirBorne flight simulator ready. Cessna 172 loaded.",
+                    "priority": "high",
+                },
+                priority=MessagePriority.HIGH,
+            )
+        )
+
     def _initialize_plugins(self) -> None:
         """Initialize core plugins and load aircraft."""
         try:
@@ -162,6 +176,27 @@ class AirBorne:
         elif event.action == "pause":
             self.paused = not self.paused
             logger.info("Paused: %s", self.paused)
+            self.message_queue.publish(
+                Message(
+                    sender="main",
+                    recipients=["*"],
+                    topic=MessageTopic.TTS_SPEAK,
+                    data={"text": "Paused" if self.paused else "Resumed", "priority": "high"},
+                    priority=MessagePriority.HIGH,
+                )
+            )
+        elif event.action == "gear_toggle":
+            state = self.input_manager.get_state()
+            gear_status = "down" if state.gear > 0.5 else "up"
+            self.message_queue.publish(
+                Message(
+                    sender="main",
+                    recipients=["*"],
+                    topic=MessageTopic.TTS_SPEAK,
+                    data={"text": f"Gear {gear_status}", "priority": "normal"},
+                    priority=MessagePriority.NORMAL,
+                )
+            )
 
     def run(self) -> None:
         """Run the main game loop."""

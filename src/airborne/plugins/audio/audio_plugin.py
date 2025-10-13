@@ -123,8 +123,9 @@ class AudioPlugin(IPlugin):
                 context.plugin_registry.register("sound_manager", self.sound_manager)
             context.plugin_registry.register("tts", self.tts_provider)
 
-        # Subscribe to position updates
+        # Subscribe to position updates and TTS requests
         context.message_queue.subscribe(MessageTopic.POSITION_UPDATED, self.handle_message)
+        context.message_queue.subscribe(MessageTopic.TTS_SPEAK, self.handle_message)
 
         logger.info("Audio plugin initialized")
 
@@ -152,6 +153,7 @@ class AudioPlugin(IPlugin):
             self.context.message_queue.unsubscribe(
                 MessageTopic.POSITION_UPDATED, self.handle_message
             )
+            self.context.message_queue.unsubscribe(MessageTopic.TTS_SPEAK, self.handle_message)
 
             # Unregister components (only if they were registered)
             if self.context.plugin_registry:
@@ -173,7 +175,29 @@ class AudioPlugin(IPlugin):
         Args:
             message: Message from the queue.
         """
-        if message.topic == MessageTopic.POSITION_UPDATED:
+        if message.topic == MessageTopic.TTS_SPEAK:
+            # Handle TTS speak requests
+            if self.tts_provider:
+                text = message.data.get("text", "")
+                priority_str = message.data.get("priority", "normal")
+
+                # Map priority string to TTSPriority enum
+                from airborne.audio.tts.base import TTSPriority
+
+                priority_map = {
+                    "low": TTSPriority.LOW,
+                    "normal": TTSPriority.NORMAL,
+                    "high": TTSPriority.HIGH,
+                    "critical": TTSPriority.CRITICAL,
+                }
+                priority = priority_map.get(priority_str.lower(), TTSPriority.NORMAL)
+
+                interrupt = message.data.get("interrupt", False)
+
+                logger.debug(f"TTS request: '{text}' (priority={priority.name})")
+                self.tts_provider.speak(text, priority=priority, interrupt=interrupt)
+
+        elif message.topic == MessageTopic.POSITION_UPDATED:
             # Update listener position from aircraft position
             data = message.data
 

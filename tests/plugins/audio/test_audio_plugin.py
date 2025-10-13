@@ -79,10 +79,8 @@ class TestAudioPluginInitialization:
         # Should register components
         assert context.plugin_registry.register.call_count == 3
 
-        # Should subscribe to position updates
-        context.message_queue.subscribe.assert_called_once_with(
-            MessageTopic.POSITION_UPDATED, plugin.handle_message
-        )
+        # Should subscribe to position updates and TTS
+        assert context.message_queue.subscribe.call_count == 2
 
 
 class TestAudioPluginPositionHandling:
@@ -212,8 +210,8 @@ class TestAudioPluginShutdown:
         """Test audio plugin shutdown."""
         plugin.shutdown()
 
-        # Should unsubscribe from messages
-        plugin.context.message_queue.unsubscribe.assert_called_once()
+        # Should unsubscribe from messages (position and TTS)
+        assert plugin.context.message_queue.unsubscribe.call_count == 2
 
         # Should unregister components
         assert plugin.context.plugin_registry.unregister.call_count == 3
