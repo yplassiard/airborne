@@ -12,7 +12,6 @@ Typical usage:
 
 import logging
 import math
-from typing import Optional
 
 from airborne.airports.classifier import AirportCategory
 from airborne.airports.database import Airport, Runway
@@ -224,16 +223,18 @@ class TaxiwayGenerator:
             node_id = self._add_node(
                 graph,
                 airport,
-                f"A{i+1}",
+                f"A{i + 1}",
                 Vector3(lon, elev, lat),
                 "intersection",
-                f"Alpha {i+1}",
+                f"Alpha {i + 1}",
             )
             taxiway_nodes.append(node_id)
 
         # Connect parallel taxiway segments
         for i in range(len(taxiway_nodes) - 1):
-            graph.add_edge(taxiway_nodes[i], taxiway_nodes[i + 1], "taxiway", "A", bidirectional=True)
+            graph.add_edge(
+                taxiway_nodes[i], taxiway_nodes[i + 1], "taxiway", "A", bidirectional=True
+            )
 
         # Connect taxiway to runway ends
         graph.add_edge(rwy_le, taxiway_nodes[0], "taxiway", "L1", bidirectional=True)
@@ -319,12 +320,14 @@ class TaxiwayGenerator:
 
         for i in range(segments):
             ratio = (i + 1) / (segments + 1)
-            lon = primary_runway.le_longitude + (
-                primary_runway.he_longitude - primary_runway.le_longitude
-            ) * ratio
-            lat = primary_runway.le_latitude + (
-                primary_runway.he_latitude - primary_runway.le_latitude
-            ) * ratio
+            lon = (
+                primary_runway.le_longitude
+                + (primary_runway.he_longitude - primary_runway.le_longitude) * ratio
+            )
+            lat = (
+                primary_runway.le_latitude
+                + (primary_runway.he_latitude - primary_runway.le_latitude) * ratio
+            )
             elev = (
                 primary_runway.le_elevation_ft
                 + (primary_runway.he_elevation_ft - primary_runway.le_elevation_ft) * ratio
@@ -336,10 +339,10 @@ class TaxiwayGenerator:
             inner_node = self._add_node(
                 graph,
                 airport,
-                f"W1{chr(65+i)}",  # W1A, W1B, etc.
+                f"W1{chr(65 + i)}",  # W1A, W1B, etc.
                 Vector3(inner_lon, elev, inner_lat),
                 "intersection",
-                f"Whiskey 1 {chr(65+i)}",
+                f"Whiskey 1 {chr(65 + i)}",
             )
             inner_nodes.append(inner_node)
 
@@ -349,10 +352,10 @@ class TaxiwayGenerator:
             outer_node = self._add_node(
                 graph,
                 airport,
-                f"W2{chr(65+i)}",  # W2A, W2B, etc.
+                f"W2{chr(65 + i)}",  # W2A, W2B, etc.
                 Vector3(outer_lon, elev, outer_lat),
                 "intersection",
-                f"Whiskey 2 {chr(65+i)}",
+                f"Whiskey 2 {chr(65 + i)}",
             )
             outer_nodes.append(outer_node)
 
@@ -371,7 +374,7 @@ class TaxiwayGenerator:
         # Connect inner to outer taxiways with link taxiways (L series)
         for i in range(len(inner_nodes)):
             graph.add_edge(
-                inner_nodes[i], outer_nodes[i], "taxiway", f"L{i+3}", bidirectional=True
+                inner_nodes[i], outer_nodes[i], "taxiway", f"L{i + 3}", bidirectional=True
             )
 
         # Add 2 terminal areas connected to outer taxiway
@@ -385,17 +388,17 @@ class TaxiwayGenerator:
             terminal = self._add_node(
                 graph,
                 airport,
-                f"T{idx+1}",
+                f"T{idx + 1}",
                 Vector3(
                     outer_pos.x + terminal_offset * math.cos(heading_rad + math.pi / 2),
                     outer_pos.y,
                     outer_pos.z + terminal_offset * math.sin(heading_rad + math.pi / 2),
                 ),
                 "gate",
-                f"Terminal {idx+1}",
+                f"Terminal {idx + 1}",
             )
 
-            graph.add_edge(outer_node, terminal, "taxiway", f"G{idx+1}", bidirectional=True)
+            graph.add_edge(outer_node, terminal, "taxiway", f"G{idx + 1}", bidirectional=True)
 
     def _generate_xl_airport(
         self,
@@ -469,12 +472,14 @@ class TaxiwayGenerator:
 
         for i in range(segments):
             ratio = (i + 1) / (segments + 1)
-            lon = primary_runway.le_longitude + (
-                primary_runway.he_longitude - primary_runway.le_longitude
-            ) * ratio
-            lat = primary_runway.le_latitude + (
-                primary_runway.he_latitude - primary_runway.le_latitude
-            ) * ratio
+            lon = (
+                primary_runway.le_longitude
+                + (primary_runway.he_longitude - primary_runway.le_longitude) * ratio
+            )
+            lat = (
+                primary_runway.le_latitude
+                + (primary_runway.he_latitude - primary_runway.le_latitude) * ratio
+            )
             elev = (
                 primary_runway.le_elevation_ft
                 + (primary_runway.he_elevation_ft - primary_runway.le_elevation_ft) * ratio
@@ -486,10 +491,10 @@ class TaxiwayGenerator:
             w1_node = self._add_node(
                 graph,
                 airport,
-                f"W1{chr(65+i)}",
+                f"W1{chr(65 + i)}",
                 Vector3(w1_lon, elev, w1_lat),
                 "intersection",
-                f"Whiskey 1 {chr(65+i)}",
+                f"Whiskey 1 {chr(65 + i)}",
             )
             w1_nodes.append(w1_node)
 
@@ -499,10 +504,10 @@ class TaxiwayGenerator:
             w2_node = self._add_node(
                 graph,
                 airport,
-                f"W2{chr(65+i)}",
+                f"W2{chr(65 + i)}",
                 Vector3(w2_lon, elev, w2_lat),
                 "intersection",
-                f"Whiskey 2 {chr(65+i)}",
+                f"Whiskey 2 {chr(65 + i)}",
             )
             w2_nodes.append(w2_node)
 
@@ -512,10 +517,10 @@ class TaxiwayGenerator:
             w3_node = self._add_node(
                 graph,
                 airport,
-                f"W3{chr(65+i)}",
+                f"W3{chr(65 + i)}",
                 Vector3(w3_lon, elev, w3_lat),
                 "intersection",
-                f"Whiskey 3 {chr(65+i)}",
+                f"Whiskey 3 {chr(65 + i)}",
             )
             w3_nodes.append(w3_node)
 
@@ -560,18 +565,18 @@ class TaxiwayGenerator:
             terminal = self._add_node(
                 graph,
                 airport,
-                f"T{idx+1}",
+                f"T{idx + 1}",
                 Vector3(
                     w3_pos.x + terminal_offset * math.cos(heading_rad + math.pi / 2),
                     w3_pos.y,
                     w3_pos.z + terminal_offset * math.sin(heading_rad + math.pi / 2),
                 ),
                 "gate",
-                f"Terminal {idx+1}",
+                f"Terminal {idx + 1}",
             )
 
             # Connect terminal to W3 with gate taxiway
-            graph.add_edge(w3_node, terminal, "taxiway", f"G{idx+1}", bidirectional=True)
+            graph.add_edge(w3_node, terminal, "taxiway", f"G{idx + 1}", bidirectional=True)
 
             # Add parking stands at each terminal
             for stand_idx in range(3):
@@ -581,14 +586,14 @@ class TaxiwayGenerator:
                 stand = self._add_node(
                     graph,
                     airport,
-                    f"T{idx+1}S{stand_idx+1}",
+                    f"T{idx + 1}S{stand_idx + 1}",
                     Vector3(
                         terminal_pos.x + stand_offset,
                         terminal_pos.y,
                         terminal_pos.z,
                     ),
                     "parking",
-                    f"Terminal {idx+1} Stand {stand_idx+1}",
+                    f"Terminal {idx + 1} Stand {stand_idx + 1}",
                 )
 
                 graph.add_edge(terminal, stand, "taxiway", "", bidirectional=True)

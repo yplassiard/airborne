@@ -127,7 +127,9 @@ class TestTaxiwayGeneratorBasics:
 
         # Should have multiple terminals (T1, T2, T3, not stands like T1S1)
         terminal_nodes = [
-            n for n in graph.nodes.keys() if n.endswith("_T1") or n.endswith("_T2") or n.endswith("_T3")
+            n
+            for n in graph.nodes.keys()
+            if n.endswith("_T1") or n.endswith("_T2") or n.endswith("_T3")
         ]
         assert len(terminal_nodes) >= 3  # At least 3 terminals
 
@@ -385,6 +387,8 @@ class TestRealWorldAirportGeneration:
 
         # Should have multiple terminals (T1, T2, T3, not stands like T1S1)
         terminal_nodes = [
-            n for n in graph.nodes.keys() if n.endswith("_T1") or n.endswith("_T2") or n.endswith("_T3")
+            n
+            for n in graph.nodes.keys()
+            if n.endswith("_T1") or n.endswith("_T2") or n.endswith("_T3")
         ]
         assert len(terminal_nodes) >= 3

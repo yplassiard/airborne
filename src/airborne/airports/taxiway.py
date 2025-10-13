@@ -16,8 +16,7 @@ Typical usage:
 
 import logging
 import math
-from dataclasses import dataclass, field
-from typing import Optional
+from dataclasses import dataclass
 
 from airborne.physics.vectors import Vector3
 
@@ -191,7 +190,7 @@ class TaxiwayGraph:
 
         return edge
 
-    def get_node(self, node_id: str) -> Optional[TaxiwayNode]:
+    def get_node(self, node_id: str) -> TaxiwayNode | None:
         """Get a node by ID.
 
         Args:
@@ -239,7 +238,7 @@ class TaxiwayGraph:
         edges = self.get_edges_from(node_id)
         return [edge.to_node for edge in edges]
 
-    def find_path(self, start_id: str, goal_id: str) -> Optional[list[str]]:
+    def find_path(self, start_id: str, goal_id: str) -> list[str] | None:
         """Find shortest path between two nodes using Dijkstra's algorithm.
 
         Args:
@@ -265,12 +264,12 @@ class TaxiwayGraph:
 
         # Dijkstra's algorithm
         distances: dict[str, float] = {start_id: 0.0}
-        previous: dict[str, Optional[str]] = {start_id: None}
+        previous: dict[str, str | None] = {start_id: None}
         unvisited: set[str] = set(self.nodes.keys())
 
         while unvisited:
             # Find unvisited node with smallest distance
-            current: Optional[str] = None
+            current: str | None = None
             current_distance = float("inf")
             for node_id in unvisited:
                 if node_id in distances and distances[node_id] < current_distance:
@@ -285,7 +284,7 @@ class TaxiwayGraph:
             if current == goal_id:
                 # Reconstruct path
                 path: list[str] = []
-                node: Optional[str] = goal_id
+                node: str | None = goal_id
                 while node is not None:
                     path.append(node)
                     node = previous.get(node)
@@ -316,7 +315,7 @@ class TaxiwayGraph:
         logger.warning("No path found from %s to %s", start_id, goal_id)
         return None
 
-    def find_nearest_node(self, position: Vector3, max_distance_m: float = 100.0) -> Optional[str]:
+    def find_nearest_node(self, position: Vector3, max_distance_m: float = 100.0) -> str | None:
         """Find the nearest node to a given position.
 
         Args:
@@ -331,7 +330,7 @@ class TaxiwayGraph:
             >>> if nearest:
             ...     print(f"Nearest node: {nearest}")
         """
-        nearest_id: Optional[str] = None
+        nearest_id: str | None = None
         nearest_distance = max_distance_m
 
         for node_id, node in self.nodes.items():
