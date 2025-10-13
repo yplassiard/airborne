@@ -125,6 +125,10 @@ class MessageTopic:
     TERRAIN_UPDATED = "terrain.updated"
     NEARBY_CITIES = "terrain.nearby_cities"
 
+    # UI/Audio
+    TTS_SPEAK = "ui.tts.speak"
+    SYSTEM_STATE_CHANGED = "system.state_changed"
+
 
 class MessageQueue:
     """Asynchronous message queue for plugin communication.

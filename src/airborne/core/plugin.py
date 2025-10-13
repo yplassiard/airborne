@@ -39,6 +39,7 @@ class PluginType(Enum):
     AIRCRAFT_SYSTEM = "aircraft"  # Engine, electrical, hydraulics, fuel
     WORLD = "world"  # Terrain, weather, traffic, airports
     CABIN = "cabin"  # Passengers, boarding, services
+    FEATURE = "feature"  # Checklists, control panels, automation
     AVIONICS = "avionics"  # FMC, autopilot, TCAS, navigation
     NETWORK = "network"  # Multiplayer, live ATC
 
