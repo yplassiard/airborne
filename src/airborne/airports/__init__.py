@@ -26,6 +26,7 @@ from airborne.airports.database import (
 )
 from airborne.airports.spatial_index import SpatialIndex
 from airborne.airports.taxiway import TaxiwayEdge, TaxiwayGraph, TaxiwayNode
+from airborne.airports.taxiway_generator import TaxiwayGenerator
 
 __all__ = [
     "Airport",
@@ -39,6 +40,7 @@ __all__ = [
     "SpatialIndex",
     "SurfaceType",
     "TaxiwayEdge",
+    "TaxiwayGenerator",
     "TaxiwayGraph",
     "TaxiwayNode",
 ]
