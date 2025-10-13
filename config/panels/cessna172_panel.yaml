@@ -1,0 +1,204 @@
+# Cessna 172 Skyhawk Panel Definition
+# Defines all cockpit panels and controls for the Cessna 172
+
+panels:
+  # Main Instrument Panel
+  - name: Instrument Panel
+    description: Primary flight instruments and controls
+    controls:
+      # Electrical Controls
+      - id: master_switch
+        name: Master Switch
+        type: switch
+        states: [OFF, ON]
+        default_index: 0
+        target_plugin: electrical
+        message_topic: electrical.master_switch
+        description: Aircraft master electrical switch
+
+      - id: avionics_master_switch
+        name: Avionics Master Switch
+        type: switch
+        states: [OFF, ON]
+        default_index: 0
+        target_plugin: electrical
+        message_topic: electrical.avionics_master
+        description: Avionics bus master switch
+
+      - id: beacon_switch
+        name: Beacon Switch
+        type: switch
+        states: [OFF, ON]
+        default_index: 0
+        target_plugin: electrical
+        message_topic: electrical.beacon
+        description: Rotating beacon light
+
+      - id: nav_lights_switch
+        name: Nav Lights Switch
+        type: switch
+        states: [OFF, ON]
+        default_index: 0
+        target_plugin: electrical
+        message_topic: electrical.nav_lights
+        description: Navigation lights
+
+      - id: strobe_switch
+        name: Strobe Switch
+        type: switch
+        states: [OFF, ON]
+        default_index: 0
+        target_plugin: electrical
+        message_topic: electrical.strobe
+        description: Strobe lights
+
+      - id: taxi_light_switch
+        name: Taxi Light Switch
+        type: switch
+        states: [OFF, ON]
+        default_index: 0
+        target_plugin: electrical
+        message_topic: electrical.taxi_light
+        description: Taxi light
+
+      - id: landing_light_switch
+        name: Landing Light Switch
+        type: switch
+        states: [OFF, ON]
+        default_index: 0
+        target_plugin: electrical
+        message_topic: electrical.landing_light
+        description: Landing light
+
+  # Pedestal Panel
+  - name: Pedestal
+    description: Center pedestal controls
+    controls:
+      # Engine Controls
+      - id: mixture_lever
+        name: Mixture
+        type: lever
+        states: [IDLE_CUTOFF, LEAN, RICH]
+        default_index: 0
+        target_plugin: engine
+        message_topic: engine.mixture
+        description: Fuel mixture control lever
+
+      - id: carburetor_heat_lever
+        name: Carburetor Heat
+        type: lever
+        states: [COLD, HOT]
+        default_index: 0
+        target_plugin: engine
+        message_topic: engine.carb_heat
+        description: Carburetor heat control
+
+      - id: throttle_lever
+        name: Throttle
+        type: slider
+        states: [IDLE, PARTIAL, FULL]
+        default_index: 0
+        target_plugin: engine
+        message_topic: engine.throttle
+        description: Engine throttle lever
+
+      # Fuel Controls
+      - id: fuel_selector_valve
+        name: Fuel Selector Valve
+        type: knob
+        states: [OFF, LEFT, RIGHT, BOTH]
+        default_index: 0
+        target_plugin: fuel
+        message_topic: fuel.selector
+        description: Fuel tank selector valve
+
+      - id: fuel_shutoff_valve
+        name: Fuel Shutoff Valve
+        type: switch
+        states: [CLOSED, OPEN]
+        default_index: 1
+        target_plugin: fuel
+        message_topic: fuel.shutoff
+        description: Fuel shutoff valve
+
+      - id: fuel_pump_switch
+        name: Fuel Pump Switch
+        type: switch
+        states: [OFF, ON]
+        default_index: 0
+        target_plugin: fuel
+        message_topic: fuel.pump
+        description: Electric fuel pump
+
+      - id: primer_pump
+        name: Primer Pump
+        type: button
+        states: [PRESSED]
+        target_plugin: engine
+        message_topic: engine.primer
+        description: Manual fuel primer pump
+
+  # Engine Panel
+  - name: Engine Controls
+    description: Engine start and magneto controls
+    controls:
+      - id: magneto_switch
+        name: Magnetos
+        type: knob
+        states: [OFF, R, L, BOTH, START]
+        default_index: 0
+        target_plugin: engine
+        message_topic: engine.magnetos
+        description: Magneto and starter switch
+
+      - id: starter_button
+        name: Starter Button
+        type: button
+        states: [PRESSED]
+        target_plugin: engine
+        message_topic: engine.starter
+        description: Engine starter button
+
+  # Overhead Panel
+  - name: Overhead Panel
+    description: Overhead switches and controls
+    controls:
+      - id: pitot_heat_switch
+        name: Pitot Heat
+        type: switch
+        states: [OFF, ON]
+        default_index: 0
+        target_plugin: electrical
+        message_topic: electrical.pitot_heat
+        description: Pitot tube anti-ice heating
+
+  # Flight Controls Panel
+  - name: Flight Controls
+    description: Flaps and trim controls
+    controls:
+      - id: flaps_lever
+        name: Flaps
+        type: lever
+        states: [UP, 10, 20, 30, FULL]
+        default_index: 0
+        target_plugin: flight_controls
+        message_topic: flight_controls.flaps
+        description: Flap position lever
+
+      - id: elevator_trim_wheel
+        name: Elevator Trim
+        type: knob
+        states: [NOSE_DOWN, NEUTRAL, NOSE_UP]
+        default_index: 1
+        target_plugin: flight_controls
+        message_topic: flight_controls.elevator_trim
+        description: Elevator trim wheel
+
+      - id: parking_brake_lever
+        name: Parking Brake
+        type: lever
+        states: [RELEASED, SET]
+        default_index: 0
+        target_plugin: flight_controls
+        message_topic: flight_controls.parking_brake
+        description: Parking brake lever
