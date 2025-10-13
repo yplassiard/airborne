@@ -141,7 +141,7 @@ class InputConfig:
     keyboard_bindings: dict[int, InputAction] = field(default_factory=dict)
     axis_sensitivity: float = 1.0
     axis_deadzone: float = 0.1
-    throttle_increment: float = 0.05
+    throttle_increment: float = 0.01  # Changed to 1% per frame
     enable_joystick: bool = True
 
     def __post_init__(self) -> None:
@@ -398,21 +398,13 @@ class InputManager:  # pylint: disable=too-many-instance-attributes
             InputAction.ROLL_RIGHT,
             InputAction.YAW_LEFT,
             InputAction.YAW_RIGHT,
+            InputAction.THROTTLE_INCREASE,
+            InputAction.THROTTLE_DECREASE,
         ):
             return  # Handled in update loop
 
         # Discrete controls
-        if action == InputAction.THROTTLE_INCREASE:
-            self._target_throttle = min(1.0, self._target_throttle + self.config.throttle_increment)
-            self.event_bus.publish(
-                InputActionEvent(action=action.value, value=self._target_throttle)
-            )
-        elif action == InputAction.THROTTLE_DECREASE:
-            self._target_throttle = max(0.0, self._target_throttle - self.config.throttle_increment)
-            self.event_bus.publish(
-                InputActionEvent(action=action.value, value=self._target_throttle)
-            )
-        elif action == InputAction.THROTTLE_FULL:
+        if action == InputAction.THROTTLE_FULL:
             self._target_throttle = 1.0
             self.event_bus.publish(
                 InputActionEvent(action=action.value, value=self._target_throttle)
@@ -529,6 +521,16 @@ class InputManager:  # pylint: disable=too-many-instance-attributes
                 yaw -= 1.0
             elif action == InputAction.YAW_RIGHT:
                 yaw += 1.0
+            elif action == InputAction.THROTTLE_INCREASE:
+                # Continuously increase throttle while key is held
+                self._target_throttle = min(
+                    1.0, self._target_throttle + self.config.throttle_increment
+                )
+            elif action == InputAction.THROTTLE_DECREASE:
+                # Continuously decrease throttle while key is held
+                self._target_throttle = max(
+                    0.0, self._target_throttle - self.config.throttle_increment
+                )
             elif action == InputAction.BRAKES:
                 brakes = 1.0
 

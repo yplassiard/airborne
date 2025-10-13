@@ -77,7 +77,7 @@ class TestInputConfig:
         assert len(config.keyboard_bindings) > 0
         assert config.axis_sensitivity == 1.0
         assert config.axis_deadzone == 0.1
-        assert config.throttle_increment == 0.05
+        assert config.throttle_increment == 0.01  # Changed to 1%
 
     def test_custom_config(self) -> None:
         """Test custom configuration."""
@@ -187,13 +187,16 @@ class TestInputManagerKeyboard:
     def test_discrete_action_throttle_increase(
         self, manager: InputManager, event_bus: EventBus
     ) -> None:
-        """Test throttle increase discrete action."""
+        """Test throttle increase continuous action."""
         initial_throttle = manager.state.throttle
 
         keydown = Mock()
         keydown.type = pygame.KEYDOWN
         keydown.key = pygame.K_HOME  # Throttle increase
         manager.process_events([keydown])
+
+        # Call update to apply continuous throttle change
+        manager.update(0.016)
 
         # Throttle should target higher value
         assert manager._target_throttle > initial_throttle
@@ -440,21 +443,18 @@ class TestInputManagerThrottle:
         assert manager._target_throttle == 0.0
 
     def test_throttle_increment_multiple_times(self, manager: InputManager) -> None:
-        """Test incrementing throttle multiple times."""
+        """Test incrementing throttle multiple times with update loop."""
+        keydown = Mock()
+        keydown.type = pygame.KEYDOWN
+        keydown.key = pygame.K_HOME  # Changed from K_EQUALS to K_HOME
+        manager.process_events([keydown])
+
+        # Call update 5 times to increment throttle continuously
         for _ in range(5):
-            keydown = Mock()
-            keydown.type = pygame.KEYDOWN
-            keydown.key = pygame.K_HOME  # Changed from K_EQUALS to K_HOME
-            manager.process_events([keydown])
+            manager.update(0.016)
 
-            # Release key between presses
-            keyup = Mock()
-            keyup.type = pygame.KEYUP
-            keyup.key = pygame.K_HOME  # Changed from K_EQUALS to K_HOME
-            manager.process_events([keyup])
-
-        # Should be 5 * 0.05 = 0.25
-        assert manager._target_throttle == pytest.approx(0.25)
+        # Should be 5 * 0.01 = 0.05 (changed from 0.25)
+        assert manager._target_throttle == pytest.approx(0.05)
 
     def test_throttle_clamps_at_maximum(self, manager: InputManager) -> None:
         """Test throttle clamps at 1.0."""
@@ -464,6 +464,10 @@ class TestInputManagerThrottle:
         keydown.type = pygame.KEYDOWN
         keydown.key = pygame.K_HOME  # Changed from K_EQUALS to K_HOME
         manager.process_events([keydown])
+
+        # Call update multiple times to exceed 1.0
+        for _ in range(5):
+            manager.update(0.016)
 
         assert manager._target_throttle == 1.0
 
