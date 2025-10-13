@@ -125,11 +125,12 @@ class AirBorne:
             self.physics_plugin = PhysicsPlugin()
             self.physics_plugin.initialize(self.plugin_context)
 
-            # Load audio plugin (commented out until audio assets are available)
-            # logger.info("Loading audio plugin...")
-            # from airborne.plugins.audio.audio_plugin import AudioPlugin
-            # self.audio_plugin = AudioPlugin()
-            # self.audio_plugin.initialize(self.plugin_context)
+            # Load audio plugin
+            logger.info("Loading audio plugin...")
+            from airborne.plugins.audio.audio_plugin import AudioPlugin
+
+            self.audio_plugin = AudioPlugin()
+            self.audio_plugin.initialize(self.plugin_context)
 
             # Build aircraft with systems
             builder = AircraftBuilder(self.plugin_loader, self.plugin_context)
