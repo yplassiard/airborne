@@ -1,408 +1,288 @@
 #!/usr/bin/env python3
 """Automatic flight demo using autopilot.
 
-This script demonstrates a fully automated flight sequence:
-1. Engine startup
-2. Automatic takeoff
-3. Climb to cruise altitude
-4. Level flight with heading hold
-5. Gentle descent
-6. Landing approach
+This script demonstrates a fully automated flight sequence by extending
+the main AirBorne application and injecting autopilot commands.
 
-No user input required - the autopilot handles everything.
+Phases:
+1. Engine startup and taxi prep (5s)
+2. Takeoff roll with autopilot (15s)
+3. Climb to 3000ft (30s)
+4. Cruise flight at 270° heading (20s)
+5. Descent to pattern altitude (25s)
+6. Final approach and landing (15s)
+
+Total demo duration: ~110 seconds
+
+Controls:
+- SPACE: Pause/Resume
+- ESC: Exit demo
 """
 
 import sys
-import time
 from pathlib import Path
-
-import pygame
 
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from airborne.core.config import ConfigLoader
-from airborne.core.event_bus import EventBus
-from airborne.core.input import InputManager
 from airborne.core.logging_system import get_logger
-from airborne.core.messaging import MessageQueue, MessageTopic
-from airborne.core.plugin_loader import PluginLoader
-from airborne.core.registry import ComponentRegistry
-from airborne.physics.vectors import Vector3
+from airborne.core.messaging import Message, MessageTopic
+from airborne.main import AirBorne
 from airborne.plugins.avionics.autopilot_plugin import AutopilotMode
 
 logger = get_logger(__name__)
 
 
-class AutomaticDemoFlight:
-    """Orchestrates an automatic demo flight using the autopilot."""
+class AutopilotDemo(AirBorne):
+    """Automatic demo extending main AirBorne app."""
 
     def __init__(self):
-        """Initialize the demo."""
+        """Initialize demo with phase tracking."""
         logger.info("=== AirBorne Automatic Flight Demo ===")
-        logger.info("Initializing systems...")
+        logger.info("Initializing automatic demo...")
 
-        # Initialize pygame
-        pygame.init()
-        self.screen = pygame.display.set_mode((800, 600))
-        pygame.display.set_caption("AirBorne - Automatic Demo Flight")
-        self.clock = pygame.time.Clock()
-        self.font = pygame.font.Font(None, 36)
-        self.small_font = pygame.font.Font(None, 24)
-
-        # Core systems
-        self.event_bus = EventBus()
-        self.message_queue = MessageQueue()
-        self.plugin_registry = ComponentRegistry()
-
-        # Load plugins
-        self.plugin_loader = PluginLoader([Path("src/airborne/plugins")])
-
-        # Load aircraft config first to get flight model params
-        from airborne.aircraft.builder import AircraftBuilder
-
-        aircraft_config_path = "config/aircraft/cessna172.yaml"
-        config_data = AircraftBuilder.load_config(aircraft_config_path)
-        flight_model_config = config_data.get("aircraft", {}).get("flight_model_config", {})
-
-        # Create config with flight model params
-        self.config = {
-            "physics": {"flight_model": {"type": "simple_6dof", **flight_model_config}},
-            "audio": {},
-            "tts": {},
-        }
-
-        # Initialize plugins
-        from airborne.core.plugin import PluginContext
-
-        context = PluginContext(
-            event_bus=self.event_bus,
-            message_queue=self.message_queue,
-            config=self.config,
-            plugin_registry=self.plugin_registry,
-        )
-
-        # Load physics plugin
-        logger.info("Loading physics plugin...")
-        self.physics_plugin = self.plugin_loader.load_plugin("physics_plugin", context)
-
-        # Load audio plugin
-        logger.info("Loading audio plugin...")
-        self.audio_plugin = self.plugin_loader.load_plugin("audio_plugin", context)
-
-        # Load autopilot plugin
-        logger.info("Loading autopilot plugin...")
-        self.autopilot_plugin = self.plugin_loader.load_plugin("autopilot_plugin", context)
-
-        # Load aircraft
-        logger.info("Loading Cessna 172...")
-        builder = AircraftBuilder(self.plugin_loader, context)
-        self.aircraft = builder.build(Path(aircraft_config_path))
+        # Initialize base app
+        super().__init__()
 
         # Demo state
-        self.phase = 0
-        self.phase_time = 0.0
-        self.running = True
-        self.paused = False
+        self.demo_phase = 0
+        self.demo_time = 0.0
+        self.demo_active = True
 
-        logger.info("Demo initialized successfully!")
-
-    def run(self) -> None:
-        """Run the automatic demo flight."""
-        logger.info("Starting automatic flight sequence...")
-        logger.info("Press SPACE to pause/resume, ESC to exit")
-
-        # Demo sequence phases with durations (seconds)
-        phases = [
-            ("Startup & Taxi", 5.0, self._phase_startup),
-            ("Takeoff Roll", 15.0, self._phase_takeoff),
-            ("Climb to 3000ft", 30.0, self._phase_climb),
-            ("Level Flight", 20.0, self._phase_cruise),
-            ("Descent", 25.0, self._phase_descent),
-            ("Approach", 15.0, self._phase_approach),
+        # Phase definitions: (name, duration, init_function)
+        self.phases = [
+            ("Engine Startup & Taxi Prep", 5.0, self._init_phase_startup),
+            ("Takeoff Roll", 15.0, self._init_phase_takeoff),
+            ("Climb to 3000ft", 30.0, self._init_phase_climb),
+            ("Cruise Flight", 20.0, self._init_phase_cruise),
+            ("Descent", 25.0, self._init_phase_descent),
+            ("Final Approach", 15.0, self._init_phase_approach),
         ]
 
-        dt = 1.0 / 60.0  # Fixed 60 FPS
-        total_time = 0.0
+        logger.info(f"Demo initialized with {len(self.phases)} phases")
+        logger.info("Press SPACE to pause, ESC to exit")
 
-        while self.running:
-            # Handle events
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    self.running = False
-                elif event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_ESCAPE:
-                        self.running = False
-                    elif event.key == pygame.K_SPACE:
-                        self.paused = not self.paused
-                        logger.info(f"Demo {'PAUSED' if self.paused else 'RESUMED'}")
+    def run(self) -> None:
+        """Run the demo with automatic phase progression."""
+        logger.info("Starting automatic flight sequence...")
 
-            if not self.paused:
-                # Update current phase
-                if self.phase < len(phases):
-                    phase_name, phase_duration, phase_func = phases[self.phase]
+        # Execute first phase
+        if self.phases:
+            phase_name, _, init_func = self.phases[0]
+            logger.info(f"=== PHASE 1: {phase_name} ===")
+            init_func()
 
-                    # Execute phase logic
-                    phase_func(dt)
+        # Run main loop
+        super().run()
 
-                    # Check if phase complete
-                    self.phase_time += dt
-                    if self.phase_time >= phase_duration:
-                        logger.info(f"Phase {self.phase + 1}/{len(phases)} complete: {phase_name}")
-                        self.phase += 1
-                        self.phase_time = 0.0
-                else:
-                    # Demo complete
-                    logger.info("=== Demo flight complete! ===")
-                    self.running = False
+    def _update(self, dt: float) -> None:
+        """Override update to inject demo logic."""
+        # Run base update
+        super()._update(dt)
 
-                # Update all systems
-                self.aircraft.update(dt)
-                self.physics_plugin.update(dt)
-                self.audio_plugin.update(dt)
-                self.autopilot_plugin.update(dt)
-                self.message_queue.process(max_messages=100)
+        # Demo phase management
+        if self.demo_active and not self.paused:
+            self.demo_time += dt
 
-                total_time += dt
+            # Check for phase transition
+            if self.demo_phase < len(self.phases):
+                _, duration, _ = self.phases[self.demo_phase]
 
-            # Render
-            self._render(phases)
+                if self.demo_time >= duration:
+                    # Move to next phase
+                    self.demo_phase += 1
+                    self.demo_time = 0.0
 
-            # Maintain 60 FPS
-            self.clock.tick(60)
+                    if self.demo_phase < len(self.phases):
+                        phase_name, _, init_func = self.phases[self.demo_phase]
+                        logger.info(f"=== PHASE {self.demo_phase + 1}: {phase_name} ===")
+                        init_func()
+                    else:
+                        logger.info("=== DEMO COMPLETE ===")
+                        logger.info("All phases executed successfully!")
+                        self.demo_active = False
+                        # Let it run for a bit more to see results
+                        # Don't auto-quit, let user exit with ESC
 
-        # Shutdown
-        logger.info("Shutting down demo...")
-        self.aircraft.shutdown()
-        self.physics_plugin.shutdown()
-        self.audio_plugin.shutdown()
-        self.autopilot_plugin.shutdown()
-        pygame.quit()
-        logger.info("Demo shutdown complete")
+    def _render(self) -> None:
+        """Override render to show demo info."""
+        # Call base render
+        super()._render()
 
-    def _phase_startup(self, dt: float) -> None:
-        """Phase 0: Engine startup and taxi prep."""
-        if self.phase_time == 0:
-            logger.info("PHASE: Engine Startup")
-            # Turn on battery and start engine
-            self.message_queue.publish(
-                Message(
-                    sender="demo",
-                    recipients=["electrical"],
-                    topic=MessageTopic.SYSTEM_COMMAND,
-                    data={"command": "master_switch", "value": True},
-                )
-            )
-            self.message_queue.publish(
-                Message(
-                    sender="demo",
-                    recipients=["engine"],
-                    topic=MessageTopic.SYSTEM_COMMAND,
-                    data={"command": "start_engine"},
-                )
-            )
-            # Set 25% throttle for taxi
-            self.message_queue.publish(
-                Message(
-                    sender="demo",
-                    recipients=["engine"],
-                    topic=MessageTopic.CONTROL_INPUT,
-                    data={"throttle": 0.25},
-                )
+        # Add demo overlay
+        if self.demo_active and self.demo_phase < len(self.phases):
+            phase_name, duration, _ = self.phases[self.demo_phase]
+            progress = min(1.0, self.demo_time / duration)
+
+            # Phase indicator
+            phase_text = f"Phase {self.demo_phase + 1}/{len(self.phases)}: {phase_name}"
+            text_surface = self.font.render(phase_text, True, (255, 255, 0))
+            self.screen.blit(text_surface, (10, 10))
+
+            # Progress bar
+            bar_width = 300
+            bar_height = 10
+            bar_x = 10
+            bar_y = 30
+
+            # Background
+            import pygame
+
+            pygame.draw.rect(self.screen, (50, 50, 50), (bar_x, bar_y, bar_width, bar_height))
+            # Progress
+            pygame.draw.rect(
+                self.screen,
+                (0, 200, 0),
+                (bar_x, bar_y, int(bar_width * progress), bar_height),
             )
 
-    def _phase_takeoff(self, dt: float) -> None:
-        """Phase 1: Takeoff roll using autopilot."""
-        if self.phase_time == 0:
-            logger.info("PHASE: Takeoff Roll - Full throttle, autopilot engaged")
-            # Full throttle
-            self.message_queue.publish(
-                Message(
-                    sender="demo",
-                    recipients=["engine"],
-                    topic=MessageTopic.CONTROL_INPUT,
-                    data={"throttle": 1.0},
-                )
-            )
-            # Engage autopilot takeoff mode
-            self.message_queue.publish(
-                Message(
-                    sender="demo",
-                    recipients=["autopilot"],
-                    topic=MessageTopic.AUTOPILOT_COMMAND,
-                    data={"command": "set_mode", "mode": AutopilotMode.GROUND_TAKEOFF},
-                )
-            )
+            # Time remaining
+            time_left = duration - self.demo_time
+            time_text = f"{time_left:.1f}s remaining"
+            time_surface = self.font.render(time_text, True, (200, 200, 200))
+            self.screen.blit(time_surface, (bar_x + bar_width + 10, bar_y))
 
-    def _phase_climb(self, dt: float) -> None:
+    # Phase initialization functions
+
+    def _init_phase_startup(self) -> None:
+        """Phase 0: Engine startup and taxi preparation."""
+        logger.info("Starting engine and preparing for taxi...")
+
+        # Set idle throttle (engine auto-starts at throttle)
+        self.message_queue.publish(
+            Message(
+                sender="demo",
+                recipients=["*"],
+                topic=MessageTopic.CONTROL_INPUT,
+                data={"throttle": 0.2},
+            )
+        )
+
+    def _init_phase_takeoff(self) -> None:
+        """Phase 1: Takeoff roll with autopilot."""
+        logger.info("Commencing takeoff roll - FULL POWER!")
+
+        # Full throttle
+        self.message_queue.publish(
+            Message(
+                sender="demo",
+                recipients=["*"],
+                topic=MessageTopic.CONTROL_INPUT,
+                data={"throttle": 1.0},
+            )
+        )
+
+        # Engage autopilot takeoff mode
+        self.message_queue.publish(
+            Message(
+                sender="demo",
+                recipients=["autopilot"],
+                topic="autopilot.command",
+                data={"command": "set_mode", "mode": AutopilotMode.GROUND_TAKEOFF.value},
+            )
+        )
+
+    def _init_phase_climb(self) -> None:
         """Phase 2: Climb to cruise altitude."""
-        if self.phase_time == 0:
-            logger.info("PHASE: Climbing to 3000ft MSL with autopilot")
-            # Engage altitude hold at 3000ft
-            self.message_queue.publish(
-                Message(
-                    sender="demo",
-                    recipients=["autopilot"],
-                    topic=MessageTopic.AUTOPILOT_COMMAND,
-                    data={
-                        "command": "set_altitude_target",
-                        "altitude_ft": 3000.0,
-                    },
-                )
-            )
-            self.message_queue.publish(
-                Message(
-                    sender="demo",
-                    recipients=["autopilot"],
-                    topic=MessageTopic.AUTOPILOT_COMMAND,
-                    data={"command": "set_mode", "mode": AutopilotMode.ALTITUDE_HOLD},
-                )
-            )
+        logger.info("Climbing to cruise altitude (3000ft MSL)")
 
-    def _phase_cruise(self, dt: float) -> None:
-        """Phase 3: Level flight at cruise altitude."""
-        if self.phase_time == 0:
-            logger.info("PHASE: Cruise flight - maintaining 3000ft, heading 270°")
-            # Set heading hold to 270° (west)
-            self.message_queue.publish(
-                Message(
-                    sender="demo",
-                    recipients=["autopilot"],
-                    topic=MessageTopic.AUTOPILOT_COMMAND,
-                    data={
-                        "command": "set_heading_target",
-                        "heading_deg": 270.0,
-                    },
-                )
+        # Set altitude target
+        self.message_queue.publish(
+            Message(
+                sender="demo",
+                recipients=["autopilot"],
+                topic="autopilot.command",
+                data={"command": "set_altitude_target", "altitude_ft": 3000.0},
             )
-            self.message_queue.publish(
-                Message(
-                    sender="demo",
-                    recipients=["autopilot"],
-                    topic=MessageTopic.AUTOPILOT_COMMAND,
-                    data={"command": "set_mode", "mode": AutopilotMode.HEADING_HOLD},
-                )
-            )
+        )
 
-    def _phase_descent(self, dt: float) -> None:
+        # Engage altitude hold mode
+        self.message_queue.publish(
+            Message(
+                sender="demo",
+                recipients=["autopilot"],
+                topic="autopilot.command",
+                data={"command": "set_mode", "mode": AutopilotMode.ALTITUDE_HOLD.value},
+            )
+        )
+
+    def _init_phase_cruise(self) -> None:
+        """Phase 3: Cruise flight at constant heading."""
+        logger.info("Cruise flight - maintaining 3000ft, heading 270° (West)")
+
+        # Set heading to 270° (west)
+        self.message_queue.publish(
+            Message(
+                sender="demo",
+                recipients=["autopilot"],
+                topic="autopilot.command",
+                data={"command": "set_heading_target", "heading_deg": 270.0},
+            )
+        )
+
+        # Engage heading hold mode
+        self.message_queue.publish(
+            Message(
+                sender="demo",
+                recipients=["autopilot"],
+                topic="autopilot.command",
+                data={"command": "set_mode", "mode": AutopilotMode.HEADING_HOLD.value},
+            )
+        )
+
+    def _init_phase_descent(self) -> None:
         """Phase 4: Descend to pattern altitude."""
-        if self.phase_time == 0:
-            logger.info("PHASE: Descending to 1500ft for approach")
-            # Reduce throttle
-            self.message_queue.publish(
-                Message(
-                    sender="demo",
-                    recipients=["engine"],
-                    topic=MessageTopic.CONTROL_INPUT,
-                    data={"throttle": 0.5},
-                )
+        logger.info("Descending to pattern altitude (1500ft)")
+
+        # Reduce power
+        self.message_queue.publish(
+            Message(
+                sender="demo",
+                recipients=["*"],
+                topic=MessageTopic.CONTROL_INPUT,
+                data={"throttle": 0.5},
             )
-            # Set vertical speed to -500 fpm
-            self.message_queue.publish(
-                Message(
-                    sender="demo",
-                    recipients=["autopilot"],
-                    topic=MessageTopic.AUTOPILOT_COMMAND,
-                    data={
-                        "command": "set_vertical_speed_target",
-                        "vs_fpm": -500.0,
-                    },
-                )
+        )
+
+        # Set vertical speed to -500 fpm
+        self.message_queue.publish(
+            Message(
+                sender="demo",
+                recipients=["autopilot"],
+                topic="autopilot.command",
+                data={"command": "set_vertical_speed_target", "vs_fpm": -500.0},
             )
-            self.message_queue.publish(
-                Message(
-                    sender="demo",
-                    recipients=["autopilot"],
-                    topic=MessageTopic.AUTOPILOT_COMMAND,
-                    data={"command": "set_mode", "mode": AutopilotMode.VERTICAL_SPEED},
-                )
+        )
+
+        # Engage vertical speed mode
+        self.message_queue.publish(
+            Message(
+                sender="demo",
+                recipients=["autopilot"],
+                topic="autopilot.command",
+                data={"command": "set_mode", "mode": AutopilotMode.VERTICAL_SPEED.value},
             )
+        )
 
-    def _phase_approach(self, dt: float) -> None:
-        """Phase 5: Final approach."""
-        if self.phase_time == 0:
-            logger.info("PHASE: Final approach - autopilot landing mode")
-            # Engage auto-land
-            self.message_queue.publish(
-                Message(
-                    sender="demo",
-                    recipients=["autopilot"],
-                    topic=MessageTopic.AUTOPILOT_COMMAND,
-                    data={"command": "set_mode", "mode": AutopilotMode.AUTO_LAND},
-                )
+    def _init_phase_approach(self) -> None:
+        """Phase 5: Final approach and landing."""
+        logger.info("Final approach - autopilot landing mode engaged")
+
+        # Engage auto-land mode
+        self.message_queue.publish(
+            Message(
+                sender="demo",
+                recipients=["autopilot"],
+                topic="autopilot.command",
+                data={"command": "set_mode", "mode": AutopilotMode.AUTO_LAND.value},
             )
-
-    def _render(self, phases) -> None:
-        """Render the demo display."""
-        # Black background
-        self.screen.fill((0, 0, 0))
-
-        # Get current state from physics
-        try:
-            flight_model = self.plugin_registry.get("flight_model")
-            state = flight_model.get_state()
-
-            # Display title
-            title = self.font.render("AirBorne - Automatic Demo Flight", True, (0, 255, 0))
-            self.screen.blit(title, (50, 30))
-
-            # Display current phase
-            if self.phase < len(phases):
-                phase_name, duration, _ = phases[self.phase]
-                phase_text = self.small_font.render(
-                    f"Phase {self.phase + 1}/{len(phases)}: {phase_name}",
-                    True,
-                    (255, 255, 0),
-                )
-                self.screen.blit(phase_text, (50, 80))
-
-                # Progress bar
-                progress = min(1.0, self.phase_time / duration)
-                pygame.draw.rect(self.screen, (50, 50, 50), (50, 110, 700, 20))  # Background
-                pygame.draw.rect(
-                    self.screen, (0, 200, 0), (50, 110, int(700 * progress), 20)
-                )  # Progress
-
-            # Display flight data
-            y = 160
-            data = [
-                f"Altitude: {state.altitude_msl_ft:.0f} ft MSL",
-                f"Airspeed: {state.airspeed_kts:.1f} kts",
-                f"Heading: {state.heading_deg:.0f}°",
-                f"Vertical Speed: {state.vertical_speed_fpm:.0f} fpm",
-                f"Throttle: {state.throttle * 100:.0f}%",
-                "",
-                f"Position: ({state.position.x:.1f}, {state.position.y:.1f}, {state.position.z:.1f})",
-                f"Velocity: {state.velocity.magnitude():.1f} m/s",
-            ]
-
-            for line in data:
-                text = self.small_font.render(line, True, (200, 200, 200))
-                self.screen.blit(text, (50, y))
-                y += 30
-
-            # Pause indicator
-            if self.paused:
-                pause_text = self.font.render("PAUSED", True, (255, 0, 0))
-                self.screen.blit(pause_text, (320, 500))
-
-            # Instructions
-            help_text = self.small_font.render(
-                "SPACE: Pause/Resume | ESC: Exit", True, (150, 150, 150)
-            )
-            self.screen.blit(help_text, (50, 550))
-
-        except Exception as e:
-            error_text = self.small_font.render(f"Error: {e}", True, (255, 0, 0))
-            self.screen.blit(error_text, (50, 160))
-
-        pygame.display.flip()
+        )
 
 
-def main():
-    """Run the automatic demo flight."""
+def main() -> int:
+    """Run the automatic demo."""
     try:
-        demo = AutomaticDemoFlight()
+        demo = AutopilotDemo()
         demo.run()
         return 0
     except KeyboardInterrupt:
