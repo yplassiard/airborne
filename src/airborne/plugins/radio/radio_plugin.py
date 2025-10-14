@@ -24,9 +24,12 @@ from airborne.core.messaging import Message, MessagePriority
 from airborne.core.plugin import IPlugin, PluginContext, PluginMetadata, PluginType
 from airborne.physics.vectors import Vector3
 from airborne.plugins.radio.atc_manager import ATCController, ATCManager, ATCRequest, ATCType
+from airborne.plugins.radio.atc_menu import ATCMenu
+from airborne.plugins.radio.atc_queue import ATCMessageQueue
 from airborne.plugins.radio.atis import ATISGenerator, ATISInfo
 from airborne.plugins.radio.frequency_manager import FrequencyManager, RadioType
 from airborne.plugins.radio.phraseology import PhraseMaker
+from airborne.plugins.radio.readback import ATCReadbackSystem
 
 logger = get_logger(__name__)
 
@@ -62,6 +65,11 @@ class RadioPlugin(IPlugin):
         self.atis_generator = ATISGenerator()
         self.phrase_maker = PhraseMaker()
 
+        # Interactive ATC systems (initialized later with dependencies)
+        self.atc_queue: ATCMessageQueue | None = None
+        self.atc_menu: ATCMenu | None = None
+        self.readback_system: ATCReadbackSystem | None = None
+
         # Current state
         self._current_position: Vector3 | None = None
         self._current_altitude: int = 0
@@ -70,6 +78,8 @@ class RadioPlugin(IPlugin):
         self._current_atis: ATISInfo | None = None
         self._push_to_talk_pressed: bool = False
         self._selected_radio: RadioType = "COM1"
+        self._engine_running: bool = False
+        self._on_ground: bool = True
 
         # TTS voice for ATC (if available)
         self._atc_voice_rate: int = 150  # Slightly faster than normal
@@ -106,12 +116,42 @@ class RadioPlugin(IPlugin):
         radio_config = context.config.get("radio", {})
         self._callsign = radio_config.get("callsign", "Cessna 123AB")
 
+        # Get TTS provider and audio manager from audio plugin
+        tts_provider = None
+        atc_audio_manager = None
+        if context.plugin_registry:
+            audio_plugin = context.plugin_registry.get("audio_plugin")
+            if audio_plugin:
+                tts_provider = getattr(audio_plugin, "tts_provider", None)
+                atc_audio_manager = getattr(audio_plugin, "atc_audio_manager", None)
+
+        # Initialize interactive ATC systems
+        if atc_audio_manager and tts_provider:
+            self.atc_queue = ATCMessageQueue(
+                atc_audio_manager,
+                min_delay=2.0,
+                max_delay=10.0
+            )
+            self.atc_menu = ATCMenu(tts_provider, self.atc_queue)
+            self.readback_system = ATCReadbackSystem(
+                self.atc_queue,
+                tts_provider,
+                callsign=self._callsign
+            )
+            logger.info("Interactive ATC systems initialized")
+        else:
+            logger.warning("ATC audio manager or TTS not available - interactive ATC disabled")
+
         # Subscribe to messages
         context.message_queue.subscribe("position_updated", self)
         context.message_queue.subscribe("input.radio_tune", self)
         context.message_queue.subscribe("input.push_to_talk", self)
         context.message_queue.subscribe("input.atis_request", self)
         context.message_queue.subscribe("airport.nearby", self)
+        context.message_queue.subscribe("input.atc_menu", self)
+        context.message_queue.subscribe("input.atc_acknowledge", self)
+        context.message_queue.subscribe("input.atc_repeat", self)
+        context.message_queue.subscribe("aircraft.state", self)
 
         # Register components
         if context.plugin_registry:
@@ -119,6 +159,12 @@ class RadioPlugin(IPlugin):
             context.plugin_registry.register("atc_manager", self.atc_manager)
             context.plugin_registry.register("atis_generator", self.atis_generator)
             context.plugin_registry.register("phrase_maker", self.phrase_maker)
+            if self.atc_queue:
+                context.plugin_registry.register("atc_queue", self.atc_queue)
+            if self.atc_menu:
+                context.plugin_registry.register("atc_menu", self.atc_menu)
+            if self.readback_system:
+                context.plugin_registry.register("readback_system", self.readback_system)
 
         logger.info("Radio plugin initialized with callsign: %s", self._callsign)
 
@@ -128,17 +174,29 @@ class RadioPlugin(IPlugin):
         Args:
             dt: Delta time since last update in seconds.
         """
+        # Process ATC message queue
+        if self.atc_queue:
+            self.atc_queue.process(dt)
+
         # Check if we need to update ATIS (e.g., every 5 minutes in real implementation)
         # For now, we'll keep the current ATIS if it exists
 
     def shutdown(self) -> None:
         """Shutdown the radio plugin."""
+        # Shutdown interactive ATC systems
+        if self.atc_queue:
+            self.atc_queue.shutdown()
+
         if self.context:
             self.context.message_queue.unsubscribe("position_updated", self)
             self.context.message_queue.unsubscribe("input.radio_tune", self)
             self.context.message_queue.unsubscribe("input.push_to_talk", self)
             self.context.message_queue.unsubscribe("input.atis_request", self)
             self.context.message_queue.unsubscribe("airport.nearby", self)
+            self.context.message_queue.unsubscribe("input.atc_menu", self)
+            self.context.message_queue.unsubscribe("input.atc_acknowledge", self)
+            self.context.message_queue.unsubscribe("input.atc_repeat", self)
+            self.context.message_queue.unsubscribe("aircraft.state", self)
 
         logger.info("Radio plugin shutdown")
 
@@ -161,6 +219,14 @@ class RadioPlugin(IPlugin):
             self._handle_atis_request(message)
         elif message.topic == "airport.nearby":
             self._handle_nearby_airport(message)
+        elif message.topic == "input.atc_menu":
+            self._handle_atc_menu(message)
+        elif message.topic == "input.atc_acknowledge":
+            self._handle_atc_acknowledge(message)
+        elif message.topic == "input.atc_repeat":
+            self._handle_atc_repeat(message)
+        elif message.topic == "aircraft.state":
+            self._handle_aircraft_state(message)
 
     def _handle_position_update(self, message: Message) -> None:
         """Handle position updates from physics plugin.
@@ -421,6 +487,71 @@ class RadioPlugin(IPlugin):
                     audio_plugin.tts_provider.speak(text, interrupt=True)
         except Exception as e:
             logger.warning("Failed to speak ATIS: %s", e)
+
+    def _handle_atc_menu(self, message: Message) -> None:
+        """Handle ATC menu request (F1 key).
+
+        Args:
+            message: ATC menu message with action (open, select).
+        """
+        if not self.atc_menu:
+            logger.warning("ATC menu not available")
+            return
+
+        data = message.data
+        action = data.get("action", "toggle")
+
+        if action == "toggle":
+            if self.atc_menu.is_open():
+                self.atc_menu.close()
+            else:
+                # Get current aircraft state
+                aircraft_state = {
+                    "on_ground": self._on_ground,
+                    "engine_running": self._engine_running,
+                    "altitude_agl": float(self._current_altitude),
+                }
+                self.atc_menu.open(aircraft_state)
+        elif action == "select":
+            option_key = data.get("option", "")
+            if option_key:
+                self.atc_menu.select_option(option_key)
+        elif action == "close":
+            self.atc_menu.close()
+
+    def _handle_atc_acknowledge(self, _message: Message) -> None:
+        """Handle ATC acknowledge request (Shift+F1).
+
+        Args:
+            _message: Acknowledge message (unused).
+        """
+        if not self.readback_system:
+            logger.warning("Readback system not available")
+            return
+
+        self.readback_system.acknowledge()
+
+    def _handle_atc_repeat(self, _message: Message) -> None:
+        """Handle ATC repeat request (Ctrl+F1).
+
+        Args:
+            _message: Repeat message (unused).
+        """
+        if not self.readback_system:
+            logger.warning("Readback system not available")
+            return
+
+        self.readback_system.request_repeat()
+
+    def _handle_aircraft_state(self, message: Message) -> None:
+        """Handle aircraft state updates.
+
+        Args:
+            message: Aircraft state message.
+        """
+        data = message.data
+        self._engine_running = data.get("engine_running", False)
+        self._on_ground = data.get("on_ground", True)
 
     def on_config_changed(self, config: dict[str, Any]) -> None:
         """Handle configuration changes.
