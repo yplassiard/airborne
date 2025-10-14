@@ -95,13 +95,15 @@ class AirBorne:
         logger.info("AirBorne initialized successfully")
 
         # Send startup announcement via TTS
+        from airborne.audio.tts.speech_messages import MSG_STARTUP
+
         self.message_queue.publish(
             Message(
                 sender="main",
                 recipients=["*"],
                 topic=MessageTopic.TTS_SPEAK,
                 data={
-                    "text": "AirBorne flight simulator ready. Cessna 172 loaded.",
+                    "text": MSG_STARTUP,
                     "priority": "high",
                 },
                 priority=MessagePriority.HIGH,
@@ -195,6 +197,49 @@ class AirBorne:
                     topic=MessageTopic.TTS_SPEAK,
                     data={"text": f"Gear {gear_status}", "priority": "normal"},
                     priority=MessagePriority.NORMAL,
+                )
+            )
+        # ATC Menu controls
+        elif event.action == "atc_menu":
+            self.message_queue.publish(
+                Message(
+                    sender="main",
+                    recipients=["radio_plugin"],
+                    topic="input.atc_menu",
+                    data={"action": "toggle"},
+                    priority=MessagePriority.HIGH,
+                )
+            )
+        elif event.action == "atc_acknowledge":
+            self.message_queue.publish(
+                Message(
+                    sender="main",
+                    recipients=["radio_plugin"],
+                    topic="input.atc_acknowledge",
+                    data={},
+                    priority=MessagePriority.HIGH,
+                )
+            )
+        elif event.action == "atc_repeat":
+            self.message_queue.publish(
+                Message(
+                    sender="main",
+                    recipients=["radio_plugin"],
+                    topic="input.atc_repeat",
+                    data={},
+                    priority=MessagePriority.HIGH,
+                )
+            )
+        # ATC menu selection (number keys 1-9)
+        elif event.action.startswith("atc_select_"):
+            option = event.action.split("_")[-1]  # Extract number
+            self.message_queue.publish(
+                Message(
+                    sender="main",
+                    recipients=["radio_plugin"],
+                    topic="input.atc_menu",
+                    data={"action": "select", "option": option},
+                    priority=MessagePriority.HIGH,
                 )
             )
 

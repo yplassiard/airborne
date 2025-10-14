@@ -121,6 +121,20 @@ class InputAction(Enum):
     READ_VSPEED = "read_vspeed"
     READ_ATTITUDE = "read_attitude"  # Bank and pitch angles
 
+    # ATC/Radio controls
+    ATC_MENU = "atc_menu"  # F1 - Open/close ATC menu
+    ATC_ACKNOWLEDGE = "atc_acknowledge"  # Shift+F1 - Acknowledge/readback
+    ATC_REPEAT = "atc_repeat"  # Ctrl+F1 - Request repeat ("say again")
+    ATC_SELECT_1 = "atc_select_1"  # Number keys for menu selection
+    ATC_SELECT_2 = "atc_select_2"
+    ATC_SELECT_3 = "atc_select_3"
+    ATC_SELECT_4 = "atc_select_4"
+    ATC_SELECT_5 = "atc_select_5"
+    ATC_SELECT_6 = "atc_select_6"
+    ATC_SELECT_7 = "atc_select_7"
+    ATC_SELECT_8 = "atc_select_8"
+    ATC_SELECT_9 = "atc_select_9"
+
     # System controls
     PAUSE = "pause"
     QUIT = "quit"
@@ -193,6 +207,16 @@ class InputConfig:
             pygame.K_z: InputAction.MENU_DOWN,
             pygame.K_RETURN: InputAction.MENU_SELECT,
             pygame.K_BACKSPACE: InputAction.MENU_BACK,
+            # ATC Menu Selection (number keys)
+            pygame.K_1: InputAction.ATC_SELECT_1,
+            pygame.K_2: InputAction.ATC_SELECT_2,
+            pygame.K_3: InputAction.ATC_SELECT_3,
+            pygame.K_4: InputAction.ATC_SELECT_4,
+            pygame.K_5: InputAction.ATC_SELECT_5,
+            pygame.K_6: InputAction.ATC_SELECT_6,
+            pygame.K_7: InputAction.ATC_SELECT_7,
+            pygame.K_8: InputAction.ATC_SELECT_8,
+            pygame.K_9: InputAction.ATC_SELECT_9,
             # System
             pygame.K_SPACE: InputAction.PAUSE,
             pygame.K_ESCAPE: InputAction.QUIT,
@@ -345,6 +369,20 @@ class InputManager:  # pylint: disable=too-many-instance-attributes
         self._keys_pressed.add(key)
         if not is_repeat:
             self._keys_just_pressed.add(key)
+
+        # Special handling for F1 with modifiers
+        if key == pygame.K_F1:
+            mods = pygame.key.get_mods()
+            if mods & pygame.KMOD_SHIFT:
+                action = InputAction.ATC_ACKNOWLEDGE
+            elif mods & pygame.KMOD_CTRL:
+                action = InputAction.ATC_REPEAT
+            else:
+                action = InputAction.ATC_MENU
+
+            if not is_repeat:
+                self._handle_action_pressed(action)
+            return
 
         # Check for bound action
         action = self.config.keyboard_bindings.get(key)
