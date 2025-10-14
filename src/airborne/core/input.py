@@ -399,23 +399,23 @@ class InputManager:  # pylint: disable=too-many-instance-attributes
             return
 
         # Check for bound action
-        action = self.config.keyboard_bindings.get(key)
-        if action:
+        bound_action = self.config.keyboard_bindings.get(key)
+        if bound_action:
             # For key repeat events, only trigger repeatable actions
             if is_repeat:
-                if action not in self._repeatable_actions:
+                if bound_action not in self._repeatable_actions:
                     return  # Skip non-repeatable actions on repeat
             else:
                 # First press: clear previous trigger state for this action
-                self._actions_triggered.discard(action)
+                self._actions_triggered.discard(bound_action)
 
             # Check if this non-repeatable action was already triggered
-            if action not in self._repeatable_actions:
-                if action in self._actions_triggered:
+            if bound_action not in self._repeatable_actions:
+                if bound_action in self._actions_triggered:
                     return  # Already triggered, don't repeat
-                self._actions_triggered.add(action)
+                self._actions_triggered.add(bound_action)
 
-            self._handle_action_pressed(action)
+            self._handle_action_pressed(bound_action)
 
     def _handle_key_up(self, key: int) -> None:
         """Handle key release event.

@@ -139,9 +139,7 @@ class RadioEffectFilter:
             if self._config.get("static_noise", {}).get("enabled", False):
                 try:
                     # Use oscillator DSP to generate white noise
-                    oscillator = self._system.create_dsp_by_type(
-                        pyfmodex.enums.DSP_TYPE.OSCILLATOR
-                    )
+                    oscillator = self._system.create_dsp_by_type(pyfmodex.enums.DSP_TYPE.OSCILLATOR)
                     # Set to white noise mode (type = 5)
                     oscillator.set_parameter_int(0, 5)  # Type: White noise
                     # Set volume/mix level
@@ -188,7 +186,7 @@ class RadioEffectFilter:
                 channel.add_dsp(0, dsp)  # Add at head of DSP chain
                 dsp.active = True
 
-            logger.debug(f"Applied radio effect to channel ({{len(self._dsp_chain)}} DSPs)")
+            logger.debug("Applied radio effect to channel ({len(self._dsp_chain)} DSPs)")
 
         except Exception as e:
             logger.error(f"Error applying radio effect to channel: {e}")

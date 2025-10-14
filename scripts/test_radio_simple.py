@@ -4,9 +4,9 @@
 This script tests the radio effect without importing the full airborne package.
 """
 
+import random
 import sys
 import time
-import random
 from pathlib import Path
 
 try:
@@ -128,7 +128,7 @@ def test_radio_effect():
             noise_level = radio_config.get("static_noise", {}).get("level", 0.08)
             oscillator.set_parameter_float(1, noise_level)
             dsp_chain.append(("White noise", oscillator))
-            print(f"  ✓ White noise at {noise_level*100:.0f}% mix")
+            print(f"  ✓ White noise at {noise_level * 100:.0f}% mix")
         except Exception as e:
             print(f"  ✗ Could not add white noise: {e}")
 
@@ -139,8 +139,10 @@ def test_radio_effect():
     if ptt_config.get("enabled", True):
         start_beep = ptt_config.get("start_beep", {})
         end_beep = ptt_config.get("end_beep", {})
-        print(f"PTT beeps enabled:")
-        print(f"  Start: {start_beep.get('frequency_hz', 1000)}Hz, {start_beep.get('duration_ms', 50)}ms")
+        print("PTT beeps enabled:")
+        print(
+            f"  Start: {start_beep.get('frequency_hz', 1000)}Hz, {start_beep.get('duration_ms', 50)}ms"
+        )
         print(f"  End: {end_beep.get('frequency_hz', 800)}Hz, {end_beep.get('duration_ms', 40)}ms")
 
     # Check crackles configuration
@@ -149,8 +151,8 @@ def test_radio_effect():
         freq = crackles_config.get("frequency", 0.3)
         duration = crackles_config.get("duration_ms", 20)
         vol = crackles_config.get("volume", 0.15)
-        print(f"Random crackles enabled:")
-        print(f"  Frequency: {freq}/sec, Duration: {duration}ms, Volume: {vol*100:.0f}%")
+        print("Random crackles enabled:")
+        print(f"  Frequency: {freq}/sec, Duration: {duration}ms, Volume: {vol * 100:.0f}%")
 
     print()
 

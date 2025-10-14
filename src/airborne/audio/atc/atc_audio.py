@@ -12,11 +12,9 @@ Typical usage example:
     atc_audio.play_atc_message("ATC_TOWER_CLEARED_TAKEOFF")
 """
 
+import time
 from pathlib import Path
 from typing import Any
-import time
-import struct
-import math
 
 import yaml
 
@@ -164,8 +162,7 @@ class ATCAudioManager:
 
             voice = config.get("voice", "unknown")
             logger.info(
-                f"Loaded {len(pilot_messages)} pilot messages from {config_file} "
-                f"(voice: {voice})"
+                f"Loaded {len(pilot_messages)} pilot messages from {config_file} (voice: {voice})"
             )
 
         except Exception as e:
@@ -216,9 +213,7 @@ class ATCAudioManager:
         try:
             # Get FMOD system from audio engine
             if hasattr(self._audio_engine, "_system"):
-                self._radio_filter = RadioEffectFilter(
-                    self._audio_engine._system, radio_config
-                )
+                self._radio_filter = RadioEffectFilter(self._audio_engine._system, radio_config)
                 logger.info("Radio effect filter created successfully")
             else:
                 logger.error("Audio engine does not have FMOD system, radio effect disabled")
@@ -284,9 +279,7 @@ class ATCAudioManager:
 
             # Generate beep using FMOD oscillator
             system = self._audio_engine._system
-            oscillator = system.create_dsp_by_type(
-                getattr(__import__("pyfmodex").enums.DSP_TYPE, "OSCILLATOR")
-            )
+            oscillator = system.create_dsp_by_type(__import__("pyfmodex").enums.DSP_TYPE.OSCILLATOR)
 
             # Set oscillator to sine wave
             oscillator.set_parameter_int(0, 0)  # Type: Sine wave
@@ -308,9 +301,7 @@ class ATCAudioManager:
         except Exception as e:
             logger.warning(f"Error playing PTT beep: {e}")
 
-    def play_atc_message(
-        self, message_key: str | list[str], volume: float = 1.0
-    ) -> int | None:
+    def play_atc_message(self, message_key: str | list[str], volume: float = 1.0) -> int | None:
         """Play an ATC message with radio effect and static layer.
 
         Args:
@@ -425,7 +416,7 @@ class ATCAudioManager:
             static_volume = self._static_layer_config.get("volume", 0.15)
 
             # Play static sound in loop mode
-            static_id = self._audio_engine.play_2d(
+            static_id: int | None = self._audio_engine.play_2d(
                 self._static_sound, volume=static_volume, pitch=1.0, loop=True
             )
 
@@ -434,16 +425,22 @@ class ATCAudioManager:
 
                 # Verify loop is actually set
                 if static_channel:
-                    logger.info(f"Started static layer (source {static_id}, loop_count={static_channel.loop_count})")
+                    logger.info(
+                        f"Started static layer (source {static_id}, loop_count={static_channel.loop_count})"
+                    )
 
                     if static_channel.loop_count != -1:
-                        logger.warning(f"Static layer loop_count is {static_channel.loop_count}, expected -1 for infinite loop")
+                        logger.warning(
+                            f"Static layer loop_count is {static_channel.loop_count}, expected -1 for infinite loop"
+                        )
 
                     if self._static_layer_config.get("ducking", {}).get("enabled", False):
                         # Apply side-chain compressor to duck static when voice plays
                         self._setup_sidechain_ducking(static_channel)
                 else:
-                    logger.warning(f"Started static layer but channel not found (source {static_id})")
+                    logger.warning(
+                        f"Started static layer but channel not found (source {static_id})"
+                    )
 
                 return static_id
 
@@ -470,9 +467,7 @@ class ATCAudioManager:
                 self._audio_engine.stop_source(static_channel_id)
                 logger.debug(f"Stopped static layer (source {static_channel_id})")
             else:
-                logger.debug(
-                    f"Static layer already stopped (source {static_channel_id})"
-                )
+                logger.debug(f"Static layer already stopped (source {static_channel_id})")
         except Exception as e:
             logger.warning(f"Failed to stop static layer: {e}")
 

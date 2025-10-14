@@ -116,8 +116,29 @@ class SpeechMessages:
             return f"MSG_FL_{fl}"
 
         # Define available altitude levels for lower altitudes
-        levels = [0, 100, 200, 300, 400, 500, 1000, 1500, 2000, 2500, 3000,
-                  4000, 5000, 6000, 7000, 8000, 9000, 10000, 12000, 15000, 20000]
+        levels = [
+            0,
+            100,
+            200,
+            300,
+            400,
+            500,
+            1000,
+            1500,
+            2000,
+            2500,
+            3000,
+            4000,
+            5000,
+            6000,
+            7000,
+            8000,
+            9000,
+            10000,
+            12000,
+            15000,
+            20000,
+        ]
 
         # Find closest level
         closest = min(levels, key=lambda x: abs(x - feet))
@@ -221,7 +242,9 @@ class SpeechMessages:
         fl_rounded = max(10, min(600, fl_rounded))  # Clamp to FL010-FL600
 
         # Assemble: "flight level" + 3 digits
-        return [SpeechMessages.MSG_WORD_FLIGHT_LEVEL] + SpeechMessages._digits_to_keys(fl_rounded, 3)
+        return [SpeechMessages.MSG_WORD_FLIGHT_LEVEL] + SpeechMessages._digits_to_keys(
+            fl_rounded, 3
+        )
 
 
 # Export commonly used constants at module level for convenience

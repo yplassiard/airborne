@@ -127,16 +127,10 @@ class RadioPlugin(IPlugin):
 
         # Initialize interactive ATC systems
         if atc_audio_manager and tts_provider:
-            self.atc_queue = ATCMessageQueue(
-                atc_audio_manager,
-                min_delay=2.0,
-                max_delay=10.0
-            )
+            self.atc_queue = ATCMessageQueue(atc_audio_manager, min_delay=2.0, max_delay=10.0)
             self.atc_menu = ATCMenu(tts_provider, self.atc_queue, context.message_queue)
             self.readback_system = ATCReadbackSystem(
-                self.atc_queue,
-                tts_provider,
-                callsign=self._callsign
+                self.atc_queue, tts_provider, callsign=self._callsign
             )
             logger.info("Interactive ATC systems initialized")
         else:

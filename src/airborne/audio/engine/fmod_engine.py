@@ -161,14 +161,12 @@ class FMODEngine(IAudioEngine):
             if preload:
                 # Load entire sound into memory
                 fmod_sound = self._system.create_sound(
-                    path,
-                    mode=mode_flags | pyfmodex.flags.MODE.CREATESAMPLE
+                    path, mode=mode_flags | pyfmodex.flags.MODE.CREATESAMPLE
                 )
             else:
                 # Stream from disk
                 fmod_sound = self._system.create_stream(
-                    path,
-                    mode=mode_flags | pyfmodex.flags.MODE.CREATESTREAM
+                    path, mode=mode_flags | pyfmodex.flags.MODE.CREATESTREAM
                 )
 
             # Detect format from extension

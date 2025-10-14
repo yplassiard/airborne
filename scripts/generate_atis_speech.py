@@ -5,10 +5,10 @@ This script generates pre-recorded ATIS (Automatic Terminal Information Service)
 announcement phrases using the same voice as ATC.
 """
 
-import subprocess
-from pathlib import Path
-from concurrent.futures import ProcessPoolExecutor
 import multiprocessing
+import subprocess
+from concurrent.futures import ProcessPoolExecutor
+from pathlib import Path
 
 # ATIS messages to generate
 ATIS_MESSAGES = {
@@ -59,11 +59,16 @@ def generate_speech(args):
         subprocess.run(
             [
                 "ffmpeg",
-                "-i", str(aiff_path),
-                "-codec:a", "libmp3lame",
-                "-b:a", "64k",
-                "-ar", "22050",
-                "-ac", "1",  # Mono
+                "-i",
+                str(aiff_path),
+                "-codec:a",
+                "libmp3lame",
+                "-b:a",
+                "64k",
+                "-ar",
+                "22050",
+                "-ac",
+                "1",  # Mono
                 "-y",  # Overwrite
                 str(output_path),
             ],
@@ -101,8 +106,7 @@ def main():
 
     # Prepare arguments for parallel processing
     args_list = [
-        (filename, text, output_dir, voice, rate)
-        for filename, text in ATIS_MESSAGES.items()
+        (filename, text, output_dir, voice, rate) for filename, text in ATIS_MESSAGES.items()
     ]
 
     # Generate speech files in parallel

@@ -76,7 +76,7 @@ def test_atc_with_static():
 
         ducking = static_config.get("ducking", {})
         if ducking.get("enabled", False):
-            print(f"  Side-chain ducking:")
+            print("  Side-chain ducking:")
             print(f"    Threshold: {ducking.get('threshold_db', -40.0)} dB")
             print(f"    Ratio: {ducking.get('ratio', 4.0)}:1")
             print(f"    Attack: {ducking.get('attack_ms', 10.0)} ms")
@@ -178,21 +178,21 @@ def test_atc_with_static():
 
     # Start voice playback
     voice_channel.paused = False
-    print(f"[VOICE MESSAGE STARTED]")
+    print("[VOICE MESSAGE STARTED]")
 
     # Wait for voice to finish
     while voice_channel.is_playing:
         system.update()
         time.sleep(0.016)
 
-    print(f"[VOICE MESSAGE ENDED]")
+    print("[VOICE MESSAGE ENDED]")
 
     # Continue static for post-roll
     time.sleep(0.4)  # Post-roll
 
     # Stop static
     static_channel.stop()
-    print(f"[STATIC LAYER STOPPED]")
+    print("[STATIC LAYER STOPPED]")
 
     print("\n✓ Finished\n")
 

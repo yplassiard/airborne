@@ -57,42 +57,35 @@ PILOT_MESSAGES = {
     "request_pushback": "Ground, Cessna one two three alpha bravo, request pushback",
     "request_taxi": "Ground, Cessna one two three alpha bravo, request taxi",
     "ready_for_departure": "Tower, Cessna one two three alpha bravo, ready for departure",
-
     # Taxiing
     "holding_short": "Tower, Cessna one two three alpha bravo, holding short",
     "ready_for_takeoff": "Tower, Cessna one two three alpha bravo, ready for takeoff",
-
     # Takeoff
     "request_takeoff_clearance": "Tower, Cessna one two three alpha bravo, request takeoff clearance",
     "rolling": "Cessna one two three alpha bravo, rolling",
     "departing": "Cessna one two three alpha bravo, departing",
-
     # In Flight - Departure
     "airborne": "Cessna one two three alpha bravo, airborne",
     "with_you": "Departure, Cessna one two three alpha bravo, with you",
     "level_at": "Cessna one two three alpha bravo, level at",
     "climbing_to": "Cessna one two three alpha bravo, climbing to",
     "leaving": "Cessna one two three alpha bravo, leaving",
-
     # In Flight - Cruise
     "request_higher": "Center, Cessna one two three alpha bravo, request higher",
     "request_lower": "Center, Cessna one two three alpha bravo, request lower",
     "request_direct": "Center, Cessna one two three alpha bravo, request direct",
     "traffic_in_sight": "Cessna one two three alpha bravo, traffic in sight",
     "negative_visual_contact": "Cessna one two three alpha bravo, negative visual contact",
-
     # In Flight - Approach
     "request_approach": "Approach, Cessna one two three alpha bravo, request approach",
     "descending_to": "Cessna one two three alpha bravo, descending to",
     "reducing_speed": "Cessna one two three alpha bravo, reducing speed",
     "established_on_approach": "Cessna one two three alpha bravo, established on approach",
-
     # Landing
     "runway_in_sight": "Cessna one two three alpha bravo, runway in sight",
     "landing": "Cessna one two three alpha bravo, landing",
     "going_around": "Cessna one two three alpha bravo, going around",
     "clear_of_runway": "Cessna one two three alpha bravo, clear of runway",
-
     # Readback & Acknowledgment
     "readback": "Roger",  # Generic - actual readback assembled at runtime
     "say_again": "Cessna one two three alpha bravo, say again",
@@ -101,13 +94,11 @@ PILOT_MESSAGES = {
     "unable": "Cessna one two three alpha bravo, unable",
     "affirmative": "Cessna one two three alpha bravo, affirmative",
     "negative": "Cessna one two three alpha bravo, negative",
-
     # ATIS
     "request_atis": "Ground, Cessna one two three alpha bravo, request ATIS",
     "have_information_alpha": "Cessna one two three alpha bravo, have information alpha",
     "have_information_bravo": "Cessna one two three alpha bravo, have information bravo",
     "have_information_charlie": "Cessna one two three alpha bravo, have information charlie",
-
     # Emergency
     "declaring_emergency": "Mayday, mayday, mayday. Cessna one two three alpha bravo, declaring an emergency",
     "request_priority_handling": "Cessna one two three alpha bravo, request priority handling",
@@ -137,13 +128,7 @@ def generate_speech_file(
 
     try:
         # Generate speech using 'say' command
-        cmd = [
-            "say",
-            "-v", voice,
-            "-r", str(rate),
-            "-o", str(temp_aiff_path),
-            text
-        ]
+        cmd = ["say", "-v", voice, "-r", str(rate), "-o", str(temp_aiff_path), text]
 
         subprocess.run(cmd, capture_output=True, check=True)
 
@@ -156,11 +141,16 @@ def generate_speech_file(
         subprocess.run(
             [
                 "ffmpeg",
-                "-i", str(temp_aiff_path),
-                "-c:a", "libmp3lame",
-                "-b:a", "64k",
-                "-ar", "22050",
-                "-ac", "1",
+                "-i",
+                str(temp_aiff_path),
+                "-c:a",
+                "libmp3lame",
+                "-b:a",
+                "64k",
+                "-ar",
+                "22050",
+                "-ac",
+                "1",
                 "-y",
                 str(output_path),
             ],
@@ -238,7 +228,7 @@ def main() -> None:
                 future.result()
                 completed += 1
                 if completed % 5 == 0:
-                    print(f"Progress: {completed}/{total} ({completed*100//total}%)")
+                    print(f"Progress: {completed}/{total} ({completed * 100 // total}%)")
             except Exception as e:
                 failed += 1
                 print(f"  Error: {e}")

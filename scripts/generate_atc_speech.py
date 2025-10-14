@@ -94,7 +94,7 @@ def generate_speech_file(
 
         # Convert to MP3 using ffmpeg
         if not FFMPEG_AVAILABLE:
-            print(f"  Warning: ffmpeg not available, keeping as AIFF")
+            print("  Warning: ffmpeg not available, keeping as AIFF")
             temp_aiff_path.rename(output_path.with_suffix(".aiff"))
             return
 
@@ -314,7 +314,7 @@ def main() -> None:
                 completed += 1
                 if completed % 10 == 0:
                     print(
-                        f"Progress: {completed}/{len(messages)} ({completed*100//len(messages)}%)"
+                        f"Progress: {completed}/{len(messages)} ({completed * 100 // len(messages)}%)"
                     )
             except Exception as e:
                 failed += 1

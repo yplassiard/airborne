@@ -15,9 +15,10 @@ Typical usage example:
     menu.select_option("1")
 """
 
+from collections.abc import Callable
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Callable, Optional
+from typing import Any
 
 from airborne.core.logging_system import get_logger
 
@@ -54,7 +55,7 @@ class ATCMenuOption:
     label: str
     pilot_message: str | list[str]
     expected_atc_response: str | list[str]
-    callback: Optional[Callable[[], None]] = None
+    callback: Callable[[], None] | None = None
     enabled: bool = True
 
 
@@ -140,6 +141,7 @@ class ATCMenu:
             # Provide audio feedback using message queue with message key (only if speak=True)
             if speak and self._message_queue:
                 from airborne.core.messaging import Message, MessagePriority, MessageTopic
+
                 self._message_queue.publish(
                     Message(
                         sender="atc_menu",
@@ -175,6 +177,7 @@ class ATCMenu:
             # Provide audio feedback using message queue with message key
             if self._message_queue:
                 from airborne.core.messaging import Message, MessagePriority, MessageTopic
+
                 self._message_queue.publish(
                     Message(
                         sender="atc_menu",
@@ -225,6 +228,7 @@ class ATCMenu:
         # Speak menu using message queue with sequence of keys
         if self._message_queue:
             from airborne.core.messaging import Message, MessagePriority, MessageTopic
+
             self._message_queue.publish(
                 Message(
                     sender="atc_menu",

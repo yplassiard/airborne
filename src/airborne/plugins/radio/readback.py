@@ -22,8 +22,8 @@ Typical usage example:
 
 import re
 from collections import deque
-from dataclasses import dataclass
-from typing import Any, Optional
+from dataclasses import dataclass, field
+from typing import Any
 
 from airborne.core.logging_system import get_logger
 
@@ -54,13 +54,8 @@ class ATCInstruction:
 
     message_key: str | list[str]
     full_text: str = ""
-    elements: dict[str, str] = None
+    elements: dict[str, str] = field(default_factory=dict)
     timestamp: float = 0.0
-
-    def __post_init__(self):
-        """Initialize elements dict if not provided."""
-        if self.elements is None:
-            self.elements = {}
 
 
 class ReadbackValidator:
@@ -187,9 +182,7 @@ class ATCReadbackSystem:
         >>> system.acknowledge()  # Generates and sends readback
     """
 
-    def __init__(
-        self, atc_queue: Any, tts_provider: Any, callsign: str = "Cessna 123AB"
-    ):
+    def __init__(self, atc_queue: Any, tts_provider: Any, callsign: str = "Cessna 123AB"):
         """Initialize readback system.
 
         Args:
@@ -207,9 +200,7 @@ class ATCReadbackSystem:
 
         logger.info(f"ATC readback system initialized (callsign: {callsign})")
 
-    def record_atc_instruction(
-        self, message_key: str | list[str], full_text: str = ""
-    ) -> None:
+    def record_atc_instruction(self, message_key: str | list[str], full_text: str = "") -> None:
         """Record an ATC instruction for potential readback.
 
         Args:
@@ -232,9 +223,7 @@ class ATCReadbackSystem:
 
         self._instruction_history.append(instruction)
 
-        logger.debug(
-            f"Recorded ATC instruction: {message_key} (elements: {list(elements.keys())})"
-        )
+        logger.debug(f"Recorded ATC instruction: {message_key} (elements: {list(elements.keys())})")
 
     def acknowledge(self) -> bool:
         """Acknowledge last ATC instruction with readback (Shift+F1).
@@ -255,9 +244,7 @@ class ATCReadbackSystem:
         last_instruction = self._instruction_history[-1]
 
         # Generate readback
-        readback_text = self._validator.generate_readback(
-            last_instruction.elements, self._callsign
-        )
+        readback_text = self._validator.generate_readback(last_instruction.elements, self._callsign)
 
         logger.info(f"Acknowledging with readback: {readback_text}")
 
@@ -325,7 +312,7 @@ class ATCReadbackSystem:
 
         return True
 
-    def get_last_atc_message(self) -> Optional[ATCInstruction]:
+    def get_last_atc_message(self) -> ATCInstruction | None:
         """Get last ATC instruction.
 
         Returns:

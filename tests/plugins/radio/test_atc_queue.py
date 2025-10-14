@@ -403,9 +403,7 @@ class TestATCMessageQueue:
 
     def test_message_with_list_of_keys(self, queue, mock_atc_audio):
         """Test message with list of message keys."""
-        msg = ATCMessage(
-            message_key=["MSG1", "MSG2", "MSG3"], sender="PILOT", delay_after=2.0
-        )
+        msg = ATCMessage(message_key=["MSG1", "MSG2", "MSG3"], sender="PILOT", delay_after=2.0)
         queue.enqueue(msg)
 
         queue.process(0.0)

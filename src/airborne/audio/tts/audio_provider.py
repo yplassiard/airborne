@@ -372,4 +372,3 @@ class AudioSpeechProvider(ITTSProvider):
         """
         with self._lock:
             return len(self._queue)
-

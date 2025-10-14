@@ -735,3 +735,4 @@ Now that you've read this guide:
 4. Ask questions as needed
 
 **Good luck, and build something amazing!** 🚀
+- never use timeout command

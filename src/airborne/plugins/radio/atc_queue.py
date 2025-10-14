@@ -24,8 +24,9 @@ Typical usage example:
 import random
 import time
 from collections import deque
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Any, Callable, Optional
+from typing import Any
 
 from airborne.core.logging_system import get_logger
 
@@ -49,10 +50,10 @@ class ATCMessage:
     sender: str  # "PILOT" or "ATC"
     priority: int = 0
     delay_after: float = 2.0
-    callback: Optional[Callable[[], None]] = None
+    callback: Callable[[], None] | None = None
     timestamp: float = field(default_factory=time.time)
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """Validate message attributes."""
         if self.sender not in ("PILOT", "ATC"):
             raise ValueError(f"sender must be 'PILOT' or 'ATC', got: {self.sender}")
@@ -92,16 +93,14 @@ class ATCMessageQueue:
         """
         self._atc_audio = atc_audio_manager
         self._queue: deque[ATCMessage] = deque()
-        self._current_message: Optional[ATCMessage] = None
-        self._current_source_id: Optional[int] = None
+        self._current_message: ATCMessage | None = None
+        self._current_source_id: int | None = None
         self._wait_until: float = 0.0
         self._min_delay = min_delay
         self._max_delay = max_delay
         self._state: str = "IDLE"  # IDLE, TRANSMITTING, WAITING
 
-        logger.info(
-            f"ATC message queue initialized (delay range: {min_delay}-{max_delay}s)"
-        )
+        logger.info(f"ATC message queue initialized (delay range: {min_delay}-{max_delay}s)")
 
     def enqueue(self, message: ATCMessage) -> None:
         """Add a message to the queue.
@@ -181,8 +180,7 @@ class ATCMessageQueue:
         self._current_message = self._queue.popleft()
 
         logger.info(
-            f"Playing {self._current_message.sender} message: "
-            f"{self._current_message.message_key}"
+            f"Playing {self._current_message.sender} message: {self._current_message.message_key}"
         )
 
         try:
@@ -232,9 +230,7 @@ class ATCMessageQueue:
     def _interrupt_current(self) -> None:
         """Interrupt current message (for emergency transmissions)."""
         if self._current_message:
-            logger.warning(
-                f"Interrupting message: {self._current_message.message_key}"
-            )
+            logger.warning(f"Interrupting message: {self._current_message.message_key}")
             # Stop current audio playback
             # Note: This would require ATCAudioManager to have a stop() method
             # For now, we just reset state
@@ -266,7 +262,7 @@ class ATCMessageQueue:
         """
         return len(self._queue)
 
-    def get_current_message(self) -> Optional[ATCMessage]:
+    def get_current_message(self) -> ATCMessage | None:
         """Get currently transmitting message.
 
         Returns:

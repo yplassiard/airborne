@@ -5,10 +5,10 @@ This script generates synthetic radio static that can be looped seamlessly.
 The static is band-limited to match aviation VHF radio characteristics.
 """
 
-import numpy as np
-import struct
 import wave
 from pathlib import Path
+
+import numpy as np
 
 
 def generate_bandlimited_noise(

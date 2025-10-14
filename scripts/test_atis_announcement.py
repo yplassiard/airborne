@@ -248,7 +248,7 @@ def test_atis_announcement():
     # Post-roll for static
     time.sleep(0.4)
     static_channel.stop()
-    print(f"[STATIC LAYER STOPPED]")
+    print("[STATIC LAYER STOPPED]")
 
     print()
     print(f"✓ ATIS announcement complete ({total_duration:.1f}s total)\n")

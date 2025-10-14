@@ -16,6 +16,9 @@ dependencies = [
     "pyfmodex>=0.7.2",
     "pyttsx3>=2.99",
     "pydub>=0.25.1",
+    "mypy>=1.18.2",
+    "pylint>=4.0.0",
+    "ruff>=0.14.0",
 ]
 
 [project.optional-dependencies]

@@ -11,14 +11,17 @@ name = "airborne"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
+    { name = "mypy" },
     { name = "numpy" },
     { name = "pybass3" },
     { name = "pydub" },
     { name = "pyfmodex" },
     { name = "pygame" },
+    { name = "pylint" },
     { name = "python-dateutil" },
     { name = "pyttsx3" },
     { name = "pyyaml" },
+    { name = "ruff" },
 ]
 
 [package.optional-dependencies]
@@ -41,6 +44,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "mypy", specifier = ">=1.18.2" },
     { name = "mypy", marker = "extra == 'dev'", specifier = ">=1.5.0" },
     { name = "numpy", specifier = ">=1.24.0" },
     { name = "pre-commit", marker = "extra == 'dev'", specifier = ">=3.0.0" },
@@ -48,12 +52,14 @@ requires-dist = [
     { name = "pydub", specifier = ">=0.25.1" },
     { name = "pyfmodex", specifier = ">=0.7.2" },
     { name = "pygame", specifier = ">=2.5.0" },
+    { name = "pylint", specifier = ">=4.0.0" },
     { name = "pylint", marker = "extra == 'dev'", specifier = ">=3.0.0" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=7.4.0" },
     { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=4.1.0" },
     { name = "python-dateutil", specifier = ">=2.8.0" },
     { name = "pyttsx3", specifier = ">=2.99" },
     { name = "pyyaml", specifier = ">=6.0" },
+    { name = "ruff", specifier = ">=0.14.0" },
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.1.0" },
     { name = "types-pyyaml", marker = "extra == 'dev'", specifier = ">=6.0.0" },
 ]

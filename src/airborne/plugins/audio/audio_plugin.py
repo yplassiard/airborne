@@ -15,6 +15,7 @@ if TYPE_CHECKING:
 
 from airborne.audio.engine.base import IAudioEngine, Vector3
 from airborne.audio.sound_manager import SoundManager
+from airborne.audio.tts.base import ITTSProvider
 from airborne.core.logging_system import get_logger
 from airborne.core.messaging import Message, MessageTopic
 from airborne.core.plugin import IPlugin, PluginContext, PluginMetadata, PluginType
@@ -167,13 +168,12 @@ class AudioPlugin(IPlugin):
         if self.audio_engine:
             try:
                 from pathlib import Path
+
                 from airborne.audio.atc.atc_audio import ATCAudioManager
 
                 config_dir = Path("config")
                 speech_dir = Path("data/speech/en")  # ATC uses same speech dir for now
-                self.atc_audio_manager = ATCAudioManager(
-                    self.audio_engine, config_dir, speech_dir
-                )
+                self.atc_audio_manager = ATCAudioManager(self.audio_engine, config_dir, speech_dir)
                 logger.info("ATC audio manager initialized")
             except Exception as e:
                 logger.warning(f"Failed to initialize ATC audio manager: {e}")
@@ -474,15 +474,21 @@ class AudioPlugin(IPlugin):
             return
 
         from airborne.audio.tts.base import TTSPriority
-        from airborne.audio.tts.speech_messages import SpeechMessages
 
         # Convert message to message key
         message_key = self._get_message_key(message, event.action)
 
-        logger.info(f"Speaking: {message_key} ({message})")
-        self.tts_provider.speak(message_key, priority=TTSPriority.NORMAL)
+        # Handle both str and list[str] cases
+        if isinstance(message_key, list):
+            # If it's a list, join with spaces or use the first one
+            text_to_speak = " ".join(message_key) if message_key else message
+        else:
+            text_to_speak = message_key
 
-    def _get_message_key(self, message: str, action: str) -> str:
+        logger.info(f"Speaking: {text_to_speak} ({message})")
+        self.tts_provider.speak(text_to_speak, priority=TTSPriority.NORMAL)
+
+    def _get_message_key(self, message: str, action: str) -> str | list[str]:
         """Convert human-readable message to message key.
 
         Args:
@@ -490,7 +496,7 @@ class AudioPlugin(IPlugin):
             action: Input action that triggered the message.
 
         Returns:
-            Message key for YAML lookup.
+            Message key or list of message keys for YAML lookup.
         """
         from airborne.audio.tts.speech_messages import SpeechMessages
 
