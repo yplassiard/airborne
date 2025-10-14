@@ -175,7 +175,7 @@ class InputConfig:
             pygame.K_DOWN: InputAction.PITCH_UP,
             pygame.K_LEFT: InputAction.ROLL_LEFT,
             pygame.K_RIGHT: InputAction.ROLL_RIGHT,
-            pygame.K_q: InputAction.YAW_LEFT,
+            pygame.K_COMMA: InputAction.YAW_LEFT,  # Changed from Q (now Ctrl+Q for quit)
             pygame.K_e: InputAction.YAW_RIGHT,
             pygame.K_HOME: InputAction.THROTTLE_INCREASE,
             pygame.K_END: InputAction.THROTTLE_DECREASE,
@@ -206,7 +206,7 @@ class InputConfig:
             pygame.K_a: InputAction.MENU_UP,
             pygame.K_z: InputAction.MENU_DOWN,
             pygame.K_RETURN: InputAction.MENU_SELECT,
-            pygame.K_BACKSPACE: InputAction.MENU_BACK,
+            pygame.K_ESCAPE: InputAction.MENU_BACK,  # ESC closes menus (Ctrl+Q to quit app)
             # ATC Menu Selection (number keys)
             pygame.K_1: InputAction.ATC_SELECT_1,
             pygame.K_2: InputAction.ATC_SELECT_2,
@@ -219,7 +219,7 @@ class InputConfig:
             pygame.K_9: InputAction.ATC_SELECT_9,
             # System
             pygame.K_SPACE: InputAction.PAUSE,
-            pygame.K_ESCAPE: InputAction.QUIT,
+            # Note: Ctrl+Q is handled specially for QUIT (see _handle_key_down)
         }
 
 
@@ -383,6 +383,14 @@ class InputManager:  # pylint: disable=too-many-instance-attributes
             if not is_repeat:
                 self._handle_action_pressed(action)
             return
+
+        # Special handling for Ctrl+Q to quit (ESC now closes ATC menu)
+        if key == pygame.K_q:
+            mods = pygame.key.get_mods()
+            if mods & pygame.KMOD_CTRL:
+                if not is_repeat:
+                    self._handle_action_pressed(InputAction.QUIT)
+                return
 
         # Check for bound action
         action = self.config.keyboard_bindings.get(key)

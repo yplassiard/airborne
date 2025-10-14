@@ -242,6 +242,17 @@ class AirBorne:
                     priority=MessagePriority.HIGH,
                 )
             )
+        # ESC closes ATC menu
+        elif event.action == "menu_back":
+            self.message_queue.publish(
+                Message(
+                    sender="main",
+                    recipients=["radio_plugin"],
+                    topic="input.atc_menu",
+                    data={"action": "close"},
+                    priority=MessagePriority.HIGH,
+                )
+            )
 
     def run(self) -> None:
         """Run the main game loop."""

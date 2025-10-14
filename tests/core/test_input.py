@@ -92,7 +92,8 @@ class TestInputConfig:
         # Check some essential bindings exist
         assert InputAction.PITCH_UP in config.keyboard_bindings.values()
         assert InputAction.THROTTLE_INCREASE in config.keyboard_bindings.values()
-        assert InputAction.QUIT in config.keyboard_bindings.values()
+        # Note: QUIT is now handled specially with Ctrl+Q (not in bindings dict)
+        assert InputAction.PAUSE in config.keyboard_bindings.values()
 
 
 class TestInputManagerInitialization:
