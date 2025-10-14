@@ -1,0 +1,73 @@
+# Radio effect DSP settings for aviation communications
+# These settings simulate VHF AM aviation radio (118-137 MHz band)
+
+radio_effect:
+  # High-pass filter (remove low rumble)
+  highpass:
+    enabled: true
+    cutoff_hz: 450.0       # Higher cutoff to remove more low frequencies (more tinny)
+
+  # Low-pass filter (bandwidth limit)
+  lowpass:
+    enabled: true
+    cutoff_hz: 3400.0      # AM radio bandwidth limit (3.4 kHz)
+
+  # Compression (AGC simulation) - AGGRESSIVE for louder, more consistent volume
+  compressor:
+    enabled: true
+    threshold_db: -30.0    # Compress above this level (lower = more compression)
+    ratio: 20.0            # Very heavy compression (20:1) for loud, consistent volume
+    attack_ms: 0.5         # Very fast attack (aggressive AGC)
+    release_ms: 50.0       # Fast release for responsive AGC
+    makeup_gain_db: 22.0   # Add +22dB gain after compression to boost volume (increased from 17dB)
+
+  # Distortion (subtle saturation) - OPTIONAL
+  distortion:
+    enabled: false          # Disabled by default (can sound harsh)
+    level: 0.2             # Very subtle (0.0-1.0)
+
+  # Static noise (atmospheric interference) - DSP-generated
+  static_noise:
+    enabled: false          # Disabled - using static_layer instead
+    level: 0.005           # 0.5% mix (very quiet background static)
+    type: "white"          # White noise
+
+  # Static layer (audio file-based with side-chain ducking)
+  static_layer:
+    enabled: true
+    file: "data/audio/effects/radio_static_subtle.wav"  # Shortest static file (5s, loopable)
+    volume: 0.15           # 15% volume (quieter than voice)
+    pre_roll: 0.2          # Start 0.2s before voice
+    post_roll: 0.4         # End 0.4s after voice
+    ducking:
+      enabled: true        # Enable side-chain compression (duck static when voice plays)
+      threshold_db: -40.0  # Duck when voice exceeds this level
+      ratio: 4.0           # Ducking ratio (4:1)
+      attack_ms: 10.0      # Fast attack for responsive ducking
+      release_ms: 200.0    # Smooth release when voice stops
+
+  # Random crackles (atmospheric pops/interference)
+  crackles:
+    enabled: true           # Enable random crackles
+    frequency: 0.3         # Average crackles per second (1 every ~3 seconds)
+    duration_ms: 20        # Duration of each crackle (20ms = short pop)
+    volume: 0.15           # Volume of crackles (15% = subtle)
+
+  # PTT (Push-to-Talk) beeps
+  ptt_beeps:
+    enabled: true           # Enable beeps at start/end of transmission
+    start_beep:
+      enabled: true
+      frequency_hz: 1000.0  # 1 kHz beep tone
+      duration_ms: 50       # 50ms beep
+      volume: 0.3           # 30% volume (subtle)
+    end_beep:
+      enabled: true
+      frequency_hz: 800.0   # 800 Hz beep tone (lower pitch)
+      duration_ms: 40       # 40ms beep
+      volume: 0.25          # 25% volume (subtle)
+
+  # Overall effect mix and volume
+  wet_level: 1.0           # 100% effected signal
+  dry_level: 0.0           # 0% original signal (fully processed)
+  output_gain_db: 3.0      # Boost output by 3dB for louder volume

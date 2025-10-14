@@ -1,0 +1,93 @@
+# ATC Speech Messages Configuration (English)
+# Maps ATC message keys to audio filenames (without extension)
+# Uses different voice from cockpit TTS (e.g., Alex male voice for ATC)
+# Format: MESSAGE_KEY: "filename_without_extension"
+
+language: en
+voice: Evan  # Male voice for ATC (different from cockpit Samantha)
+file_extension: mp3
+
+# ATC messages (pre-recorded phrases with radio effect applied at runtime)
+messages:
+  # Ground Control
+  ATC_GROUND_GOOD_MORNING: "good_morning"
+  ATC_GROUND_GOOD_AFTERNOON: "good_afternoon"
+  ATC_GROUND_GOOD_EVENING: "good_evening"
+  ATC_GROUND_TAXI_RWY_31: "taxi_to_runway_31_via_alpha"
+  ATC_GROUND_TAXI_RWY_13: "taxi_to_runway_13_via_bravo"
+  ATC_GROUND_HOLD_SHORT_31: "hold_short_of_runway_31"
+  ATC_GROUND_HOLD_SHORT_13: "hold_short_of_runway_13"
+  ATC_GROUND_CROSS_RWY_31: "cross_runway_31"
+  ATC_GROUND_CONTACT_TOWER_120_5: "contact_tower_120_point_5"
+  ATC_GROUND_CONTACT_TOWER_118_3: "contact_tower_118_point_3"
+
+  # Tower - Takeoff
+  ATC_TOWER_LINEUP_WAIT_31: "runway_31_line_up_and_wait"
+  ATC_TOWER_LINEUP_WAIT_13: "runway_13_line_up_and_wait"
+  ATC_TOWER_CLEARED_TAKEOFF_31: "runway_31_cleared_for_takeoff"
+  ATC_TOWER_CLEARED_TAKEOFF_13: "runway_13_cleared_for_takeoff"
+  ATC_TOWER_WIND_CHECK: "wind_310_at_8"
+  ATC_TOWER_CONTACT_DEPARTURE: "contact_departure_125_point_35"
+
+  # Departure Control
+  ATC_DEPARTURE_RADAR_CONTACT: "radar_contact"
+  ATC_DEPARTURE_CLIMB_3000: "climb_and_maintain_3000"
+  ATC_DEPARTURE_CLIMB_5000: "climb_and_maintain_5000"
+  ATC_DEPARTURE_TURN_LEFT_270: "turn_left_heading_270"
+  ATC_DEPARTURE_TURN_RIGHT_090: "turn_right_heading_090"
+  ATC_DEPARTURE_CONTACT_CENTER: "contact_center_132_point_45"
+
+  # Center (En Route)
+  ATC_CENTER_CLIMB_10000: "climb_and_maintain_10000"
+  ATC_CENTER_DESCEND_5000: "descend_and_maintain_5000"
+  ATC_CENTER_FLY_HEADING_180: "fly_heading_180"
+  ATC_CENTER_DIRECT_WAYPOINT: "proceed_direct"
+  ATC_CENTER_TRAFFIC_2_OCLOCK: "traffic_2_oclock_5_miles"
+
+  # Approach Control
+  ATC_APPROACH_EXPECT_ILS_31: "expect_ils_runway_31_approach"
+  ATC_APPROACH_CLEARED_APPROACH_31: "cleared_ils_runway_31_approach"
+  ATC_APPROACH_DESCEND_2000: "descend_and_maintain_2000"
+  ATC_APPROACH_REDUCE_SPEED_180: "reduce_speed_to_180_knots"
+  ATC_APPROACH_CONTACT_TOWER: "contact_tower_118_point_3"
+
+  # Tower - Landing
+  ATC_TOWER_CLEARED_LAND_31: "runway_31_cleared_to_land"
+  ATC_TOWER_CLEARED_LAND_13: "runway_13_cleared_to_land"
+  ATC_TOWER_WIND_CALM: "wind_calm"
+  ATC_TOWER_GO_AROUND: "go_around"
+  ATC_TOWER_EXIT_NEXT_RIGHT: "exit_runway_next_available_right"
+  ATC_TOWER_CONTACT_GROUND: "contact_ground_121_point_9"
+
+  # Generic/Common
+  ATC_ROGER: "roger"
+  ATC_AFFIRM: "affirmative"
+  ATC_NEGATIVE: "negative"
+  ATC_SAY_AGAIN: "say_again"
+  ATC_WILCO: "wilco"
+  ATC_UNABLE: "unable"
+  ATC_STANDBY: "standby"
+  ATC_CLEARED: "cleared"
+  ATC_REPORT: "report"
+
+  # Emergency
+  ATC_EMERGENCY_ACKNOWLEDGED: "roger_emergency_aircraft"
+  ATC_EMERGENCY_SAY_INTENTIONS: "say_intentions"
+  ATC_EMERGENCY_ALL_TRAFFIC: "all_traffic_clear_runway"
+
+  # ATIS (Automatic Terminal Information Service)
+  ATIS_AIRPORT_INFO: "airport_information"
+  ATIS_TIME: "time_1730_zulu"
+  ATIS_WIND: "wind_310_at_8_knots"
+  ATIS_VISIBILITY: "visibility_10_miles"
+  ATIS_CEILING: "ceiling_3000_broken"
+  ATIS_TEMPERATURE: "temperature_15_celsius"
+  ATIS_DEWPOINT: "dewpoint_8_celsius"
+  ATIS_ALTIMETER: "altimeter_2992"
+  ATIS_RUNWAY_IN_USE: "runway_31_in_use"
+  ATIS_LANDING_RUNWAY: "landing_runway_31"
+  ATIS_DEPARTING_RUNWAY: "departing_runway_31"
+  ATIS_ADVISE_ON_CONTACT: "advise_you_have_information"
+  ATIS_INFO_ALPHA: "information_alpha"
+  ATIS_INFO_BRAVO: "information_bravo"
+  ATIS_INFO_CHARLIE: "information_charlie"
