@@ -51,6 +51,7 @@ The `scripts/demo_autopilot.py` script now successfully demonstrates:
 - Phase 7: Checklists & Panels (Complete with TTS integration, ready for keyboard input wiring)
 
 **Not Started** ❌:
+- Phase 8.5: Interactive ATC Communications (0%) - **HIGH PRIORITY**
 - Phase 10: Cabin Simulation (0%)
 - Phase 11: Network Layer (0%)
 - Phase 13: Additional Aircraft (0%)
@@ -551,6 +552,282 @@ Integrate PyBASS, implement TTS, create audio manager, test 3D positioning.
 - ✅ Multiple sounds play simultaneously - **PASS** (when audio engine available)
 - ✅ Volume control works - **PASS**
 - ✅ Position updates subscribed from physics - **PASS** (audio_plugin.py:127)
+
+### Adding New Speech Messages
+
+AirBorne uses a **pre-recorded audio file system** with YAML-based configuration for all TTS messages. This provides faster, more reliable audio than real-time TTS synthesis.
+
+#### Architecture Overview
+
+The speech system has three main components:
+
+1. **Message Keys** (`src/airborne/audio/tts/speech_messages.py`): Constants and helper methods
+2. **YAML Config** (`config/speech_en.yaml`): Maps keys to audio filenames
+3. **Audio Files** (`data/speech/en/*.mp3`): Pre-generated speech audio
+
+#### Digit Assembly System
+
+To minimize file count, the system uses **digit assembly** for dynamic messages:
+
+- Generate individual digits once: "zero", "one", ..., "niner" (aviation phraseology for 9)
+- Generate common words: "heading", "flight level", "knots", "feet"
+- Assemble messages at runtime by playing multiple files in sequence
+
+**Example**: Heading 215 = `["heading", "two", "one", "five"]` (4 files played sequentially)
+
+#### When to Add New Messages
+
+**Use Pre-recorded Files** when:
+- Message is static and doesn't change (e.g., "Gear down", "Ready for flight")
+- Message is frequently used (e.g., common airspeeds: 60, 80, 100, 120 knots)
+- Performance is critical (pre-recorded is faster than assembly)
+
+**Use Digit Assembly** when:
+- Message contains numbers that vary widely (e.g., heading 0-359°, altitude)
+- Generating all combinations would create too many files
+- Slight delay between digits is acceptable
+
+#### Adding a Static Message
+
+**Step 1**: Add message key constant to `src/airborne/audio/tts/speech_messages.py`
+
+```python
+class SpeechMessages:
+    # ... existing constants ...
+
+    # New message
+    MSG_AUTOPILOT_ENGAGED = "MSG_AUTOPILOT_ENGAGED"
+    MSG_AUTOPILOT_DISENGAGED = "MSG_AUTOPILOT_DISENGAGED"
+
+# Export at module level for convenience
+MSG_AUTOPILOT_ENGAGED = SpeechMessages.MSG_AUTOPILOT_ENGAGED
+MSG_AUTOPILOT_DISENGAGED = SpeechMessages.MSG_AUTOPILOT_DISENGAGED
+```
+
+**Step 2**: Add mapping to `config/speech_en.yaml`
+
+```yaml
+messages:
+  # ... existing messages ...
+
+  # Autopilot
+  MSG_AUTOPILOT_ENGAGED: "autopilot_engaged"
+  MSG_AUTOPILOT_DISENGAGED: "autopilot_disengaged"
+```
+
+**Step 3**: Add text to `scripts/generate_tts.py` in `get_default_messages()`
+
+```python
+def get_default_messages() -> list[str]:
+    messages = []
+
+    # ... existing messages ...
+
+    # Autopilot messages
+    messages.extend([
+        "Autopilot engaged",
+        "Autopilot disengaged",
+    ])
+
+    return messages
+```
+
+**Step 4**: Generate MP3 files
+
+```bash
+# Generate all speech files (deletes old files, generates new ones)
+python scripts/generate_tts.py
+
+# Options:
+# --voice Samantha    # macOS voice name (default: Samantha)
+# --rate 180          # Speech rate in WPM (default: 180)
+# --format mp3        # Output format (default: mp3)
+# --language en       # Language code (default: en)
+```
+
+**Step 5**: Use in code
+
+```python
+from airborne.audio.tts.speech_messages import MSG_AUTOPILOT_ENGAGED
+
+# Single message
+tts.speak(MSG_AUTOPILOT_ENGAGED)
+```
+
+#### Adding a Dynamic Assembled Message
+
+**Step 1**: Add helper method to `SpeechMessages` class
+
+```python
+@staticmethod
+def radio_frequency(freq_mhz: float) -> list[str]:
+    """Get message keys for radio frequency readout.
+
+    Args:
+        freq_mhz: Frequency in MHz (e.g., 120.75)
+
+    Returns:
+        List of message keys to assemble frequency.
+        Example: 120.75 -> ["MSG_DIGIT_1", "MSG_DIGIT_2", "MSG_DIGIT_0",
+                            "MSG_WORD_POINT", "MSG_DIGIT_7", "MSG_DIGIT_5"]
+    """
+    # Format to 2 decimal places
+    freq_str = f"{freq_mhz:.2f}"
+
+    # Split on decimal point
+    whole, decimal = freq_str.split('.')
+
+    # Convert to digit keys
+    keys = SpeechMessages._digits_to_keys(int(whole))
+    keys.append(SpeechMessages.MSG_WORD_POINT)
+    keys.extend(SpeechMessages._digits_to_keys(int(decimal)))
+
+    return keys
+```
+
+**Step 2**: Add any new word constants needed
+
+```python
+class SpeechMessages:
+    # ... existing constants ...
+
+    MSG_WORD_POINT = "MSG_WORD_POINT"  # For decimal point
+```
+
+**Step 3**: Add word mapping to `config/speech_en.yaml` (if new word needed)
+
+```yaml
+messages:
+  # ... existing messages ...
+
+  MSG_WORD_POINT: "point"
+```
+
+**Step 4**: Add word to `scripts/generate_tts.py` (if new word)
+
+```python
+def get_default_messages() -> list[str]:
+    messages = []
+
+    # ... existing messages ...
+
+    # Common words
+    messages.append("point")  # For decimals
+
+    return messages
+```
+
+**Step 5**: Generate MP3 files (if new word added)
+
+```bash
+python scripts/generate_tts.py
+```
+
+**Step 6**: Use in code
+
+```python
+from airborne.audio.tts.speech_messages import SpeechMessages
+
+# Assembled message (multiple files played in sequence)
+freq_keys = SpeechMessages.radio_frequency(120.75)
+tts.speak(freq_keys)  # Plays: "one two zero point seven five"
+```
+
+#### Speech Generation Details
+
+The `scripts/generate_tts.py` script uses:
+
+- **macOS `say` command**: Native high-quality TTS
+- **ffmpeg**: Converts AIFF output to MP3 format
+- **Parallel processing**: Uses all CPU cores for fast generation
+- **File format**: 64kbps MP3, 22050 Hz, mono (optimized for speech)
+
+**Available voices** (macOS):
+```bash
+python scripts/generate_tts.py --list-voices
+```
+
+**Generation options**:
+- `--voice Samantha`: Choose voice (default: Samantha, female US English)
+- `--rate 180`: Speech rate in words per minute (default: 180)
+- `--format mp3`: Output format - mp3/wav/ogg (default: mp3)
+- `--language en`: Language code for multi-language support
+
+#### File Naming Convention
+
+Audio files use **normalized lowercase with underscores**:
+
+- Text: "Autopilot engaged" → Filename: `autopilot_engaged.mp3`
+- Text: "120 knots" → Filename: `120_knots.mp3`
+- Text: "niner" → Filename: `niner.mp3`
+
+The normalization is handled automatically by `normalize_text_to_filename()` in the generation script.
+
+#### Current Speech File Inventory
+
+The system generates approximately **60 core files**:
+
+1. **10 digit files**: zero, one, two, three, four, five, six, seven, eight, niner
+2. **4 word files**: heading, flight level, feet, knots
+3. **14 common airspeeds**: 0, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150, 160, 170, 180 knots
+4. **12 common altitudes**: 100, 500, 1000, 1500, 2000, 2500, 3000, 4000, 5000, 10000, 15000, 20000 feet
+5. **14 vertical speeds**: level flight, 100-2000 climbing/descending (7 levels × 2 directions)
+6. **12 attitude angles**: 5-45° up/down/left/right (6 levels × 2 pitch × 2 bank)
+7. **System/action messages**: ~8 messages (startup, gear, flaps, throttle, brakes, etc.)
+
+**Total**: ~60 files vs. 559 files without digit assembly (90% reduction!)
+
+#### Testing New Messages
+
+**Test message generation**:
+```bash
+# Generate test phrase
+say -v Samantha -r 180 "Test message"
+
+# Test file exists
+ls data/speech/en/test_message.mp3
+
+# Test in app
+uv run python scripts/test_instrument_keys.py
+```
+
+**Debug audio playback**:
+```python
+# In your plugin
+from airborne.audio.tts.speech_messages import MSG_YOUR_MESSAGE
+
+logger.info(f"Speaking message: {MSG_YOUR_MESSAGE}")
+tts.speak(MSG_YOUR_MESSAGE)
+```
+
+#### Troubleshooting
+
+**Problem**: Message not found error
+- **Solution**: Verify message key exists in `speech_messages.py`
+- **Solution**: Verify mapping exists in `config/speech_en.yaml`
+- **Solution**: Verify MP3 file exists in `data/speech/en/`
+
+**Problem**: No audio plays
+- **Solution**: Check audio engine is initialized (may be in stub mode)
+- **Solution**: Check file extension in YAML matches generated files
+- **Solution**: Verify file path is correct: `data/speech/en/{filename}.mp3`
+
+**Problem**: Wrong audio file plays
+- **Solution**: Verify filename in YAML matches generated file exactly
+- **Solution**: Check for typos in message key constant
+
+**Problem**: Assembled message has gaps between words
+- **Solution**: This is expected - small delays between sequential files
+- **Solution**: Adjust delay in `audio_provider.py` if needed (currently 50ms)
+
+#### Multi-Language Support (Future)
+
+The system is designed for multi-language expansion:
+
+1. Create `config/speech_fr.yaml` (French), `config/speech_de.yaml` (German), etc.
+2. Generate speech files: `python scripts/generate_tts.py --language fr --voice Amelie`
+3. Files stored in `data/speech/fr/*.mp3`
+4. Set language in `config/settings.yaml` or runtime
 
 ---
 
@@ -1526,6 +1803,258 @@ Advise on initial contact you have information Bravo."
 - ✅ Phraseology sounds realistic - **PASS** (PhraseMaker with ICAO standard templates)
 - ✅ Different voice for ATC vs cockpit - **PARTIAL** (Framework ready, TTS voice differentiation TODO)
 - ✅ Push-to-talk works - **PASS** (PTT handling in RadioPlugin)
+
+---
+
+## Phase 8.5: Interactive ATC Communications (6-8 hours) ❌
+
+**Status**: NOT STARTED
+**Priority**: HIGH - Essential for playable flight simulation experience
+
+### Objective
+Implement interactive ATC menu system with realistic two-way radio communications, message queuing, and proper phraseology with readback/hearback procedures.
+
+### Overview
+This phase extends Phase 8's radio foundation with player-initiated ATC communications using an interactive menu system. The system simulates realistic ATC operations with proper timing, message queuing, and readback procedures as used in real aviation.
+
+### Tasks
+
+#### 8.5.1: Implement ATC Message Queue System (1.5 hours)
+**File**: `src/airborne/plugins/radio/atc_queue.py`
+
+**Requirements**:
+- FIFO message queue for ATC transmissions
+- Minimum 2-second spacing between messages
+- Only one message plays at a time
+- Dynamic delay calculation (2-5 seconds based on message complexity)
+- Queue state tracking (idle, transmitting, waiting)
+
+**Key Classes**:
+```python
+@dataclass
+class ATCMessage:
+    message_key: str | list[str]  # Message key(s) from atc_en.yaml
+    sender: str  # "PILOT" or "ATC"
+    priority: int = 0  # Higher = more urgent
+    delay_after: float = 2.0  # Seconds to wait after this message
+    callback: Optional[Callable] = None  # Called when message completes
+
+class ATCMessageQueue:
+    def enqueue(self, message: ATCMessage) -> None
+    def process(self, dt: float) -> None  # Called every frame
+    def is_busy(self) -> bool
+    def clear(self) -> None
+```
+
+**Timing Rules**:
+- Minimum 2 seconds between messages
+- Longer delays for complex messages (3-5 seconds)
+- Emergency messages can interrupt with higher priority
+
+**Test**: Enqueue 3 messages, verify proper spacing and order.
+
+#### 8.5.2: Implement ATC Menu System (2 hours)
+**File**: `src/airborne/plugins/radio/atc_menu.py`
+
+**Requirements**:
+- F1 key opens ATC menu
+- Context-aware menu options (based on flight phase, position, altitude)
+- Number keys to select option
+- ESC to close menu
+- TTS reads menu options
+- Menu state machine (closed, open, waiting_for_response)
+
+**Key Classes**:
+```python
+class ATCMenuOption:
+    key: str  # "1", "2", etc.
+    label: str  # "Request Taxi"
+    pilot_message: str | list[str]  # What pilot says
+    expected_atc_response: str | list[str]  # What ATC responds
+    callback: Optional[Callable] = None
+
+class ATCMenu:
+    def open(self) -> None
+    def close(self) -> None
+    def get_context_options(self, aircraft_state: dict) -> list[ATCMenuOption]
+    def select_option(self, key: str) -> None
+    def read_menu(self) -> None  # TTS reads current menu
+```
+
+**Menu Context Examples**:
+- **On Ground, Engine Off**: "1. Request Start-up | 2. Request ATIS"
+- **On Ground, Engine Running**: "1. Request Taxi | 2. Request ATIS"
+- **Holding Short**: "1. Request Takeoff | 2. Report Ready"
+- **Airborne**: "1. Request Flight Following | 2. Report Position"
+
+**Test**: Open menu, verify options change with context.
+
+#### 8.5.3: Implement Readback System (1.5 hours)
+**File**: `src/airborne/plugins/radio/readback.py`
+
+**Requirements**:
+- Shift+F1 acknowledges last ATC instruction
+- Pilot reads back critical elements (altitude, heading, runway)
+- ATC validates readback with "Readback correct" or corrections
+- Ctrl+F1 requests repeat ("Say again")
+- Track last 3 ATC messages for readback/repeat
+
+**Key Classes**:
+```python
+class ReadbackValidator:
+    def extract_critical_elements(self, message: str) -> dict[str, str]
+    def generate_readback(self, elements: dict) -> str
+    def validate_readback(self, original: dict, readback: dict) -> bool
+
+class ATCReadbackSystem:
+    def acknowledge(self) -> None  # Shift+F1
+    def request_repeat(self) -> None  # Ctrl+F1
+    def get_last_atc_message(self) -> Optional[str]
+```
+
+**Critical Elements to Read Back**:
+- Altitude assignments: "Climb and maintain three thousand"
+- Heading assignments: "Turn left heading two seven zero"
+- Runway assignments: "Runway three one, cleared for takeoff"
+- Frequency changes: "Contact departure one two five point three five"
+
+**ATC Responses**:
+- Correct: "Readback correct"
+- Incorrect: "Negative, I say again: [corrected instruction]"
+
+**Test**: Receive clearance, read back, verify ATC confirms.
+
+#### 8.5.4: Generate Pilot & ATC Speech (1 hour)
+**Files**: `scripts/generate_pilot_speech.py`, update `scripts/generate_atc_speech.py`
+
+**Requirements**:
+- **Pilot voice**: Oliver, 200 WPM (different from cockpit Samantha 180 WPM)
+- **ATC voice**: Evan, 220 WPM (faster, more professional)
+- Generate pilot phraseology messages
+- Generate ATC response messages
+- Update atc_en.yaml with new messages
+
+**Pilot Messages** (Oliver 200 WPM):
+```yaml
+PILOT_REQUEST_STARTUP: "ground_request_startup"
+PILOT_REQUEST_TAXI: "request_taxi_to_runway"
+PILOT_READY_FOR_DEPARTURE: "ready_for_departure"
+PILOT_READBACK_ALTITUDE: "readback_altitude_3000"
+PILOT_SAY_AGAIN: "say_again"
+PILOT_WILCO: "wilco"
+```
+
+**ATC Messages** (Evan 220 WPM):
+```yaml
+ATC_READBACK_CORRECT: "readback_correct"
+ATC_SAY_AGAIN_SLOWLY: "i_say_again"
+ATC_STANDBY: "standby"
+```
+
+**Test**: Play pilot message at 200 WPM, ATC at 220 WPM.
+
+#### 8.5.5: Integrate with Radio Plugin (2 hours)
+**File**: `src/airborne/plugins/radio/radio_plugin.py` (update)
+
+**Requirements**:
+- Wire F1 key to open ATC menu
+- Wire Shift+F1 to acknowledge
+- Wire Ctrl+F1 to request repeat
+- Integrate ATCMessageQueue with ATCAudioManager
+- Process queue every frame
+- Handle radio static + effects for all transmissions
+
+**Key Integrations**:
+```python
+class RadioPlugin:
+    def __init__(self):
+        self.atc_menu = ATCMenu()
+        self.atc_queue = ATCMessageQueue()
+        self.readback_system = ATCReadbackSystem()
+        self.atc_audio = ATCAudioManager(...)  # From Phase 8
+
+    def on_key_pressed(self, event):
+        if event.key == pygame.K_F1:
+            if event.mod & pygame.KMOD_SHIFT:
+                self.readback_system.acknowledge()
+            elif event.mod & pygame.KMOD_CTRL:
+                self.readback_system.request_repeat()
+            else:
+                self.atc_menu.open()
+
+    def update(self, dt: float):
+        self.atc_queue.process(dt)
+```
+
+**Message Flow**:
+1. Player presses F1 → Menu opens
+2. Player selects "1. Request Taxi" → Pilot message queued
+3. Queue plays pilot message (Oliver 200 WPM, radio effect)
+4. After 2+ seconds, ATC response queued
+5. Queue plays ATC message (Evan 220 WPM, radio effect)
+6. Player presses Shift+F1 → Pilot readback queued
+7. Queue plays readback
+8. After 2+ seconds, ATC confirms "Readback correct"
+
+**Test**: Full sequence from menu to readback confirmation.
+
+### Success Criteria
+- [ ] F1 opens ATC menu with context-aware options
+- [ ] Selecting menu option sends pilot message and receives ATC response
+- [ ] Messages play with proper 2+ second spacing
+- [ ] Only one message plays at a time
+- [ ] Shift+F1 reads back last ATC instruction with critical elements
+- [ ] ATC responds with "Readback correct" or corrections
+- [ ] Ctrl+F1 requests repeat of last ATC message
+- [ ] Pilot voice (Oliver 200 WPM) distinct from ATC (Evan 220 WPM)
+- [ ] All messages play with radio effect and static layer
+- [ ] Queue handles multiple rapid requests gracefully
+
+### Technical Notes
+
+**Voice Rates**:
+- **Cockpit TTS** (Samantha): 180 WPM (clear, relaxed)
+- **Pilot Radio** (Oliver): 200 WPM (professional, moderate pace)
+- **ATC Radio** (Evan): 220 WPM (fast, professional, typical ATC speed)
+
+**Message Timing**:
+```python
+# Simple acknowledgment
+delay = 2.0  # "Roger" → 2 seconds
+
+# Short instruction
+delay = 2.5  # "Taxi via Alpha" → 2.5 seconds
+
+# Complex clearance
+delay = 4.0  # "Cleared ILS 31 approach, maintain 3000 until DUMBA" → 4 seconds
+
+# Emergency
+priority = 10  # Can interrupt current transmission
+```
+
+**Readback Elements**:
+```python
+CRITICAL_ELEMENTS = {
+    "altitude": r"(\d+,?\d*)\s*(?:feet|ft)",
+    "heading": r"heading\s*(\d{3})",
+    "runway": r"runway\s*(\d{1,2}[LRC]?)",
+    "frequency": r"(\d{3}\.\d{1,2})",
+    "squawk": r"squawk\s*(\d{4})",
+}
+```
+
+### Dependencies
+- Phase 8 (Radio & ATC) - Radio effect system, ATCAudioManager
+- Phase 2 (Audio System) - FMOD audio engine, sound manager
+- Input system - Key press handling
+
+### Estimated Time: 6-8 hours
+- Task 8.5.1: 1.5 hours
+- Task 8.5.2: 2 hours
+- Task 8.5.3: 1.5 hours
+- Task 8.5.4: 1 hour
+- Task 8.5.5: 2 hours
+- Testing & polish: 1 hour
 
 ---
 
