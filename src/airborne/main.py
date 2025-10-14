@@ -201,6 +201,7 @@ class AirBorne:
             )
         # ATC Menu controls
         elif event.action == "atc_menu":
+            # Send to radio plugin
             self.message_queue.publish(
                 Message(
                     sender="main",
@@ -210,6 +211,8 @@ class AirBorne:
                     priority=MessagePriority.HIGH,
                 )
             )
+            # TTS feedback (menu will speak its own content)
+            logger.debug("ATC menu toggled")
         elif event.action == "atc_acknowledge":
             self.message_queue.publish(
                 Message(
@@ -233,6 +236,7 @@ class AirBorne:
         # ATC menu selection (number keys 1-9)
         elif event.action.startswith("atc_select_"):
             option = event.action.split("_")[-1]  # Extract number
+            # Send to radio plugin (menu will provide its own TTS feedback)
             self.message_queue.publish(
                 Message(
                     sender="main",
@@ -244,6 +248,7 @@ class AirBorne:
             )
         # ESC closes ATC menu
         elif event.action == "menu_back":
+            # Send to radio plugin (menu will provide its own TTS feedback)
             self.message_queue.publish(
                 Message(
                     sender="main",

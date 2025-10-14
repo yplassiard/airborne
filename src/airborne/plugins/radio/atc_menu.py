@@ -131,6 +131,10 @@ class ATCMenu:
             self._current_options = []
             logger.debug("ATC menu closed")
 
+            # Provide audio feedback
+            if self._tts:
+                self._tts.speak("Menu closed")
+
     def select_option(self, key: str) -> bool:
         """Select a menu option by key.
 
