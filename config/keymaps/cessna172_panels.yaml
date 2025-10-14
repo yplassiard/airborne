@@ -1,0 +1,93 @@
+# Cessna 172 Cockpit Panel Keyboard Mapping
+# Defines keyboard shortcuts for all panel controls
+
+# Panel navigation keys (Ctrl + number)
+panel_navigation:
+  1: Instrument Panel
+  2: Pedestal
+  3: Engine Controls
+  4: Overhead Panel
+  5: Flight Controls
+
+# Key mappings for each panel
+# Format:
+#   key: control_id
+#   shift+key: control_id (for multi-state controls - next state)
+#   ctrl+key: control_id (for multi-state controls - previous state / decrease)
+
+panels:
+  # PANEL 1: Instrument Panel (Ctrl+1)
+  Instrument Panel:
+    # All switches - single letter toggles
+    m: master_switch                  # M - Master Switch
+    a: avionics_master_switch         # A - Avionics Master
+    b: beacon_switch                  # B - Beacon
+    n: nav_lights_switch              # N - Nav Lights
+    s: strobe_switch                  # S - Strobe
+    t: taxi_light_switch              # T - Taxi Light
+    l: landing_light_switch           # L - Landing Light
+
+  # PANEL 2: Pedestal (Ctrl+2)
+  Pedestal:
+    # Mixture lever (3 states) - Shift+M next, Ctrl+M previous
+    shift+m: mixture_lever_next
+    ctrl+m: mixture_lever_prev
+
+    # Carburetor heat (2 states) - C toggles
+    c: carburetor_heat_lever
+
+    # Throttle slider (continuous) - Shift+T increase, Ctrl+T decrease
+    shift+t: throttle_lever_increase
+    ctrl+t: throttle_lever_decrease
+
+    # Fuel selector (4 states) - Shift+F next, Ctrl+F previous
+    shift+f: fuel_selector_valve_next
+    ctrl+f: fuel_selector_valve_prev
+
+    # Fuel shutoff valve - V toggles
+    v: fuel_shutoff_valve
+
+    # Fuel pump switch - P toggles
+    p: fuel_pump_switch
+
+    # Primer pump button - R presses
+    r: primer_pump
+
+  # PANEL 3: Engine Controls (Ctrl+3)
+  Engine Controls:
+    # Magnetos (5 states) - Shift+G next, Ctrl+G previous
+    shift+g: magneto_switch_next
+    ctrl+g: magneto_switch_prev
+
+    # Starter button - S presses
+    s: starter_button
+
+  # PANEL 4: Overhead Panel (Ctrl+4)
+  Overhead Panel:
+    # Pitot heat switch - H toggles
+    h: pitot_heat_switch
+
+  # PANEL 5: Flight Controls (Ctrl+5)
+  Flight Controls:
+    # Flaps lever (5 states) - Shift+F next, Ctrl+F previous
+    shift+f: flaps_lever_next
+    ctrl+f: flaps_lever_prev
+
+    # Elevator trim (3 states) - Shift+E next, Ctrl+E previous
+    shift+e: elevator_trim_wheel_next
+    ctrl+e: elevator_trim_wheel_prev
+
+    # Parking brake - B toggles
+    b: parking_brake_lever
+
+# Key conflict resolution
+# Note: Same letters can be used in different panels since panel context changes with Ctrl+[1-5]
+# Within a panel, conflicts are avoided by using different letters or modifiers
+conflicts:
+  - panel: Pedestal
+    keys: [shift+f, ctrl+f]
+    note: "F is used for fuel selector in Pedestal"
+
+  - panel: Flight Controls
+    keys: [shift+f, ctrl+f]
+    note: "F is also used for flaps in Flight Controls - no conflict due to panel context"

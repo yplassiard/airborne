@@ -214,3 +214,139 @@ messages:
   MSG_ATC_OPTION_REQUEST_LANDING: "menu_request_landing"
   MSG_ATC_OPTION_ACKNOWLEDGE: "menu_acknowledge"
   MSG_ATC_OPTION_BACK: "menu_back"
+
+  # ===== COCKPIT PANEL CONTROLS =====
+
+  # Panel names
+  MSG_PANEL_INSTRUMENT: "instrument_panel"
+  MSG_PANEL_PEDESTAL: "pedestal"
+  MSG_PANEL_ENGINE: "engine_controls"
+  MSG_PANEL_OVERHEAD: "overhead_panel"
+  MSG_PANEL_FLIGHT: "flight_controls"
+
+  # Instrument Panel - Master Switch
+  MSG_MASTER_SWITCH: "master_switch"
+  MSG_MASTER_SWITCH_OFF: "master_off"
+  MSG_MASTER_SWITCH_ON: "master_on"
+
+  # Instrument Panel - Avionics Master
+  MSG_AVIONICS_MASTER: "avionics_master"
+  MSG_AVIONICS_OFF: "avionics_off"
+  MSG_AVIONICS_ON: "avionics_on"
+
+  # Instrument Panel - Beacon
+  MSG_BEACON: "beacon"
+  MSG_BEACON_OFF: "beacon_off"
+  MSG_BEACON_ON: "beacon_on"
+
+  # Instrument Panel - Nav Lights
+  MSG_NAV_LIGHTS: "nav_lights"
+  MSG_NAV_LIGHTS_OFF: "nav_lights_off"
+  MSG_NAV_LIGHTS_ON: "nav_lights_on"
+
+  # Instrument Panel - Strobe
+  MSG_STROBE: "strobe"
+  MSG_STROBE_OFF: "strobe_off"
+  MSG_STROBE_ON: "strobe_on"
+
+  # Instrument Panel - Taxi Light
+  MSG_TAXI_LIGHT: "taxi_light"
+  MSG_TAXI_LIGHT_OFF: "taxi_light_off"
+  MSG_TAXI_LIGHT_ON: "taxi_light_on"
+
+  # Instrument Panel - Landing Light
+  MSG_LANDING_LIGHT: "landing_light"
+  MSG_LANDING_LIGHT_OFF: "landing_light_off"
+  MSG_LANDING_LIGHT_ON: "landing_light_on"
+
+  # Pedestal - Mixture Lever
+  MSG_MIXTURE: "mixture"
+  MSG_MIXTURE_IDLE_CUTOFF: "mixture_idle_cutoff"
+  MSG_MIXTURE_LEAN: "mixture_lean"
+  MSG_MIXTURE_RICH: "mixture_rich"
+
+  # Pedestal - Carburetor Heat
+  MSG_CARB_HEAT: "carburetor_heat"
+  MSG_CARB_HEAT_COLD: "carb_heat_cold"
+  MSG_CARB_HEAT_HOT: "carb_heat_hot"
+
+  # Pedestal - Throttle (0-100% in 5% increments)
+  MSG_THROTTLE: "throttle"
+  MSG_THROTTLE_0: "throttle_0_percent"
+  MSG_THROTTLE_5: "throttle_5_percent"
+  MSG_THROTTLE_10: "throttle_10_percent"
+  MSG_THROTTLE_15: "throttle_15_percent"
+  MSG_THROTTLE_20: "throttle_20_percent"
+  MSG_THROTTLE_25: "throttle_25_percent"
+  MSG_THROTTLE_30: "throttle_30_percent"
+  MSG_THROTTLE_35: "throttle_35_percent"
+  MSG_THROTTLE_40: "throttle_40_percent"
+  MSG_THROTTLE_45: "throttle_45_percent"
+  MSG_THROTTLE_50: "throttle_50_percent"
+  MSG_THROTTLE_55: "throttle_55_percent"
+  MSG_THROTTLE_60: "throttle_60_percent"
+  MSG_THROTTLE_65: "throttle_65_percent"
+  MSG_THROTTLE_70: "throttle_70_percent"
+  MSG_THROTTLE_75: "throttle_75_percent"
+  MSG_THROTTLE_80: "throttle_80_percent"
+  MSG_THROTTLE_85: "throttle_85_percent"
+  MSG_THROTTLE_90: "throttle_90_percent"
+  MSG_THROTTLE_95: "throttle_95_percent"
+  MSG_THROTTLE_100: "throttle_100_percent"
+
+  # Pedestal - Fuel Selector Valve
+  MSG_FUEL_SELECTOR: "fuel_selector"
+  MSG_FUEL_SELECTOR_OFF: "fuel_off"
+  MSG_FUEL_SELECTOR_LEFT: "fuel_left"
+  MSG_FUEL_SELECTOR_RIGHT: "fuel_right"
+  MSG_FUEL_SELECTOR_BOTH: "fuel_both"
+
+  # Pedestal - Fuel Shutoff Valve
+  MSG_FUEL_SHUTOFF: "fuel_shutoff_valve"
+  MSG_FUEL_SHUTOFF_CLOSED: "fuel_shutoff_closed"
+  MSG_FUEL_SHUTOFF_OPEN: "fuel_shutoff_open"
+
+  # Pedestal - Fuel Pump
+  MSG_FUEL_PUMP: "fuel_pump"
+  MSG_FUEL_PUMP_OFF: "fuel_pump_off"
+  MSG_FUEL_PUMP_ON: "fuel_pump_on"
+
+  # Pedestal - Primer Pump
+  MSG_PRIMER: "primer"
+  MSG_PRIMER_PRESSED: "primer_pressed"
+
+  # Engine Controls - Magnetos
+  MSG_MAGNETOS: "magnetos"
+  MSG_MAGNETOS_OFF: "magnetos_off"
+  MSG_MAGNETOS_R: "magnetos_right"
+  MSG_MAGNETOS_L: "magnetos_left"
+  MSG_MAGNETOS_BOTH: "magnetos_both"
+  MSG_MAGNETOS_START: "magnetos_start"
+
+  # Engine Controls - Starter
+  MSG_STARTER: "starter"
+  MSG_STARTER_PRESSED: "starter_pressed"
+
+  # Overhead Panel - Pitot Heat
+  MSG_PITOT_HEAT: "pitot_heat"
+  MSG_PITOT_HEAT_OFF: "pitot_heat_off"
+  MSG_PITOT_HEAT_ON: "pitot_heat_on"
+
+  # Flight Controls - Flaps
+  MSG_FLAPS: "flaps"
+  MSG_FLAPS_UP: "flaps_up"
+  MSG_FLAPS_10: "flaps_10"
+  MSG_FLAPS_20: "flaps_20"
+  MSG_FLAPS_30: "flaps_30"
+  MSG_FLAPS_FULL: "flaps_full"
+
+  # Flight Controls - Elevator Trim
+  MSG_ELEVATOR_TRIM: "elevator_trim"
+  MSG_TRIM_NOSE_DOWN: "trim_nose_down"
+  MSG_TRIM_NEUTRAL: "trim_neutral"
+  MSG_TRIM_NOSE_UP: "trim_nose_up"
+
+  # Flight Controls - Parking Brake
+  MSG_PARKING_BRAKE: "parking_brake"
+  MSG_PARKING_BRAKE_RELEASED: "parking_brake_released"
+  MSG_PARKING_BRAKE_SET: "parking_brake_set"
