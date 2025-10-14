@@ -589,6 +589,10 @@ class ControlPanelPlugin(IPlugin):
         """
         import pygame  # Import here to avoid circular dependency
 
+        # Skip Ctrl+Q - let it fall through to app quit handler
+        if mod & pygame.KMOD_CTRL and key == pygame.K_q:
+            return False
+
         # Check for panel navigation (Ctrl+1-5)
         if mod & pygame.KMOD_CTRL:
             if key == pygame.K_1:
