@@ -69,6 +69,7 @@ messages:
   ATC_STANDBY: "standby"
   ATC_CLEARED: "cleared"
   ATC_REPORT: "report"
+  ATC_READBACK_CORRECT: "readback_correct"
 
   # Emergency
   ATC_EMERGENCY_ACKNOWLEDGED: "roger_emergency_aircraft"

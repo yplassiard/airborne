@@ -1,0 +1,72 @@
+# Pilot Speech Messages Configuration (English)
+# Maps pilot message keys to audio filenames (without extension)
+# Uses Oliver voice at 200 WPM for pilot radio communications
+# Format: MESSAGE_KEY: "filename_without_extension"
+
+language: en
+voice: Oliver  # Male voice for pilot (200 WPM)
+file_extension: mp3
+
+# Pilot messages (pre-recorded phrases with radio effect applied at runtime)
+messages:
+  # Ground Operations
+  PILOT_REQUEST_STARTUP: "request_startup_clearance"
+  PILOT_REQUEST_PUSHBACK: "request_pushback"
+  PILOT_REQUEST_TAXI: "request_taxi"
+  PILOT_READY_FOR_DEPARTURE: "ready_for_departure"
+
+  # Taxiing
+  PILOT_HOLDING_SHORT: "holding_short"
+  PILOT_READY_FOR_TAKEOFF: "ready_for_takeoff"
+
+  # Takeoff
+  PILOT_REQUEST_TAKEOFF: "request_takeoff_clearance"
+  PILOT_ROLLING: "rolling"
+  PILOT_DEPARTING: "departing"
+
+  # In Flight - Departure
+  PILOT_AIRBORNE: "airborne"
+  PILOT_WITH_YOU: "with_you"
+  PILOT_LEVEL: "level_at"
+  PILOT_CLIMBING: "climbing_to"
+  PILOT_LEAVING: "leaving"
+
+  # In Flight - Cruise
+  PILOT_REQUEST_HIGHER: "request_higher"
+  PILOT_REQUEST_LOWER: "request_lower"
+  PILOT_REQUEST_DIRECT: "request_direct"
+  PILOT_TRAFFIC_IN_SIGHT: "traffic_in_sight"
+  PILOT_NO_VISUAL: "negative_visual_contact"
+
+  # In Flight - Approach
+  PILOT_REQUEST_APPROACH: "request_approach"
+  PILOT_DESCENDING: "descending_to"
+  PILOT_REDUCING_SPEED: "reducing_speed"
+  PILOT_ESTABLISHED: "established_on_approach"
+
+  # Landing
+  PILOT_RUNWAY_IN_SIGHT: "runway_in_sight"
+  PILOT_LANDING: "landing"
+  PILOT_GOING_AROUND: "going_around"
+  PILOT_CLEAR_RUNWAY: "clear_of_runway"
+
+  # Readback & Acknowledgment
+  PILOT_READBACK: "readback"  # Generic - actual text assembled at runtime
+  PILOT_SAY_AGAIN: "say_again"
+  PILOT_ROGER: "roger"
+  PILOT_WILCO: "wilco"
+  PILOT_UNABLE: "unable"
+  PILOT_AFFIRM: "affirmative"
+  PILOT_NEGATIVE: "negative"
+
+  # ATIS
+  PILOT_REQUEST_ATIS: "request_atis"
+  PILOT_HAVE_INFO_ALPHA: "have_information_alpha"
+  PILOT_HAVE_INFO_BRAVO: "have_information_bravo"
+  PILOT_HAVE_INFO_CHARLIE: "have_information_charlie"
+
+  # Emergency
+  PILOT_DECLARE_EMERGENCY: "declaring_emergency"
+  PILOT_REQUEST_PRIORITY: "request_priority_handling"
+  PILOT_PAN_PAN: "pan_pan_pan_pan"
+  PILOT_MAYDAY: "mayday_mayday_mayday"
