@@ -165,6 +165,17 @@ class AirBorne:
             self.radio_plugin = RadioPlugin()
             self.radio_plugin.initialize(self.plugin_context)
 
+            # Load control panel plugin
+            logger.info("Loading control panel plugin...")
+            from airborne.plugins.panel.control_panel_plugin import ControlPanelPlugin
+
+            self.control_panel_plugin = ControlPanelPlugin()
+            # Configure panel definition file
+            self.plugin_context.config["panels"] = {
+                "definition": "config/panels/cessna172_panel.yaml"
+            }
+            self.control_panel_plugin.initialize(self.plugin_context)
+
             # Build aircraft with systems
             builder = AircraftBuilder(self.plugin_loader, self.plugin_context)
             self.aircraft = builder.build(aircraft_config_path)
@@ -308,16 +319,29 @@ class AirBorne:
     def _process_events(self) -> None:
         """Process pygame events."""
         events = pygame.event.get()
+        remaining_events = []
 
         for event in events:
             if event.type == pygame.QUIT:
                 self.running = False
+                remaining_events.append(event)
             elif event.type == pygame.VIDEORESIZE:
                 self.screen = pygame.display.set_mode((event.w, event.h), pygame.RESIZABLE)
                 logger.debug("Window resized to %dx%d", event.w, event.h)
+                remaining_events.append(event)
+            elif (
+                event.type == pygame.KEYDOWN
+                and hasattr(self, "control_panel_plugin")
+                and self.control_panel_plugin
+                and self.control_panel_plugin.handle_key_press(event.key, pygame.key.get_mods())
+            ):
+                # Event was handled by panel system, don't add to remaining_events
+                pass
+            else:
+                remaining_events.append(event)
 
-        # Pass events to input manager
-        self.input_manager.process_events(events)
+        # Pass remaining events to input manager
+        self.input_manager.process_events(remaining_events)
 
     def _update(self, dt: float) -> None:
         """Update game state.
