@@ -13,6 +13,7 @@ source = { editable = "." }
 dependencies = [
     { name = "numpy" },
     { name = "pybass3" },
+    { name = "pydub" },
     { name = "pyfmodex" },
     { name = "pygame" },
     { name = "python-dateutil" },
@@ -31,24 +32,39 @@ dev = [
     { name = "types-pyyaml" },
 ]
 
+[package.dev-dependencies]
+dev = [
+    { name = "pre-commit" },
+    { name = "pytest" },
+    { name = "pytest-cov" },
+]
+
 [package.metadata]
 requires-dist = [
     { name = "mypy", marker = "extra == 'dev'", specifier = ">=1.5.0" },
     { name = "numpy", specifier = ">=1.24.0" },
     { name = "pre-commit", marker = "extra == 'dev'", specifier = ">=3.0.0" },
     { name = "pybass3", specifier = ">=0.2.0" },
+    { name = "pydub", specifier = ">=0.25.1" },
     { name = "pyfmodex", specifier = ">=0.7.2" },
     { name = "pygame", specifier = ">=2.5.0" },
     { name = "pylint", marker = "extra == 'dev'", specifier = ">=3.0.0" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=7.4.0" },
     { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=4.1.0" },
     { name = "python-dateutil", specifier = ">=2.8.0" },
-    { name = "pyttsx3", specifier = ">=2.90" },
+    { name = "pyttsx3", specifier = ">=2.99" },
     { name = "pyyaml", specifier = ">=6.0" },
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.1.0" },
     { name = "types-pyyaml", marker = "extra == 'dev'", specifier = ">=6.0.0" },
 ]
 provides-extras = ["dev"]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "pre-commit", specifier = ">=4.3.0" },
+    { name = "pytest", specifier = ">=8.4.2" },
+    { name = "pytest-cov", specifier = ">=7.0.0" },
+]
 
 [[package]]
 name = "astroid"
@@ -437,6 +453,15 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/f0/64/846abd06e17ba90929db62143139ed9e904393b73a83619687fcb4bd23f0/PyBASS3-0.2.0.tar.gz", hash = "sha256:ee2438480f1413cd04df10f083cae7260cb5e5ac0aa5a6b24ebdc99dafe1e894", size = 213513, upload-time = "2021-12-24T19:36:38.643Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/68/68/3e454bec43a57d9f589456ca28c89c6be133f09281010090b3d36c310c74/PyBASS3-0.2.0-py3-none-any.whl", hash = "sha256:2515f5390dc38591361448d730455d9906b4c89c912f214077ff57d4c1e75948", size = 218810, upload-time = "2021-12-24T19:36:35.225Z" },
+]
+
+[[package]]
+name = "pydub"
+version = "0.25.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/fe/9a/e6bca0eed82db26562c73b5076539a4a08d3cffd19c3cc5913a3e61145fd/pydub-0.25.1.tar.gz", hash = "sha256:980a33ce9949cab2a569606b65674d748ecbca4f0796887fd6f46173a7b0d30f", size = 38326, upload-time = "2021-03-10T02:09:54.659Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/a6/53/d78dc063216e62fc55f6b2eebb447f6a4b0a59f55c8406376f76bf959b08/pydub-0.25.1-py2.py3-none-any.whl", hash = "sha256:65617e33033874b59d87db603aa1ed450633288aefead953b30bded59cb599a6", size = 32327, upload-time = "2021-03-10T02:09:53.503Z" },
 ]
 
 [[package]]

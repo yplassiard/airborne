@@ -10,11 +10,12 @@ authors = [
 dependencies = [
     "pygame>=2.5.0",
     "PyBASS3>=0.2.0",
-    "pyttsx3>=2.90",
     "numpy>=1.24.0",
     "pyyaml>=6.0",
     "python-dateutil>=2.8.0",
     "pyfmodex>=0.7.2",
+    "pyttsx3>=2.99",
+    "pydub>=0.25.1",
 ]
 
 [project.optional-dependencies]
@@ -81,3 +82,10 @@ python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
 addopts = "-v --strict-markers"
+
+[dependency-groups]
+dev = [
+    "pre-commit>=4.3.0",
+    "pytest>=8.4.2",
+    "pytest-cov>=7.0.0",
+]
