@@ -72,10 +72,9 @@ class SoundManager:
             audio_config = {"sample_rate": 44100, "enable_3d": True}
         self._audio_engine.initialize(audio_config)
 
-        # Initialize TTS
-        if tts_config is None:
-            tts_config = {"rate": 200, "volume": 1.0}
-        self._tts_provider.initialize(tts_config)
+        # Initialize TTS only if config provided (may already be initialized)
+        if tts_config is not None:
+            self._tts_provider.initialize(tts_config)
 
         logger.info("Sound manager initialized")
 

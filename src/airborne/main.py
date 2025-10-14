@@ -148,6 +148,8 @@ class AirBorne:
 
             self.audio_plugin = AudioPlugin()
             self.audio_plugin.initialize(self.plugin_context)
+            # Register audio plugin so other plugins can access it
+            self.plugin_context.plugin_registry.register("audio_plugin", self.audio_plugin)
 
             # Load autopilot plugin
             logger.info("Loading autopilot plugin...")
@@ -155,6 +157,13 @@ class AirBorne:
 
             self.autopilot_plugin = AutopilotPlugin()
             self.autopilot_plugin.initialize(self.plugin_context)
+
+            # Load radio plugin
+            logger.info("Loading radio plugin...")
+            from airborne.plugins.radio.radio_plugin import RadioPlugin
+
+            self.radio_plugin = RadioPlugin()
+            self.radio_plugin.initialize(self.plugin_context)
 
             # Build aircraft with systems
             builder = AircraftBuilder(self.plugin_loader, self.plugin_context)
@@ -211,8 +220,6 @@ class AirBorne:
                     priority=MessagePriority.HIGH,
                 )
             )
-            # TTS feedback (menu will speak its own content)
-            logger.debug("ATC menu toggled")
         elif event.action == "atc_acknowledge":
             self.message_queue.publish(
                 Message(
@@ -255,6 +262,18 @@ class AirBorne:
                     recipients=["radio_plugin"],
                     topic="input.atc_menu",
                     data={"action": "close"},
+                    priority=MessagePriority.HIGH,
+                )
+            )
+        # Control key stops cockpit TTS
+        elif event.action == "tts_interrupt":
+            # Stop TTS via message queue
+            self.message_queue.publish(
+                Message(
+                    sender="main",
+                    recipients=["*"],
+                    topic=MessageTopic.TTS_INTERRUPT,
+                    data={},
                     priority=MessagePriority.HIGH,
                 )
             )
@@ -324,6 +343,10 @@ class AirBorne:
         # Update audio plugin
         if self.audio_plugin:
             self.audio_plugin.update(dt)
+
+        # Update radio plugin
+        if hasattr(self, "radio_plugin") and self.radio_plugin:
+            self.radio_plugin.update(dt)
 
         # Process message queue
         self.message_queue.process()
@@ -528,6 +551,10 @@ class AirBorne:
         if hasattr(self, "autopilot_plugin") and self.autopilot_plugin:
             logger.info("Shutting down autopilot plugin...")
             self.autopilot_plugin.shutdown()
+
+        if hasattr(self, "radio_plugin") and self.radio_plugin:
+            logger.info("Shutting down radio plugin...")
+            self.radio_plugin.shutdown()
 
         if self.audio_plugin:
             logger.info("Shutting down audio plugin...")

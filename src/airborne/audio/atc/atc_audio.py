@@ -86,6 +86,10 @@ class ATCAudioManager:
         atc_config_file = config_dir / f"atc_{language}.yaml"
         self._load_atc_config(atc_config_file)
 
+        # Load pilot message configuration
+        pilot_config_file = config_dir / f"pilot_{language}.yaml"
+        self._load_pilot_config(pilot_config_file)
+
         # Load radio effect configuration
         radio_config_file = config_dir / "radio_effects.yaml"
         self._load_radio_effect(radio_config_file)
@@ -130,6 +134,42 @@ class ATCAudioManager:
 
         except Exception as e:
             logger.error(f"Error loading ATC config: {e}")
+
+    def _load_pilot_config(self, config_file: Path) -> None:
+        """Load pilot message configuration from YAML.
+
+        Args:
+            config_file: Path to pilot configuration file (e.g., pilot_en.yaml).
+
+        The configuration file should have the format:
+            language: en
+            voice: Oliver
+            file_extension: mp3
+            messages:
+              PILOT_REQUEST_STARTUP: "request_startup_clearance"
+              PILOT_REQUEST_ATIS: "request_atis"
+        """
+        if not config_file.exists():
+            logger.warning(f"Pilot config not found: {config_file}")
+            logger.info("Pilot messages will not be available until config is created")
+            return
+
+        try:
+            with open(config_file, encoding="utf-8") as f:
+                config = yaml.safe_load(f)
+
+            # Add pilot messages to the same message map
+            pilot_messages = config.get("messages", {})
+            self._message_map.update(pilot_messages)
+
+            voice = config.get("voice", "unknown")
+            logger.info(
+                f"Loaded {len(pilot_messages)} pilot messages from {config_file} "
+                f"(voice: {voice})"
+            )
+
+        except Exception as e:
+            logger.error(f"Error loading pilot config: {e}")
 
     def _load_radio_effect(self, config_file: Path) -> None:
         """Load and setup radio effect DSP.
@@ -210,9 +250,12 @@ class ATCAudioManager:
             return
 
         try:
-            # Load static sound as looping
-            self._static_sound = self._audio_engine.load_sound(str(static_path))
-            logger.info(f"Loaded static layer: {static_path}")
+            # Load static sound with loop mode enabled at sound level
+            # Use streaming mode for better performance with looping background sounds
+            self._static_sound = self._audio_engine.load_sound(
+                str(static_path), preload=False, loop_mode=True
+            )
+            logger.info(f"Loaded static layer (streaming, loop): {static_path}")
         except Exception as e:
             logger.error(f"Failed to load static layer: {e}")
 
@@ -389,11 +432,19 @@ class ATCAudioManager:
             if static_id:
                 static_channel = self._audio_engine._channels.get(static_id)
 
-                if static_channel and self._static_layer_config.get("ducking", {}).get("enabled", False):
-                    # Apply side-chain compressor to duck static when voice plays
-                    self._setup_sidechain_ducking(static_channel)
+                # Verify loop is actually set
+                if static_channel:
+                    logger.info(f"Started static layer (source {static_id}, loop_count={static_channel.loop_count})")
 
-                logger.debug(f"Started static layer (source {static_id})")
+                    if static_channel.loop_count != -1:
+                        logger.warning(f"Static layer loop_count is {static_channel.loop_count}, expected -1 for infinite loop")
+
+                    if self._static_layer_config.get("ducking", {}).get("enabled", False):
+                        # Apply side-chain compressor to duck static when voice plays
+                        self._setup_sidechain_ducking(static_channel)
+                else:
+                    logger.warning(f"Started static layer but channel not found (source {static_id})")
+
                 return static_id
 
         except Exception as e:
@@ -411,12 +462,19 @@ class ATCAudioManager:
             return
 
         try:
-            static_channel = self._audio_engine._channels.get(static_channel_id)
-            if static_channel:
-                static_channel.stop()
+            # Check if channel still exists and is playing
+            from airborne.audio.engine.base import SourceState
+
+            state = self._audio_engine.get_source_state(static_channel_id)
+            if state != SourceState.STOPPED:
+                self._audio_engine.stop_source(static_channel_id)
                 logger.debug(f"Stopped static layer (source {static_channel_id})")
+            else:
+                logger.debug(
+                    f"Static layer already stopped (source {static_channel_id})"
+                )
         except Exception as e:
-            logger.error(f"Failed to stop static layer: {e}")
+            logger.warning(f"Failed to stop static layer: {e}")
 
     def _setup_sidechain_ducking(self, static_channel: Any) -> None:
         """Setup side-chain compression to duck static when voice plays.

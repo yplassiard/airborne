@@ -64,12 +64,12 @@ The `scripts/demo_autopilot.py` script now successfully demonstrates:
 2. **Plugin Wiring**: Position updates, proximity audio, terrain alerts need message subscriptions
 3. **Type Checking**: 23 pre-existing mypy warnings in 7 files (tests pass, non-critical)
 
-### Recent Commits
+### Recent Commits (2025-10-14)
+- `enh(audio): fix radio static looping with FMOD LOOP_NORMAL mode`
+- `enh(input): add Control key to interrupt cockpit TTS at any time`
+- `enh(radio): make menu close silent when selecting option, speak only on ESC`
 - `feat(autopilot): integrate autopilot with main app and demo script`
 - `docs(demo): update DEMO.md with working autopilot demo instructions`
-- `feat(demo): complete working automatic autopilot demo with phase progression`
-- `feat(demo): add automatic autopilot demo script and comprehensive documentation`
-- `fix(audio): only unregister components that were registered in shutdown`
 
 ### Recommended Next Steps
 **Priority: Complete Near-Complete Phases (Est: 6-10 hours)**

@@ -92,9 +92,16 @@ class TestATCMenu:
         return mock
 
     @pytest.fixture
-    def menu(self, mock_tts, mock_queue):
+    def mock_message_queue(self):
+        """Create mock message queue."""
+        mock = Mock()
+        mock.publish = Mock()
+        return mock
+
+    @pytest.fixture
+    def menu(self, mock_tts, mock_queue, mock_message_queue):
         """Create ATC menu with mocks."""
-        return ATCMenu(mock_tts, mock_queue)
+        return ATCMenu(mock_tts, mock_queue, mock_message_queue)
 
     def test_create_menu(self, menu):
         """Test creating menu."""
@@ -200,7 +207,7 @@ class TestATCMenu:
         assert len(options) >= 1
         # Should have departure-related options
 
-    def test_open_menu(self, menu, mock_tts):
+    def test_open_menu(self, menu, mock_message_queue):
         """Test opening menu."""
         state = {
             "on_ground": True,
@@ -215,8 +222,8 @@ class TestATCMenu:
         assert menu.get_current_phase() == FlightPhase.ON_GROUND_ENGINE_RUNNING
         assert len(menu.get_current_options()) > 0
 
-        # Should have called TTS to read menu
-        mock_tts.speak.assert_called_once()
+        # Should have published TTS message to read menu
+        mock_message_queue.publish.assert_called()
 
     def test_close_menu(self, menu):
         """Test closing menu."""
@@ -245,13 +252,13 @@ class TestATCMenu:
         # Should have enqueued messages
         assert mock_queue.enqueue.call_count == 2  # Pilot + ATC
 
-    def test_select_invalid_option(self, menu, mock_queue, mock_tts):
+    def test_select_invalid_option(self, menu, mock_queue, mock_message_queue):
         """Test selecting invalid menu option."""
         state = {"on_ground": True, "engine_running": True, "altitude_agl": 0.0}
         menu.open(state)
 
-        # Clear previous TTS calls
-        mock_tts.speak.reset_mock()
+        # Clear previous message queue calls
+        mock_message_queue.publish.reset_mock()
 
         # Select invalid option
         result = menu.select_option("9")
@@ -262,8 +269,8 @@ class TestATCMenu:
         # Should not enqueue messages
         mock_queue.enqueue.assert_not_called()
 
-        # Should give audio feedback
-        mock_tts.speak.assert_called_once_with("Invalid option")
+        # Should give audio feedback via message queue
+        mock_message_queue.publish.assert_called()
 
     def test_select_option_when_closed(self, menu, mock_queue):
         """Test selecting option when menu is closed."""
@@ -288,24 +295,28 @@ class TestATCMenu:
 
         assert menu.is_available(state)
 
-    def test_read_menu(self, menu, mock_tts):
+    def test_read_menu(self, menu, mock_message_queue):
         """Test reading menu aloud."""
         state = {"on_ground": True, "engine_running": True, "altitude_agl": 0.0}
         menu.open(state)
 
-        # Clear the speak call from open()
-        mock_tts.speak.reset_mock()
+        # Clear the message queue calls from open()
+        mock_message_queue.publish.reset_mock()
 
         # Read menu again
         menu.read_menu()
 
-        # Should have called TTS
-        mock_tts.speak.assert_called_once()
+        # Should have published TTS message
+        mock_message_queue.publish.assert_called()
 
-        # Check that menu text contains options
-        call_args = mock_tts.speak.call_args[0][0]
-        assert "ATC Menu" in call_args
-        assert "1." in call_args
+        # Check that message data contains message keys (menu now uses keys)
+        call_args = mock_message_queue.publish.call_args[0][0]
+        message_keys = call_args.data.get("text", [])
+        # Should be a list of message keys
+        assert isinstance(message_keys, list)
+        assert len(message_keys) > 0
+        # Should contain menu-related message keys
+        assert any("MSG_ATC_MENU" in key or "MSG_ATC_OPTION" in key for key in message_keys)
 
     def test_option_with_callback(self, menu, mock_queue):
         """Test that option callback is executed."""

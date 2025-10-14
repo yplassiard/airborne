@@ -392,6 +392,12 @@ class InputManager:  # pylint: disable=too-many-instance-attributes
                     self._handle_action_pressed(InputAction.QUIT)
                 return
 
+        # Special handling for Control key alone to stop TTS
+        if key in (pygame.K_LCTRL, pygame.K_RCTRL):
+            if not is_repeat:
+                self._handle_action_pressed(InputAction.TTS_INTERRUPT)
+            return
+
         # Check for bound action
         action = self.config.keyboard_bindings.get(key)
         if action:

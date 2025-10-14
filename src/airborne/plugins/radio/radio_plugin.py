@@ -132,7 +132,7 @@ class RadioPlugin(IPlugin):
                 min_delay=2.0,
                 max_delay=10.0
             )
-            self.atc_menu = ATCMenu(tts_provider, self.atc_queue)
+            self.atc_menu = ATCMenu(tts_provider, self.atc_queue, context.message_queue)
             self.readback_system = ATCReadbackSystem(
                 self.atc_queue,
                 tts_provider,
@@ -143,15 +143,15 @@ class RadioPlugin(IPlugin):
             logger.warning("ATC audio manager or TTS not available - interactive ATC disabled")
 
         # Subscribe to messages
-        context.message_queue.subscribe("position_updated", self)
-        context.message_queue.subscribe("input.radio_tune", self)
-        context.message_queue.subscribe("input.push_to_talk", self)
-        context.message_queue.subscribe("input.atis_request", self)
-        context.message_queue.subscribe("airport.nearby", self)
-        context.message_queue.subscribe("input.atc_menu", self)
-        context.message_queue.subscribe("input.atc_acknowledge", self)
-        context.message_queue.subscribe("input.atc_repeat", self)
-        context.message_queue.subscribe("aircraft.state", self)
+        context.message_queue.subscribe("position_updated", self.handle_message)
+        context.message_queue.subscribe("input.radio_tune", self.handle_message)
+        context.message_queue.subscribe("input.push_to_talk", self.handle_message)
+        context.message_queue.subscribe("input.atis_request", self.handle_message)
+        context.message_queue.subscribe("airport.nearby", self.handle_message)
+        context.message_queue.subscribe("input.atc_menu", self.handle_message)
+        context.message_queue.subscribe("input.atc_acknowledge", self.handle_message)
+        context.message_queue.subscribe("input.atc_repeat", self.handle_message)
+        context.message_queue.subscribe("aircraft.state", self.handle_message)
 
         # Register components
         if context.plugin_registry:

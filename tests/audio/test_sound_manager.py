@@ -199,7 +199,7 @@ class TestSoundManager:
         audio_engine = MockAudioEngine()
         tts_provider = MockTTSProvider()
 
-        manager.initialize(audio_engine, tts_provider)
+        manager.initialize(audio_engine, tts_provider, tts_config={})
 
         assert audio_engine.initialized
         assert tts_provider.initialized

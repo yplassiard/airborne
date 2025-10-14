@@ -81,10 +81,11 @@ class FMODEngine(IAudioEngine):
 
         try:
             self._system = pyfmodex.System()
-            # Initialize with default settings (no parameters needed)
-            self._system.init()
+            # Initialize FMOD with sufficient channels
+            max_channels = config.get("max_channels", 32)
+            self._system.init(maxchannels=max_channels)
             self._initialized = True
-            logger.info("FMOD initialized successfully")
+            logger.info(f"FMOD initialized successfully (max_channels={max_channels})")
         except Exception as e:
             raise FMODError(f"Failed to initialize FMOD: {e}") from e
 
@@ -122,12 +123,13 @@ class FMODEngine(IAudioEngine):
         self._channels.clear()
         logger.info("FMOD engine shut down")
 
-    def load_sound(self, path: str, preload: bool = True) -> Sound:
+    def load_sound(self, path: str, preload: bool = True, loop_mode: bool = False) -> Sound:
         """Load a sound from file.
 
         Args:
             path: Path to the sound file.
             preload: Whether to load into memory (True) or stream (False).
+            loop_mode: Whether to enable loop mode on the sound itself (True) or not (False).
 
         Returns:
             Loaded sound resource.
@@ -148,11 +150,26 @@ class FMODEngine(IAudioEngine):
             raise FileNotFoundError(f"Sound file not found: {path}")
 
         try:
-            # Create sound based on preload flag
+            # Create sound with explicit mode flags
+            # FMOD_DEFAULT includes format detection and appropriate codec selection
+            mode_flags = pyfmodex.flags.MODE.DEFAULT
+
+            # Add loop mode if requested
+            if loop_mode:
+                mode_flags |= pyfmodex.flags.MODE.LOOP_NORMAL
+
             if preload:
-                fmod_sound = self._system.create_sound(path)
+                # Load entire sound into memory
+                fmod_sound = self._system.create_sound(
+                    path,
+                    mode=mode_flags | pyfmodex.flags.MODE.CREATESAMPLE
+                )
             else:
-                fmod_sound = self._system.create_stream(path)
+                # Stream from disk
+                fmod_sound = self._system.create_stream(
+                    path,
+                    mode=mode_flags | pyfmodex.flags.MODE.CREATESTREAM
+                )
 
             # Detect format from extension
             ext = Path(path).suffix.lower()

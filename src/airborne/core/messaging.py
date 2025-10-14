@@ -130,6 +130,7 @@ class MessageTopic:
 
     # UI/Audio
     TTS_SPEAK = "ui.tts.speak"
+    TTS_INTERRUPT = "ui.tts.interrupt"
     SYSTEM_STATE_CHANGED = "system.state_changed"
 
 

@@ -78,15 +78,17 @@ class ATCMenu:
         'Request Taxi'
     """
 
-    def __init__(self, tts_provider: Any, atc_queue: Any):
+    def __init__(self, tts_provider: Any, atc_queue: Any, message_queue: Any = None):
         """Initialize ATC menu.
 
         Args:
             tts_provider: TTS provider for reading menu options.
             atc_queue: ATCMessageQueue for enqueueing messages.
+            message_queue: Message queue for sending TTS requests (optional).
         """
         self._tts = tts_provider
         self._atc_queue = atc_queue
+        self._message_queue = message_queue
         self._state = "CLOSED"  # CLOSED, OPEN, WAITING_RESPONSE
         self._current_options: list[ATCMenuOption] = []
         self._current_phase: FlightPhase = FlightPhase.UNKNOWN
@@ -124,16 +126,29 @@ class ATCMenu:
         # Read menu to player
         self.read_menu()
 
-    def close(self) -> None:
-        """Close the ATC menu."""
+    def close(self, speak: bool = True) -> None:
+        """Close the ATC menu.
+
+        Args:
+            speak: If True, speak "menu closed" message. Default True.
+        """
         if self._state != "CLOSED":
             self._state = "CLOSED"
             self._current_options = []
             logger.debug("ATC menu closed")
 
-            # Provide audio feedback
-            if self._tts:
-                self._tts.speak("Menu closed")
+            # Provide audio feedback using message queue with message key (only if speak=True)
+            if speak and self._message_queue:
+                from airborne.core.messaging import Message, MessagePriority, MessageTopic
+                self._message_queue.publish(
+                    Message(
+                        sender="atc_menu",
+                        recipients=["*"],
+                        topic=MessageTopic.TTS_SPEAK,
+                        data={"text": "MSG_ATC_MENU_CLOSED", "priority": "normal"},
+                        priority=MessagePriority.NORMAL,
+                    )
+                )
 
     def select_option(self, key: str) -> bool:
         """Select a menu option by key.
@@ -157,9 +172,18 @@ class ATCMenu:
 
         if not selected_option:
             logger.debug(f"Invalid or disabled option selected: {key}")
-            # Provide audio feedback
-            if self._tts:
-                self._tts.speak("Invalid option")
+            # Provide audio feedback using message queue with message key
+            if self._message_queue:
+                from airborne.core.messaging import Message, MessagePriority, MessageTopic
+                self._message_queue.publish(
+                    Message(
+                        sender="atc_menu",
+                        recipients=["*"],
+                        topic=MessageTopic.TTS_SPEAK,
+                        data={"text": "MSG_ATC_INVALID_OPTION", "priority": "normal"},
+                        priority=MessagePriority.NORMAL,
+                    )
+                )
             return False
 
         logger.info(f"Selected menu option: {selected_option.label}")
@@ -174,19 +198,42 @@ class ATCMenu:
         if self._state != "OPEN" or not self._current_options:
             return
 
-        # Build menu text
-        menu_text = "ATC Menu. "
+        # Map option labels to message keys
+        label_to_key = {
+            "Request Startup Clearance": "MSG_ATC_OPTION_REQUEST_STARTUP",
+            "Request ATIS": "MSG_ATC_OPTION_REQUEST_ATIS",
+            "Request Taxi": "MSG_ATC_OPTION_REQUEST_TAXI",
+            "Request Takeoff Clearance": "MSG_ATC_OPTION_REQUEST_TAKEOFF",
+            "Report Ready for Departure": "MSG_ATC_OPTION_READY_DEPARTURE",
+            "Check In with Departure": "MSG_ATC_OPTION_CHECKIN_DEPARTURE",
+            "Report Altitude": "MSG_ATC_OPTION_REPORT_ALTITUDE",
+            "Request Flight Following": "MSG_ATC_OPTION_REQUEST_FLIGHT_FOLLOWING",
+            "Report Position": "MSG_ATC_OPTION_REPORT_POSITION",
+        }
+
+        # Build list of message keys to speak
+        message_keys = ["MSG_ATC_MENU_OPENED"]
         for option in self._current_options:
             if option.enabled:
-                menu_text += f"{option.key}. {option.label}. "
+                message_key = label_to_key.get(option.label)
+                if message_key:
+                    message_keys.append(message_key)
+        message_keys.append("MSG_ATC_PRESS_ESC")
 
-        menu_text += "Press escape to close."
+        logger.debug(f"Reading menu with {len(message_keys)} messages")
 
-        logger.debug(f"Reading menu: {menu_text}")
-
-        # Speak menu
-        if self._tts:
-            self._tts.speak(menu_text)
+        # Speak menu using message queue with sequence of keys
+        if self._message_queue:
+            from airborne.core.messaging import Message, MessagePriority, MessageTopic
+            self._message_queue.publish(
+                Message(
+                    sender="atc_menu",
+                    recipients=["*"],
+                    topic=MessageTopic.TTS_SPEAK,
+                    data={"text": message_keys, "priority": "high", "interrupt": True},
+                    priority=MessagePriority.HIGH,
+                )
+            )
 
     def get_current_options(self) -> list[ATCMenuOption]:
         """Get current menu options.
@@ -378,8 +425,8 @@ class ATCMenu:
         """
         from airborne.plugins.radio.atc_queue import ATCMessage
 
-        # Close menu
-        self.close()
+        # Close menu silently (don't speak "menu closed" when selecting option)
+        self.close(speak=False)
         self._state = "WAITING_RESPONSE"
 
         # Enqueue pilot message

@@ -15,8 +15,6 @@ if TYPE_CHECKING:
 
 from airborne.audio.engine.base import IAudioEngine, Vector3
 from airborne.audio.sound_manager import SoundManager
-from airborne.audio.tts.base import ITTSProvider
-from airborne.audio.tts.pyttsx_provider import PyTTSXProvider
 from airborne.core.logging_system import get_logger
 from airborne.core.messaging import Message, MessageTopic
 from airborne.core.plugin import IPlugin, PluginContext, PluginMetadata, PluginType
@@ -58,7 +56,6 @@ class AudioPlugin(IPlugin):
     The plugin provides:
     - audio_engine: IAudioEngine instance
     - sound_manager: SoundManager instance
-    - tts: ITTSProvider instance
     """
 
     def __init__(self) -> None:
@@ -67,6 +64,7 @@ class AudioPlugin(IPlugin):
         self.sound_manager: SoundManager | None = None
         self.audio_engine: IAudioEngine | None = None
         self.tts_provider: ITTSProvider | None = None
+        self.atc_audio_manager: Any = None  # ATCAudioManager for radio communications
 
         # Listener state
         self._listener_position = Vector3(0.0, 0.0, 0.0)
@@ -139,21 +137,49 @@ class AudioPlugin(IPlugin):
             logger.warning("Audio engine not available, running without audio")
             self.audio_engine = None
 
-        self.tts_provider = PyTTSXProvider()
-        self.tts_provider.initialize(tts_config)
+        # Create audio speech provider only if audio engine is available
+        if self.audio_engine:
+            from airborne.audio.tts.audio_provider import AudioSpeechProvider
+
+            self.tts_provider = AudioSpeechProvider()
+            # Pass audio engine reference to TTS provider
+            tts_config["audio_engine"] = self.audio_engine
+            self.tts_provider.initialize(tts_config)
+        else:
+            logger.warning("TTS provider disabled due to missing audio engine")
+            self.tts_provider = None
 
         # Create sound manager only if audio engine is available
-        if self.audio_engine:
+        if self.audio_engine and self.tts_provider:
             self.sound_manager = SoundManager()
+            # Don't pass tts_config again - TTS is already initialized
             self.sound_manager.initialize(
                 audio_engine=self.audio_engine,
                 tts_provider=self.tts_provider,
                 audio_config=audio_config,
-                tts_config=tts_config,
+                tts_config=None,  # Already initialized above
             )
         else:
-            logger.warning("Sound manager disabled due to missing audio engine")
+            logger.warning("Sound manager disabled due to missing audio engine or TTS")
             self.sound_manager = None
+
+        # Create ATC audio manager for radio communications
+        if self.audio_engine:
+            try:
+                from pathlib import Path
+                from airborne.audio.atc.atc_audio import ATCAudioManager
+
+                config_dir = Path("config")
+                speech_dir = Path("data/speech/en")  # ATC uses same speech dir for now
+                self.atc_audio_manager = ATCAudioManager(
+                    self.audio_engine, config_dir, speech_dir
+                )
+                logger.info("ATC audio manager initialized")
+            except Exception as e:
+                logger.warning(f"Failed to initialize ATC audio manager: {e}")
+                self.atc_audio_manager = None
+        else:
+            self.atc_audio_manager = None
 
         # Register components in registry
         if context.plugin_registry:
@@ -166,6 +192,7 @@ class AudioPlugin(IPlugin):
         # Subscribe to position updates, TTS requests, control inputs, and input actions
         context.message_queue.subscribe(MessageTopic.POSITION_UPDATED, self.handle_message)
         context.message_queue.subscribe(MessageTopic.TTS_SPEAK, self.handle_message)
+        context.message_queue.subscribe(MessageTopic.TTS_INTERRUPT, self.handle_message)
         context.message_queue.subscribe(MessageTopic.CONTROL_INPUT, self.handle_message)
 
         # Subscribe to input action events from event bus for TTS feedback
@@ -192,6 +219,10 @@ class AudioPlugin(IPlugin):
         if self.audio_engine and hasattr(self.audio_engine, "update"):
             self.audio_engine.update()
 
+        # Update TTS sequential playback
+        if self.tts_provider and hasattr(self.tts_provider, "update"):
+            self.tts_provider.update()
+
         if not self.sound_manager:
             return
 
@@ -211,6 +242,7 @@ class AudioPlugin(IPlugin):
                 MessageTopic.POSITION_UPDATED, self.handle_message
             )
             self.context.message_queue.unsubscribe(MessageTopic.TTS_SPEAK, self.handle_message)
+            self.context.message_queue.unsubscribe(MessageTopic.TTS_INTERRUPT, self.handle_message)
             self.context.message_queue.unsubscribe(MessageTopic.CONTROL_INPUT, self.handle_message)
 
             # Unregister components (only if they were registered)
@@ -285,6 +317,12 @@ class AudioPlugin(IPlugin):
 
                 logger.debug(f"TTS request: '{text}' (priority={priority.name})")
                 self.tts_provider.speak(text, priority=priority, interrupt=interrupt)
+
+        elif message.topic == MessageTopic.TTS_INTERRUPT:
+            # Handle TTS interrupt (stop current speech)
+            if self.tts_provider:
+                logger.debug("TTS interrupt requested")
+                self.tts_provider.stop()
 
         elif message.topic == MessageTopic.POSITION_UPDATED:
             # Update listener position from aircraft position
@@ -427,7 +465,6 @@ class AudioPlugin(IPlugin):
                 "brakes_on": "Brakes on",
                 "pause": "Paused",
                 "tts_next": "Next",
-                "tts_repeat": "Repeat",
             }
 
             message = action_messages.get(event.action)
@@ -437,6 +474,65 @@ class AudioPlugin(IPlugin):
             return
 
         from airborne.audio.tts.base import TTSPriority
+        from airborne.audio.tts.speech_messages import SpeechMessages
 
-        logger.debug(f"Speaking: {message}")
-        self.tts_provider.speak(message, priority=TTSPriority.NORMAL)
+        # Convert message to message key
+        message_key = self._get_message_key(message, event.action)
+
+        logger.info(f"Speaking: {message_key} ({message})")
+        self.tts_provider.speak(message_key, priority=TTSPriority.NORMAL)
+
+    def _get_message_key(self, message: str, action: str) -> str:
+        """Convert human-readable message to message key.
+
+        Args:
+            message: Human-readable message.
+            action: Input action that triggered the message.
+
+        Returns:
+            Message key for YAML lookup.
+        """
+        from airborne.audio.tts.speech_messages import SpeechMessages
+
+        # Map instrument reading actions to helper methods
+        if action == "read_airspeed":
+            return SpeechMessages.airspeed(int(self._airspeed))
+        elif action == "read_altitude":
+            return SpeechMessages.altitude(int(self._altitude))
+        elif action == "read_heading":
+            return SpeechMessages.heading(int(self._heading))
+        elif action == "read_vspeed":
+            return SpeechMessages.vertical_speed(int(self._vspeed))
+        elif action == "read_attitude":
+            # For attitude, we need bank/pitch combination
+            bank_int = int(self._bank)
+            pitch_int = int(self._pitch)
+            if abs(bank_int) < 3 and abs(pitch_int) < 3:
+                return SpeechMessages.MSG_LEVEL_ATTITUDE
+            elif abs(bank_int) < 3:
+                return SpeechMessages.pitch(pitch_int)
+            elif abs(pitch_int) < 3:
+                return SpeechMessages.bank(bank_int)
+            else:
+                # For combined attitude, use bank message for now
+                # TODO: Support combined attitude messages
+                return SpeechMessages.bank(bank_int)
+
+        # Map action messages to constants
+        action_to_key = {
+            "Gear down": SpeechMessages.MSG_GEAR_DOWN,
+            "Gear up": SpeechMessages.MSG_GEAR_UP,
+            "Flaps extending": SpeechMessages.MSG_FLAPS_EXTENDING,
+            "Flaps retracting": SpeechMessages.MSG_FLAPS_RETRACTING,
+            "Throttle increased": SpeechMessages.MSG_THROTTLE_INCREASED,
+            "Throttle decreased": SpeechMessages.MSG_THROTTLE_DECREASED,
+            "Full throttle": SpeechMessages.MSG_FULL_THROTTLE,
+            "Throttle idle": SpeechMessages.MSG_THROTTLE_IDLE,
+            "Brakes on": SpeechMessages.MSG_BRAKES_ON,
+            "Paused": SpeechMessages.MSG_PAUSED,
+            "Next": SpeechMessages.MSG_NEXT,
+            "Level flight": SpeechMessages.MSG_LEVEL_FLIGHT,
+            "Level attitude": SpeechMessages.MSG_LEVEL_ATTITUDE,
+        }
+
+        return action_to_key.get(message, SpeechMessages.MSG_ERROR)
