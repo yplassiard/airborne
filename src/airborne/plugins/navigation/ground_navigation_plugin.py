@@ -228,9 +228,22 @@ class GroundNavigationPlugin(IPlugin):
                             style=self.beep_style,
                         )
 
-                        # TODO: Play beep_samples through audio engine
-                        # For now, just log that we would beep
-                        if beep_samples is not None:
+                        # Publish beep to audio plugin for playback
+                        if beep_samples is not None and self.context:
+                            self.context.message_queue.publish(
+                                Message(
+                                    sender="ground_navigation",
+                                    recipients=["audio_plugin"],
+                                    topic=MessageTopic.PROXIMITY_BEEP,
+                                    data={
+                                        "samples": beep_samples.tolist(),  # Convert numpy to list
+                                        "sample_rate": 44100,
+                                        "target_id": target_id,
+                                        "distance": distance,
+                                        "frequency": frequency,
+                                    },
+                                )
+                            )
                             logger.debug(
                                 "Beep: target=%s, distance=%.1fm, frequency=%.2fHz",
                                 target_id,

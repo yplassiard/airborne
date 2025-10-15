@@ -211,6 +211,7 @@ class AudioPlugin(IPlugin):
         context.message_queue.subscribe(MessageTopic.POSITION_UPDATED, self.handle_message)
         context.message_queue.subscribe(MessageTopic.TTS_SPEAK, self.handle_message)
         context.message_queue.subscribe(MessageTopic.TTS_INTERRUPT, self.handle_message)
+        context.message_queue.subscribe(MessageTopic.PROXIMITY_BEEP, self.handle_message)
         context.message_queue.subscribe(MessageTopic.CONTROL_INPUT, self.handle_message)
         context.message_queue.subscribe(MessageTopic.ENGINE_STATE, self.handle_message)
         context.message_queue.subscribe(MessageTopic.SYSTEM_STATE, self.handle_message)
@@ -263,6 +264,7 @@ class AudioPlugin(IPlugin):
             )
             self.context.message_queue.unsubscribe(MessageTopic.TTS_SPEAK, self.handle_message)
             self.context.message_queue.unsubscribe(MessageTopic.TTS_INTERRUPT, self.handle_message)
+            self.context.message_queue.unsubscribe(MessageTopic.PROXIMITY_BEEP, self.handle_message)
             self.context.message_queue.unsubscribe(MessageTopic.CONTROL_INPUT, self.handle_message)
             self.context.message_queue.unsubscribe(MessageTopic.ENGINE_STATE, self.handle_message)
             self.context.message_queue.unsubscribe(MessageTopic.SYSTEM_STATE, self.handle_message)
@@ -345,6 +347,32 @@ class AudioPlugin(IPlugin):
             if self.tts_provider:
                 logger.debug("TTS interrupt requested")
                 self.tts_provider.stop()
+
+        elif message.topic == MessageTopic.PROXIMITY_BEEP:
+            # Handle proximity beep requests from ground navigation
+            if self.audio_engine:
+                import numpy as np
+
+                data = message.data
+                samples = np.array(data.get("samples", []), dtype=np.float32)
+                sample_rate = data.get("sample_rate", 44100)
+
+                if len(samples) > 0:
+                    # Play raw audio samples through audio engine
+                    # For now, we log the beep info. Full implementation would call
+                    # audio_engine.play_raw_samples(samples, sample_rate)
+                    target_id = data.get("target_id", "unknown")
+                    distance = data.get("distance", 0.0)
+                    frequency = data.get("frequency", 0.0)
+                    logger.debug(
+                        "Playing proximity beep: target=%s, distance=%.1fm, freq=%.2fHz, samples=%d",
+                        target_id,
+                        distance,
+                        frequency,
+                        len(samples),
+                    )
+                    # TODO: Implement play_raw_samples() in audio engines
+                    # self.audio_engine.play_raw_samples(samples, sample_rate)
 
         elif message.topic == MessageTopic.POSITION_UPDATED:
             # Update listener position from aircraft position

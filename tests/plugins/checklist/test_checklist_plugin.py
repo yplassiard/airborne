@@ -176,8 +176,8 @@ class TestChecklistPlugin:
         # Should register component
         assert context.plugin_registry.register.called
 
-        # Should subscribe to messages
-        assert context.message_queue.subscribe.call_count == 2
+        # Should subscribe to messages (POSITION_UPDATED, SYSTEM_STATE_CHANGED, input.checklist_menu)
+        assert context.message_queue.subscribe.call_count == 3
 
     def test_start_checklist(self) -> None:
         """Test starting a checklist."""

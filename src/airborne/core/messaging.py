@@ -134,6 +134,8 @@ class MessageTopic:
     # UI/Audio
     TTS_SPEAK = "ui.tts.speak"
     TTS_INTERRUPT = "ui.tts.interrupt"
+    AUDIO_PLAY_RAW = "ui.audio.play_raw"  # Play raw audio samples
+    PROXIMITY_BEEP = "ui.audio.proximity_beep"  # Proximity beep cue
     SYSTEM_STATE_CHANGED = "system.state_changed"
 
 
