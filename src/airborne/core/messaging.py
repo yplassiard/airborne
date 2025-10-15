@@ -102,6 +102,9 @@ class MessageTopic:
     FUEL_STATE = "system.fuel.state"
     ENGINE_STATE = "system.engine.state"
     HYDRAULIC_STATE = "system.hydraulic.state"
+    SYSTEM_STATE = "system.state"  # Generic system state updates
+    WARNING = "system.warning"  # System warnings
+    FAILURE = "system.failure"  # System failures
 
     # Flight
     POSITION_UPDATED = "flight.position_updated"
