@@ -42,6 +42,36 @@ class SpeechMessages:
     # Attitude
     MSG_LEVEL_ATTITUDE = "MSG_LEVEL_ATTITUDE"
 
+    # Engine instruments
+    MSG_ENGINE_STOPPED = "MSG_ENGINE_STOPPED"
+    MSG_WORD_ENGINE_RPM = "MSG_WORD_ENGINE_RPM"
+    MSG_WORD_MANIFOLD_PRESSURE = "MSG_WORD_MANIFOLD_PRESSURE"
+    MSG_WORD_INCHES = "MSG_WORD_INCHES"
+    MSG_WORD_OIL_PRESSURE = "MSG_WORD_OIL_PRESSURE"
+    MSG_WORD_PSI = "MSG_WORD_PSI"
+    MSG_WORD_OIL_TEMPERATURE = "MSG_WORD_OIL_TEMPERATURE"
+    MSG_WORD_DEGREES = "MSG_WORD_DEGREES"
+    MSG_WORD_FUEL_FLOW = "MSG_WORD_FUEL_FLOW"
+    MSG_WORD_GALLONS_PER_HOUR = "MSG_WORD_GALLONS_PER_HOUR"
+
+    # Electrical instruments
+    MSG_WORD_BATTERY = "MSG_WORD_BATTERY"
+    MSG_WORD_VOLTS = "MSG_WORD_VOLTS"
+    MSG_WORD_PERCENT = "MSG_WORD_PERCENT"
+    MSG_BATTERY_CHARGING = "MSG_BATTERY_CHARGING"
+    MSG_BATTERY_DISCHARGING = "MSG_BATTERY_DISCHARGING"
+    MSG_BATTERY_STABLE = "MSG_BATTERY_STABLE"
+    MSG_WORD_AT = "MSG_WORD_AT"
+    MSG_WORD_AMPS = "MSG_WORD_AMPS"
+    MSG_WORD_ALTERNATOR_OUTPUT = "MSG_WORD_ALTERNATOR_OUTPUT"
+
+    # Fuel instruments
+    MSG_WORD_FUEL_QUANTITY = "MSG_WORD_FUEL_QUANTITY"
+    MSG_WORD_GALLONS = "MSG_WORD_GALLONS"
+    MSG_WORD_FUEL_REMAINING = "MSG_WORD_FUEL_REMAINING"
+    MSG_WORD_HOURS = "MSG_WORD_HOURS"
+    MSG_WORD_MINUTES = "MSG_WORD_MINUTES"
+
     # Individual digits
     MSG_DIGIT_0 = "MSG_DIGIT_0"
     MSG_DIGIT_1 = "MSG_DIGIT_1"
@@ -245,6 +275,314 @@ class SpeechMessages:
         return [SpeechMessages.MSG_WORD_FLIGHT_LEVEL] + SpeechMessages._digits_to_keys(
             fl_rounded, 3
         )
+
+    @staticmethod
+    def engine_rpm(rpm: int, running: bool) -> str | list[str]:
+        """Get message key(s) for engine RPM readout.
+
+        Args:
+            rpm: Engine RPM.
+            running: Whether engine is running.
+
+        Returns:
+            Message key or list of keys.
+        """
+        if not running:
+            return SpeechMessages.MSG_ENGINE_STOPPED
+
+        # Round to nearest 100
+        rpm_rounded = round(rpm / 100) * 100
+
+        # Use pre-recorded if available
+        if 500 <= rpm_rounded <= 3000:
+            return [
+                SpeechMessages.MSG_WORD_ENGINE_RPM,
+                f"MSG_NUMBER_{rpm_rounded}",
+            ]
+
+        # Fallback: spell out digits
+        return [SpeechMessages.MSG_WORD_ENGINE_RPM] + SpeechMessages._digits_to_keys(rpm)
+
+    @staticmethod
+    def manifold_pressure(inches: float) -> list[str]:
+        """Get message keys for manifold pressure readout.
+
+        Args:
+            inches: Manifold pressure in inches Hg.
+
+        Returns:
+            List of message keys.
+        """
+        value = int(round(inches))
+        value = max(0, min(100, value))
+
+        if value <= 100:
+            return [
+                SpeechMessages.MSG_WORD_MANIFOLD_PRESSURE,
+                f"MSG_NUMBER_{value}",
+                SpeechMessages.MSG_WORD_INCHES,
+            ]
+
+        return (
+            [SpeechMessages.MSG_WORD_MANIFOLD_PRESSURE]
+            + SpeechMessages._digits_to_keys(value)
+            + [SpeechMessages.MSG_WORD_INCHES]
+        )
+
+    @staticmethod
+    def oil_pressure(psi: int) -> list[str]:
+        """Get message keys for oil pressure readout.
+
+        Args:
+            psi: Oil pressure in PSI.
+
+        Returns:
+            List of message keys.
+        """
+        psi = max(0, min(100, psi))
+
+        if psi <= 100:
+            return [
+                SpeechMessages.MSG_WORD_OIL_PRESSURE,
+                f"MSG_NUMBER_{psi}",
+                SpeechMessages.MSG_WORD_PSI,
+            ]
+
+        return (
+            [SpeechMessages.MSG_WORD_OIL_PRESSURE]
+            + SpeechMessages._digits_to_keys(psi)
+            + [SpeechMessages.MSG_WORD_PSI]
+        )
+
+    @staticmethod
+    def oil_temperature(fahrenheit: int) -> list[str]:
+        """Get message keys for oil temperature readout.
+
+        Args:
+            fahrenheit: Oil temperature in Fahrenheit.
+
+        Returns:
+            List of message keys.
+        """
+        temp = max(0, min(100, fahrenheit))
+
+        if temp <= 100:
+            return [
+                SpeechMessages.MSG_WORD_OIL_TEMPERATURE,
+                f"MSG_NUMBER_{temp}",
+                SpeechMessages.MSG_WORD_DEGREES,
+            ]
+
+        return (
+            [SpeechMessages.MSG_WORD_OIL_TEMPERATURE]
+            + SpeechMessages._digits_to_keys(temp)
+            + [SpeechMessages.MSG_WORD_DEGREES]
+        )
+
+    @staticmethod
+    def fuel_flow(gph: float) -> list[str]:
+        """Get message keys for fuel flow readout.
+
+        Args:
+            gph: Fuel flow in gallons per hour.
+
+        Returns:
+            List of message keys.
+        """
+        value = int(round(gph))
+        value = max(0, min(100, value))
+
+        if value <= 100:
+            return [
+                SpeechMessages.MSG_WORD_FUEL_FLOW,
+                f"MSG_NUMBER_{value}",
+                SpeechMessages.MSG_WORD_GALLONS_PER_HOUR,
+            ]
+
+        return (
+            [SpeechMessages.MSG_WORD_FUEL_FLOW]
+            + SpeechMessages._digits_to_keys(value)
+            + [SpeechMessages.MSG_WORD_GALLONS_PER_HOUR]
+        )
+
+    @staticmethod
+    def battery_voltage(volts: float) -> list[str]:
+        """Get message keys for battery voltage readout.
+
+        Args:
+            volts: Battery voltage.
+
+        Returns:
+            List of message keys.
+        """
+        value = int(round(volts))
+        value = max(0, min(100, value))
+
+        if value <= 100:
+            return [
+                SpeechMessages.MSG_WORD_BATTERY,
+                f"MSG_NUMBER_{value}",
+                SpeechMessages.MSG_WORD_VOLTS,
+            ]
+
+        return (
+            [SpeechMessages.MSG_WORD_BATTERY]
+            + SpeechMessages._digits_to_keys(value)
+            + [SpeechMessages.MSG_WORD_VOLTS]
+        )
+
+    @staticmethod
+    def battery_percent(percent: int) -> list[str]:
+        """Get message keys for battery percentage readout.
+
+        Args:
+            percent: Battery state of charge percentage.
+
+        Returns:
+            List of message keys.
+        """
+        value = max(0, min(100, percent))
+
+        return [
+            SpeechMessages.MSG_WORD_BATTERY,
+            f"MSG_NUMBER_{value}",
+            SpeechMessages.MSG_WORD_PERCENT,
+        ]
+
+    @staticmethod
+    def battery_status(amps: float) -> str | list[str]:
+        """Get message keys for battery charging status.
+
+        Args:
+            amps: Battery current in amps (positive = charging, negative = discharging).
+
+        Returns:
+            Message key or list of keys.
+        """
+        if amps > 1.0:
+            amp_value = int(round(abs(amps)))
+            amp_value = max(0, min(100, amp_value))
+            if amp_value <= 100:
+                return [
+                    SpeechMessages.MSG_BATTERY_CHARGING,
+                    SpeechMessages.MSG_WORD_AT,
+                    f"MSG_NUMBER_{amp_value}",
+                    SpeechMessages.MSG_WORD_AMPS,
+                ]
+            return (
+                [
+                    SpeechMessages.MSG_BATTERY_CHARGING,
+                    SpeechMessages.MSG_WORD_AT,
+                ]
+                + SpeechMessages._digits_to_keys(amp_value)
+                + [SpeechMessages.MSG_WORD_AMPS]
+            )
+        elif amps < -1.0:
+            amp_value = int(round(abs(amps)))
+            amp_value = max(0, min(100, amp_value))
+            if amp_value <= 100:
+                return [
+                    SpeechMessages.MSG_BATTERY_DISCHARGING,
+                    SpeechMessages.MSG_WORD_AT,
+                    f"MSG_NUMBER_{amp_value}",
+                    SpeechMessages.MSG_WORD_AMPS,
+                ]
+            return (
+                [
+                    SpeechMessages.MSG_BATTERY_DISCHARGING,
+                    SpeechMessages.MSG_WORD_AT,
+                ]
+                + SpeechMessages._digits_to_keys(amp_value)
+                + [SpeechMessages.MSG_WORD_AMPS]
+            )
+        else:
+            return SpeechMessages.MSG_BATTERY_STABLE
+
+    @staticmethod
+    def alternator_output(amps: float) -> list[str]:
+        """Get message keys for alternator output readout.
+
+        Args:
+            amps: Alternator output in amps.
+
+        Returns:
+            List of message keys.
+        """
+        value = int(round(amps))
+        value = max(0, min(100, value))
+
+        if value <= 100:
+            return [
+                SpeechMessages.MSG_WORD_ALTERNATOR_OUTPUT,
+                f"MSG_NUMBER_{value}",
+                SpeechMessages.MSG_WORD_AMPS,
+            ]
+
+        return (
+            [SpeechMessages.MSG_WORD_ALTERNATOR_OUTPUT]
+            + SpeechMessages._digits_to_keys(value)
+            + [SpeechMessages.MSG_WORD_AMPS]
+        )
+
+    @staticmethod
+    def fuel_quantity(gallons: float) -> list[str]:
+        """Get message keys for fuel quantity readout.
+
+        Args:
+            gallons: Fuel quantity in gallons.
+
+        Returns:
+            List of message keys.
+        """
+        value = int(round(gallons))
+        value = max(0, min(100, value))
+
+        if value <= 100:
+            return [
+                SpeechMessages.MSG_WORD_FUEL_QUANTITY,
+                f"MSG_NUMBER_{value}",
+                SpeechMessages.MSG_WORD_GALLONS,
+            ]
+
+        return (
+            [SpeechMessages.MSG_WORD_FUEL_QUANTITY]
+            + SpeechMessages._digits_to_keys(value)
+            + [SpeechMessages.MSG_WORD_GALLONS]
+        )
+
+    @staticmethod
+    def fuel_remaining(minutes: float) -> list[str]:
+        """Get message keys for fuel remaining time readout.
+
+        Args:
+            minutes: Fuel remaining time in minutes.
+
+        Returns:
+            List of message keys.
+        """
+        hours = int(minutes / 60)
+        mins = int(minutes % 60)
+
+        if hours > 0:
+            result = [
+                SpeechMessages.MSG_WORD_FUEL_REMAINING,
+                f"MSG_NUMBER_{hours}",
+                SpeechMessages.MSG_WORD_HOURS,
+            ]
+            if mins > 0:
+                result.extend(
+                    [
+                        f"MSG_NUMBER_{mins}",
+                        SpeechMessages.MSG_WORD_MINUTES,
+                    ]
+                )
+            return result
+        else:
+            return [
+                SpeechMessages.MSG_WORD_FUEL_REMAINING,
+                f"MSG_NUMBER_{mins}",
+                SpeechMessages.MSG_WORD_MINUTES,
+            ]
 
 
 # Export commonly used constants at module level for convenience

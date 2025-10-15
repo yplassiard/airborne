@@ -615,6 +615,36 @@ class AudioPlugin(IPlugin):
                 # TODO: Support combined attitude messages
                 return SpeechMessages.bank(bank_int)
 
+        # Engine instrument readouts
+        elif action == "read_rpm":
+            return SpeechMessages.engine_rpm(int(self._engine_rpm), self._engine_running)
+        elif action == "read_manifold_pressure":
+            return SpeechMessages.manifold_pressure(self._manifold_pressure)
+        elif action == "read_oil_pressure":
+            return SpeechMessages.oil_pressure(int(self._oil_pressure))
+        elif action == "read_oil_temp":
+            # Convert Celsius to Fahrenheit
+            oil_temp_f = self._oil_temp * 9 / 5 + 32
+            return SpeechMessages.oil_temperature(int(oil_temp_f))
+        elif action == "read_fuel_flow":
+            return SpeechMessages.fuel_flow(self._fuel_flow)
+
+        # Electrical instrument readouts
+        elif action == "read_battery_voltage":
+            return SpeechMessages.battery_voltage(self._battery_voltage)
+        elif action == "read_battery_percent":
+            return SpeechMessages.battery_percent(int(self._battery_percent))
+        elif action == "read_battery_status":
+            return SpeechMessages.battery_status(self._battery_current)
+        elif action == "read_alternator":
+            return SpeechMessages.alternator_output(self._alternator_output)
+
+        # Fuel instrument readouts
+        elif action == "read_fuel_quantity":
+            return SpeechMessages.fuel_quantity(self._fuel_quantity)
+        elif action == "read_fuel_remaining":
+            return SpeechMessages.fuel_remaining(self._fuel_remaining_minutes)
+
         # Map action messages to constants
         action_to_key = {
             "Gear down": SpeechMessages.MSG_GEAR_DOWN,
