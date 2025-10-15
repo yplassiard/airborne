@@ -1,0 +1,273 @@
+# Unified Speech Configuration for AirBorne
+# Defines all voice types, TTS engines, and message mappings
+
+# Default language
+default_language: en
+
+# Voice definitions
+voices:
+  # Pilot voice - for pilot transmissions and checklist readbacks
+  pilot:
+    description: "Pilot transmitting on radio and reading checklists"
+    engine: "say"  # macOS: "say", Windows/Linux: "pyttsx3"
+    language: en-US
+    voice_name: "Oliver"  # macOS voice name
+    rate: 200  # Words per minute
+    volume: 1.0  # 0.0 to 1.0
+    output_dir: "pilot"
+
+  # Cockpit voice - for instrument readouts and system announcements
+  cockpit:
+    description: "Cockpit computer for instrument readouts"
+    engine: "say"
+    language: en-US
+    voice_name: "Samantha"
+    rate: 200
+    volume: 1.0
+    output_dir: "cockpit"
+
+  # Ground/Delivery voice - for clearance delivery
+  ground:
+    description: "Ground control / Clearance delivery"
+    engine: "say"
+    language: en-US
+    voice_name: "Evan"
+    rate: 180
+    volume: 1.0
+    output_dir: "atc/ground"
+
+  # Tower voice - for tower controllers
+  tower:
+    description: "Tower control"
+    engine: "say"
+    language: en-US
+    voice_name: "Evan"
+    rate: 180
+    volume: 1.0
+    output_dir: "atc/tower"
+
+  # Approach/Departure voice - for approach and departure control
+  approach:
+    description: "Approach/Departure control"
+    engine: "say"
+    language: en-US
+    voice_name: "Evan"
+    rate: 180
+    volume: 1.0
+    output_dir: "atc/approach"
+
+  # ATIS voice - for automated terminal information
+  atis:
+    description: "Automated Terminal Information Service"
+    engine: "say"
+    language: en-US
+    voice_name: "Samantha"
+    rate: 160
+    volume: 1.0
+    output_dir: "atc/atis"
+
+  # Cabin crew voice - for flight attendant announcements
+  steward:
+    description: "Flight attendant / cabin crew"
+    engine: "say"
+    language: en-US
+    voice_name: "Samantha"
+    rate: 170
+    volume: 1.0
+    output_dir: "cabin"
+
+# Message definitions - maps message keys to text and voice type
+messages:
+  # System messages (cockpit voice)
+  MSG_STARTUP:
+    text: "airborne flight simulator"
+    voice: cockpit
+  MSG_READY:
+    text: "ready for flight"
+    voice: cockpit
+  MSG_ERROR:
+    text: "error"
+    voice: cockpit
+  MSG_PAUSED:
+    text: "paused"
+    voice: cockpit
+
+  # Checklist menu messages (cockpit voice)
+  MSG_CHECKLIST_MENU_OPENED:
+    text: "checklist menu opened"
+    voice: cockpit
+  MSG_CHECKLIST_MENU_CLOSED:
+    text: "checklist menu closed"
+    voice: cockpit
+  MSG_CHECKLIST_INVALID_OPTION:
+    text: "invalid option"
+    voice: cockpit
+  MSG_CHECKLIST_PRESS_ESC:
+    text: "press escape to close"
+    voice: cockpit
+  MSG_CHECKLIST_NONE_AVAILABLE:
+    text: "no checklists available"
+    voice: cockpit
+  MSG_CHECKLIST_START_FAILED:
+    text: "checklist start failed"
+    voice: cockpit
+
+  # Checklist state messages (pilot voice)
+  MSG_CHECKLIST_STARTING:
+    text: "starting checklist"
+    voice: pilot
+  MSG_CHECKLIST_TEXT:
+    text: "checklist"
+    voice: pilot
+  MSG_CHECKLIST_COMPLETE:
+    text: "complete"
+    voice: pilot
+
+  # Checklist names (cockpit voice for menu)
+  MSG_CHECKLIST_BEFORE_START:
+    text: "before engine start"
+    voice: cockpit
+  MSG_CHECKLIST_ENGINE_START:
+    text: "engine start"
+    voice: cockpit
+  MSG_CHECKLIST_BEFORE_TAKEOFF:
+    text: "before takeoff"
+    voice: cockpit
+  MSG_CHECKLIST_TAKEOFF:
+    text: "takeoff"
+    voice: cockpit
+  MSG_CHECKLIST_BEFORE_LANDING:
+    text: "before landing"
+    voice: cockpit
+  MSG_CHECKLIST_AFTER_LANDING:
+    text: "after landing"
+    voice: cockpit
+  MSG_CHECKLIST_SHUTDOWN:
+    text: "shutdown"
+    voice: cockpit
+  MSG_CHECKLIST_UNKNOWN:
+    text: "unknown checklist"
+    voice: cockpit
+
+  # Common words
+  MSG_WORD_CHECK:
+    text: "check"
+    voice: pilot
+  MSG_WORD_SKIPPED:
+    text: "skipped"
+    voice: pilot
+  MSG_WORD_COLON:
+    text: ":"
+    voice: cockpit
+
+  # Numbers 0-9 (cockpit voice)
+  MSG_NUMBER_0:
+    text: "0"
+    voice: cockpit
+  MSG_NUMBER_1:
+    text: "1"
+    voice: cockpit
+  MSG_NUMBER_2:
+    text: "2"
+    voice: cockpit
+  MSG_NUMBER_3:
+    text: "3"
+    voice: cockpit
+  MSG_NUMBER_4:
+    text: "4"
+    voice: cockpit
+  MSG_NUMBER_5:
+    text: "5"
+    voice: cockpit
+  MSG_NUMBER_6:
+    text: "6"
+    voice: cockpit
+  MSG_NUMBER_7:
+    text: "7"
+    voice: cockpit
+  MSG_NUMBER_8:
+    text: "8"
+    voice: cockpit
+  MSG_NUMBER_9:
+    text: "9"
+    voice: cockpit
+
+  # ATC Menu messages (cockpit voice)
+  MSG_ATC_MENU_OPENED:
+    text: "atc menu"
+    voice: cockpit
+  MSG_ATC_MENU_CLOSED:
+    text: "menu closed"
+    voice: cockpit
+  MSG_ATC_INVALID_OPTION:
+    text: "invalid option"
+    voice: cockpit
+  MSG_ATC_PRESS_ESC:
+    text: "press escape to close"
+    voice: cockpit
+
+  # ATC menu options (cockpit voice)
+  MSG_ATC_OPTION_REQUEST_STARTUP:
+    text: "request startup clearance"
+    voice: cockpit
+  MSG_ATC_OPTION_REQUEST_ATIS:
+    text: "request ATIS"
+    voice: cockpit
+  MSG_ATC_OPTION_REQUEST_TAXI:
+    text: "request taxi"
+    voice: cockpit
+  MSG_ATC_OPTION_REQUEST_TAKEOFF:
+    text: "request takeoff clearance"
+    voice: cockpit
+  MSG_ATC_OPTION_READY_DEPARTURE:
+    text: "report ready for departure"
+    voice: cockpit
+  MSG_ATC_OPTION_CHECKIN_DEPARTURE:
+    text: "check in with departure"
+    voice: cockpit
+  MSG_ATC_OPTION_REPORT_ALTITUDE:
+    text: "report altitude"
+    voice: cockpit
+  MSG_ATC_OPTION_REQUEST_FLIGHT_FOLLOWING:
+    text: "request flight following"
+    voice: cockpit
+  MSG_ATC_OPTION_REPORT_POSITION:
+    text: "report position"
+    voice: cockpit
+
+  # Instrument readouts (cockpit voice)
+  MSG_AIRSPEED:
+    text: "airspeed"
+    voice: cockpit
+  MSG_ALTITUDE:
+    text: "altitude"
+    voice: cockpit
+  MSG_VERTICAL_SPEED:
+    text: "vertical speed"
+    voice: cockpit
+  MSG_HEADING:
+    text: "heading"
+    voice: cockpit
+  MSG_BANK_ANGLE:
+    text: "bank angle"
+    voice: cockpit
+  MSG_PITCH_ANGLE:
+    text: "pitch angle"
+    voice: cockpit
+
+  # Gear/Flaps
+  MSG_GEAR_DOWN:
+    text: "gear down"
+    voice: cockpit
+  MSG_GEAR_UP:
+    text: "gear up"
+    voice: cockpit
+  MSG_FLAPS_EXTENDING:
+    text: "flaps extending"
+    voice: cockpit
+  MSG_FLAPS_RETRACTING:
+    text: "flaps retracting"
+    voice: cockpit
+
+# Note: Checklist challenges and responses are dynamically extracted from checklist YAML files
+# They will be generated with pilot voice for challenges and responses

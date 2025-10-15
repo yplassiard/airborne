@@ -13,6 +13,7 @@ Typical usage example:
     tts.speak(MSG_STARTUP)
 """
 
+import contextlib
 import threading
 from collections import deque
 from collections.abc import Callable
@@ -75,8 +76,9 @@ class AudioSpeechProvider(ITTSProvider):
         self._speech_dir = Path("data/speech")
         self._config_dir = Path("config")
         self._language = "en"
-        self._file_extension = "ogg"
-        self._message_map: dict[str, str] = {}
+        self._file_extension = "mp3"
+        self._message_map: dict[str, dict[str, str]] = {}  # key -> {text, voice}
+        self._voice_dirs: dict[str, Path] = {}  # voice -> directory path
 
         # Audio engine reference (will be injected)
         self._audio_engine: Any = None
@@ -110,27 +112,52 @@ class AudioSpeechProvider(ITTSProvider):
             logger.error("No audio engine provided to AudioSpeechProvider")
             return
 
-        # Load speech configuration YAML
-        config_file = self._config_dir / f"speech_{self._language}.yaml"
+        # Load unified speech configuration YAML
+        config_file = self._config_dir / "speech.yaml"
         if not config_file.exists():
-            logger.error(f"Speech config not found: {config_file}")
-            return
+            # Fall back to old format
+            config_file = self._config_dir / f"speech_{self._language}.yaml"
+            if not config_file.exists():
+                logger.error(f"Speech config not found: {config_file}")
+                return
+            # Load old format
+            try:
+                with open(config_file, encoding="utf-8") as f:
+                    speech_config = yaml.safe_load(f)
+                self._file_extension = speech_config.get("file_extension", "mp3")
+                # Convert old format to new format
+                old_messages = speech_config.get("messages", {})
+                self._message_map = {key: {"text": key, "voice": "cockpit"} for key in old_messages}
+                self._voice_dirs = {"cockpit": self._speech_dir}
+                logger.info("Loaded %d speech messages (old format)", len(self._message_map))
+            except Exception as e:  # pylint: disable=broad-exception-caught
+                logger.error(f"Error loading speech config: {e}")
+                return
+        else:
+            # Load new unified format
+            try:
+                with open(config_file, encoding="utf-8") as f:
+                    speech_config = yaml.safe_load(f)
 
-        try:
-            with open(config_file, encoding="utf-8") as f:
-                speech_config = yaml.safe_load(f)
+                # Build voice directory map
+                voices = speech_config.get("voices", {})
+                for voice_name, voice_config in voices.items():
+                    output_dir = voice_config.get("output_dir", voice_name)
+                    self._voice_dirs[voice_name] = self._speech_dir / output_dir
 
-            self._file_extension = speech_config.get("file_extension", "ogg")
-            self._message_map = speech_config.get("messages", {})
+                # Load messages
+                self._message_map = speech_config.get("messages", {})
+                self._file_extension = "mp3"  # New format always uses mp3
 
-            logger.info(
-                "Loaded %d speech messages from %s",
-                len(self._message_map),
-                config_file,
-            )
-        except Exception as e:  # pylint: disable=broad-exception-caught
-            logger.error(f"Error loading speech config: {e}")
-            return
+                logger.info(
+                    "Loaded %d speech messages from %s (%d voices)",
+                    len(self._message_map),
+                    config_file,
+                    len(self._voice_dirs),
+                )
+            except Exception as e:  # pylint: disable=broad-exception-caught
+                logger.error(f"Error loading speech config: {e}")
+                return
 
         # Create speech directory if it doesn't exist
         self._speech_dir.mkdir(parents=True, exist_ok=True)
@@ -190,13 +217,18 @@ class AudioSpeechProvider(ITTSProvider):
         # Resolve all file paths
         filepaths = []
         for key in message_keys:
-            filename_base = self._message_map.get(key)
-            if not filename_base:
+            message_config = self._message_map.get(key)
+            if not message_config:
                 logger.warning(f"Message key not found: {key}")
                 continue
 
-            filename = f"{filename_base}.{self._file_extension}"
-            filepath = self._speech_dir / filename
+            # Get voice type and resolve directory
+            voice = message_config.get("voice", "cockpit")
+            voice_dir = self._voice_dirs.get(voice, self._speech_dir)
+
+            # Build filename (key name is the filename)
+            filename = f"{key}.{self._file_extension}"
+            filepath = voice_dir / filename
 
             if not filepath.exists():
                 logger.warning(f"Speech file not found: {filepath}")
@@ -214,10 +246,8 @@ class AudioSpeechProvider(ITTSProvider):
             self._playback_queue.clear()
             self._playing = False
             if self._current_source_id is not None and self._audio_engine:
-                try:
+                with contextlib.suppress(Exception):
                     self._audio_engine.stop_source(self._current_source_id)
-                except Exception:  # pylint: disable=broad-exception-caught
-                    pass
             self._current_source_id = None
 
         # Add new files to queue
