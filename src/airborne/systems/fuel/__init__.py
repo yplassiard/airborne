@@ -11,6 +11,7 @@ from airborne.systems.fuel.base import (
     FuelType,
     IFuelSystem,
 )
+from airborne.systems.fuel.simple_gravity import SimpleGravityFuelSystem
 
 __all__ = [
     "FuelSelectorPosition",
@@ -18,4 +19,5 @@ __all__ = [
     "FuelTank",
     "FuelType",
     "IFuelSystem",
+    "SimpleGravityFuelSystem",
 ]

@@ -12,6 +12,7 @@ from airborne.systems.electrical.base import (
     IElectricalSystem,
     PowerSource,
 )
+from airborne.systems.electrical.simple_12v import Simple12VElectricalSystem
 
 __all__ = [
     "BatteryType",
@@ -20,4 +21,5 @@ __all__ = [
     "ElectricalState",
     "IElectricalSystem",
     "PowerSource",
+    "Simple12VElectricalSystem",
 ]
