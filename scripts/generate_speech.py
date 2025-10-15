@@ -204,6 +204,68 @@ def extract_checklist_items(checklist_dir):
     return challenges, responses
 
 
+def extract_atc_messages(atc_config_file):
+    """Extract ATC messages from atc_en.yaml config.
+
+    Args:
+        atc_config_file: Path to ATC configuration file (e.g., config/atc_en.yaml)
+
+    Returns:
+        Dict of filename -> message text
+    """
+    messages = {}
+
+    config_path = Path(atc_config_file)
+    if not config_path.exists():
+        print(f"Warning: ATC config not found: {atc_config_file}")
+        return messages
+
+    try:
+        with open(config_path) as f:
+            data = yaml.safe_load(f)
+            # messages: dict of MESSAGE_KEY -> "filename_without_extension"
+            # We need to extract the actual text from the message key
+            for msg_key, filename_base in data.get("messages", {}).items():
+                # Convert message key to readable text
+                # E.g., "ATC_TOWER_CLEARED_TAKEOFF_31" -> "Runway three one, cleared for takeoff"
+                text = convert_atc_key_to_text(msg_key)
+                messages[filename_base] = text
+    except Exception as e:
+        print(f"Warning: Failed to parse {atc_config_file}: {e}")
+
+    return messages
+
+
+def convert_atc_key_to_text(msg_key):
+    """Convert ATC message key to readable text.
+
+    Args:
+        msg_key: Message key (e.g., "ATC_TOWER_CLEARED_TAKEOFF_31")
+
+    Returns:
+        Readable text for TTS
+    """
+    # Manual mapping of common ATC phrases
+    text_map = {
+        "ATC_TOWER_CLEARED_TAKEOFF_31": "Runway three one, cleared for takeoff",
+        "ATC_TOWER_CLEARED_TAKEOFF_13": "Runway one three, cleared for takeoff",
+        "ATC_TOWER_CLEARED_LAND_31": "Runway three one, cleared to land",
+        "ATC_TOWER_CLEARED_LAND_13": "Runway one three, cleared to land",
+        "ATC_TOWER_CONTACT_DEPARTURE": "Contact departure on one two five point three five",
+        "ATC_TOWER_LINEUP_WAIT_31": "Runway three one, line up and wait",
+        "ATC_TOWER_LINEUP_WAIT_13": "Runway one three, line up and wait",
+        "ATC_TOWER_WIND_CHECK": "Wind three one zero at eight",
+        "ATC_GROUND_TAXI_RWY_31": "Taxi to runway three one via alpha",
+        "ATC_GROUND_TAXI_RWY_13": "Taxi to runway one three via bravo",
+        "ATC_GROUND_CONTACT_TOWER_120_5": "Contact tower on one two zero point five",
+        "ATC_GROUND_GOOD_MORNING": "Good morning",
+        "ATC_GROUND_GOOD_AFTERNOON": "Good afternoon",
+        "ATC_GROUND_GOOD_EVENING": "Good evening",
+    }
+
+    return text_map.get(msg_key, msg_key.replace("_", " ").lower())
+
+
 def sanitize_filename(text):
     """Convert text to safe filename.
 
@@ -283,6 +345,50 @@ def generate_voice_messages(voice_name, voice_config, messages, base_dir, force=
                 generated += 1
             else:
                 skipped += 1
+
+    print(f"  Generated: {generated}, Skipped: {skipped}")
+    return generated
+
+
+def generate_atc_messages(language, base_dir, force=False):
+    """Generate ATC messages from atc_en.yaml.
+
+    Args:
+        language: Language code (e.g., "en")
+        base_dir: Base output directory (e.g., data/speech/en)
+        force: If True, regenerate existing files
+
+    Returns:
+        Number of files generated
+    """
+    # Load ATC configuration
+    atc_config_file = f"config/atc_{language}.yaml"
+    messages = extract_atc_messages(atc_config_file)
+
+    if not messages:
+        print(f"\nNo ATC messages found in {atc_config_file}")
+        return 0
+
+    print(f"\nATC Messages (Evan @ 180 WPM):")
+    print(f"  Output: {base_dir}")
+    print(f"  Found {len(messages)} ATC messages")
+
+    # Use Evan voice at 180 WPM for ATC
+    voice_config = {
+        "engine": "say",
+        "voice_name": "Evan",
+        "rate": 180,
+    }
+
+    generated = 0
+    skipped = 0
+
+    for filename_base, text in sorted(messages.items()):
+        print(f"  {filename_base}: '{text}'")
+        if generate_speech_file(filename_base, text, voice_config, base_dir, force):
+            generated += 1
+        else:
+            skipped += 1
 
     print(f"  Generated: {generated}, Skipped: {skipped}")
     return generated
@@ -382,6 +488,10 @@ def main():
             force=args.clean,
         )
         total_generated += generated
+
+    # Generate ATC messages (flat structure in base_dir)
+    atc_generated = generate_atc_messages(args.language, base_dir, force=args.clean)
+    total_generated += atc_generated
 
     print(f"\n{'=' * 80}")
     print(f"Generation complete! Total files generated: {total_generated}")
