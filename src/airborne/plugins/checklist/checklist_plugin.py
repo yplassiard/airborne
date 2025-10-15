@@ -158,6 +158,7 @@ class ChecklistPlugin(IPlugin):
 
         # Subscribe to input messages
         context.message_queue.subscribe("input.checklist_menu", self.handle_message)
+        context.message_queue.subscribe("checklist.start", self.handle_message)
 
         logger.info("Checklist plugin initialized with %d checklists", len(self.checklists))
 
@@ -180,6 +181,7 @@ class ChecklistPlugin(IPlugin):
                 MessageTopic.SYSTEM_STATE_CHANGED, self.handle_message
             )
             self.context.message_queue.unsubscribe("input.checklist_menu", self.handle_message)
+            self.context.message_queue.unsubscribe("checklist.start", self.handle_message)
 
             # Unregister components
             if self.context.plugin_registry:
@@ -202,6 +204,17 @@ class ChecklistPlugin(IPlugin):
                     self.checklist_menu.close()
                 else:
                     self.checklist_menu.open()
+        elif message.topic == "checklist.start":
+            # Handle checklist start request
+            checklist_name = message.data.get("checklist_name", "")
+            if checklist_name:
+                # Find checklist by name
+                for checklist_id, checklist in self.checklists.items():
+                    if checklist.name == checklist_name:
+                        logger.info(f"Starting checklist: {checklist_name}")
+                        self.start_checklist(checklist_id)
+                        return
+                logger.warning(f"Checklist not found: {checklist_name}")
 
     def _load_checklists(self, checklist_dir: Path) -> None:
         """Load checklists from YAML files."""

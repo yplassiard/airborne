@@ -572,15 +572,15 @@ class RadioPlugin(IPlugin):
         if request_type == "takeoff_clearance":
             # ATC clears for takeoff
             atc_msg = ATCMessage(
-                message_key="cleared_for_takeoff",
+                message_key="ATC_TOWER_CLEARED_TAKEOFF_31",
                 sender="ATC",
                 delay_after=3.0,
             )
             self.atc_queue.enqueue(atc_msg)
         elif request_type == "departure_checkin":
-            # Check in with departure after takeoff
+            # Tower: Contact departure
             atc_msg = ATCMessage(
-                message_key="contact_departure",
+                message_key="ATC_TOWER_CONTACT_DEPARTURE",
                 sender="ATC",
                 delay_after=3.0,
             )
@@ -588,7 +588,7 @@ class RadioPlugin(IPlugin):
         elif request_type == "landing_clearance":
             # ATC clears to land
             atc_msg = ATCMessage(
-                message_key="cleared_to_land",
+                message_key="ATC_TOWER_CLEARED_LAND_31",
                 sender="ATC",
                 delay_after=3.0,
             )
