@@ -11,6 +11,7 @@ from airborne.systems.engines.base import (
     EngineType,
     IEngine,
 )
+from airborne.systems.engines.piston_simple import SimplePistonEngine
 
 __all__ = [
     "EngineControls",
@@ -18,4 +19,5 @@ __all__ = [
     "EngineState",
     "EngineType",
     "IEngine",
+    "SimplePistonEngine",
 ]
