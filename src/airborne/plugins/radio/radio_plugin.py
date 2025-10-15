@@ -561,36 +561,38 @@ class RadioPlugin(IPlugin):
             logger.warning("ATC queue not available")
             return
 
+        from airborne.plugins.radio.atc_queue import ATCMessage
+
         data = message.data
         request_type = data.get("request_type", "")
 
         logger.info(f"Processing ATC request: {request_type}")
 
-        # Map request types to ATC responses
+        # Map request types to ATC messages
         if request_type == "takeoff_clearance":
             # ATC clears for takeoff
-            self.atc_queue.queue_message(
+            atc_msg = ATCMessage(
                 message_key="cleared_for_takeoff",
-                airport="AIRPORT",
-                callsign=self._callsign,
-                runway="31",
+                sender="ATC",
+                delay_after=3.0,
             )
+            self.atc_queue.enqueue(atc_msg)
         elif request_type == "departure_checkin":
             # Check in with departure after takeoff
-            self.atc_queue.queue_message(
+            atc_msg = ATCMessage(
                 message_key="contact_departure",
-                airport="AIRPORT",
-                callsign=self._callsign,
-                frequency="124.5",
+                sender="ATC",
+                delay_after=3.0,
             )
+            self.atc_queue.enqueue(atc_msg)
         elif request_type == "landing_clearance":
             # ATC clears to land
-            self.atc_queue.queue_message(
+            atc_msg = ATCMessage(
                 message_key="cleared_to_land",
-                airport="AIRPORT",
-                callsign=self._callsign,
-                runway="31",
+                sender="ATC",
+                delay_after=3.0,
             )
+            self.atc_queue.enqueue(atc_msg)
         else:
             logger.warning(f"Unknown ATC request type: {request_type}")
 
