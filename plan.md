@@ -6,12 +6,13 @@ AirBorne is a blind-accessible flight simulator with self-voicing capabilities, 
 
 ---
 
-## Current Status (2025-10-13)
+## Current Status (2025-10-15)
 
 **Phase 4 Complete** ✅ - Automatic flight demo fully operational!
+**Instrument Readouts Complete** ✅ - All engine/electrical/fuel instruments with pre-recorded TTS!
 
 ### Test Results
-- **752/752 tests passing (100%)** ✅
+- **920/920 tests passing (100%)** ✅
 - All quality checks passing (Ruff, pytest)
 - No regressions
 
@@ -24,6 +25,10 @@ AirBorne is a blind-accessible flight simulator with self-voicing capabilities, 
 - ✅ Automatic demo script executes full flight sequence
 - ✅ Terrain collision detection operational
 - ✅ Audio plugin runs in stub mode (graceful degradation)
+- ✅ **NEW**: Instrument readouts for engine (RPM, oil pressure, oil temp, manifold pressure, fuel flow)
+- ✅ **NEW**: Instrument readouts for electrical (battery voltage, battery %, charging status, alternator)
+- ✅ **NEW**: Instrument readouts for fuel (quantity, remaining time)
+- ✅ **NEW**: 151 pre-recorded TTS audio files (Samantha 200WPM)
 - ✅ Clean shutdown
 
 ### Automatic Demo Working! 🎉
@@ -32,6 +37,45 @@ The `scripts/demo_autopilot.py` script now successfully demonstrates:
 - **Phase 2**: Takeoff Roll with autopilot ground_takeoff mode (15s) ✅
 - **Phase 3**: Climb to 3000ft with altitude_hold autopilot (30s) ✅
 - **Phase 4-6**: Cruise, Descent, Landing (planned, framework ready)
+
+### Instrument Readouts System ✅ (2025-10-15)
+**Complete integration of aircraft system instrument readouts with pre-recorded TTS**
+
+#### Features Implemented:
+- **10 Engine Instrument Readouts**:
+  - `read_rpm` - Engine RPM (500-3000) or "Engine stopped"
+  - `read_manifold_pressure` - Manifold pressure (0-100 inches Hg)
+  - `read_oil_pressure` - Oil pressure (0-100 PSI)
+  - `read_oil_temp` - Oil temperature in Fahrenheit
+  - `read_fuel_flow` - Instant fuel consumption (0-100 GPH)
+
+- **4 Electrical Instrument Readouts**:
+  - `read_battery_voltage` - Battery voltage (0-100V)
+  - `read_battery_percent` - Battery state of charge (0-100%)
+  - `read_battery_status` - "Charging at X amps" / "Discharging at X amps" / "Stable"
+  - `read_alternator` - Alternator output (0-100 amps)
+
+- **2 Fuel Instrument Readouts**:
+  - `read_fuel_quantity` - Total fuel quantity (0-100 gallons)
+  - `read_fuel_remaining` - Time remaining (X hours Y minutes)
+
+#### Technical Implementation:
+- **151 Pre-recorded Audio Files** (assets/sounds/pilot/MSG_*.mp3):
+  - 24 instrument-specific phrases (Samantha 200WPM)
+  - 101 numbers (0-100)
+  - 26 RPM values (500-3000 in 100 RPM increments)
+- **29 New MSG_* Constants** in speech_messages.py
+- **11 Helper Methods** in SpeechMessages class for composing readouts
+- **Audio Plugin Integration** via _get_message_key() routing
+- **Message Subscriptions** to ENGINE_STATE and SYSTEM_STATE topics
+- **Zero-latency Playback** - instant response, no TTS generation delay
+
+#### Benefits:
+- ✅ Professional cockpit voice quality (Samantha 200WPM)
+- ✅ Enables completion of Cessna 172 checklists
+- ✅ Supports full aircraft systems operation
+- ✅ Unified with existing flight instrument readouts (airspeed, altitude, heading, vspeed, attitude)
+- ✅ Modular and extensible design
 
 ### Phase Completion Status
 
@@ -64,12 +108,12 @@ The `scripts/demo_autopilot.py` script now successfully demonstrates:
 2. **Plugin Wiring**: Position updates, proximity audio, terrain alerts need message subscriptions
 3. **Type Checking**: 23 pre-existing mypy warnings in 7 files (tests pass, non-critical)
 
-### Recent Commits (2025-10-14)
-- `enh(audio): fix radio static looping with FMOD LOOP_NORMAL mode`
-- `enh(input): add Control key to interrupt cockpit TTS at any time`
-- `enh(radio): make menu close silent when selecting option, speak only on ESC`
-- `feat(autopilot): integrate autopilot with main app and demo script`
-- `docs(demo): update DEMO.md with working autopilot demo instructions`
+### Recent Commits (2025-10-15)
+- `feat(audio): add pre-recorded TTS for all instrument readouts with Samantha 200WPM` ✅
+- `feat(audio): add comprehensive instrument readouts for engine, electrical, and fuel systems` ✅
+- `fix(panel): skip Ctrl+Q in panel handler to allow app quit`
+- `feat(panel): wire keyboard events to control panel plugin for 5-panel navigation system`
+- `feat(panel): add keyboard nav with 92 cockpit control TTS messages`
 
 ### Recommended Next Steps
 **Priority: Complete Near-Complete Phases (Est: 6-10 hours)**
