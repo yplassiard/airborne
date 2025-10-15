@@ -148,19 +148,99 @@ class AutopilotDemo(AirBorne):
         """Phase 0: Engine startup and taxi preparation."""
         logger.info("Starting engine and preparing for taxi...")
 
-        # Set idle throttle (engine auto-starts at throttle)
+        # Start "Before Engine Start" checklist
+        self.message_queue.publish(
+            Message(
+                sender="demo",
+                recipients=["checklist_plugin"],
+                topic="checklist.start",
+                data={"checklist_name": "Before Engine Start"},
+            )
+        )
+
+        # Master switch ON
+        self.message_queue.publish(
+            Message(
+                sender="demo",
+                recipients=["electrical"],
+                topic="electrical.master_switch",
+                data={"state": "ON"},
+            )
+        )
+
+        # Fuel selector to BOTH
+        self.message_queue.publish(
+            Message(
+                sender="demo",
+                recipients=["fuel"],
+                topic="fuel.selector",
+                data={"state": "BOTH"},
+            )
+        )
+
+        # Mixture to RICH
+        self.message_queue.publish(
+            Message(
+                sender="demo",
+                recipients=["engine"],
+                topic="engine.mixture",
+                data={"state": "RICH"},
+            )
+        )
+
+        # Magnetos to BOTH
+        self.message_queue.publish(
+            Message(
+                sender="demo",
+                recipients=["engine"],
+                topic="engine.magnetos",
+                data={"state": "BOTH"},
+            )
+        )
+
+        # Set idle throttle for engine start
         self.message_queue.publish(
             Message(
                 sender="demo",
                 recipients=["*"],
                 topic=MessageTopic.CONTROL_INPUT,
-                data={"throttle": 0.2},
+                data={"throttle": 0.15},
+            )
+        )
+
+        # Engage starter (engine start checklist)
+        self.message_queue.publish(
+            Message(
+                sender="demo",
+                recipients=["engine"],
+                topic="engine.magnetos",
+                data={"state": "START"},
             )
         )
 
     def _init_phase_takeoff(self) -> None:
         """Phase 1: Takeoff roll with autopilot."""
         logger.info("Commencing takeoff roll - FULL POWER!")
+
+        # Start takeoff checklist
+        self.message_queue.publish(
+            Message(
+                sender="demo",
+                recipients=["checklist_plugin"],
+                topic="checklist.start",
+                data={"checklist_name": "Normal Takeoff"},
+            )
+        )
+
+        # Request takeoff clearance from ATC
+        self.message_queue.publish(
+            Message(
+                sender="demo",
+                recipients=["radio_plugin"],
+                topic="atc.request",
+                data={"request_type": "takeoff_clearance"},
+            )
+        )
 
         # Full throttle
         self.message_queue.publish(
@@ -186,6 +266,16 @@ class AutopilotDemo(AirBorne):
         """Phase 2: Climb to cruise altitude."""
         logger.info("Climbing to cruise altitude (3000ft MSL)")
 
+        # Retract landing gear after positive climb
+        self.message_queue.publish(
+            Message(
+                sender="demo",
+                recipients=["*"],
+                topic=MessageTopic.CONTROL_INPUT,
+                data={"gear": 0.0},  # Gear up
+            )
+        )
+
         # Set altitude target
         self.message_queue.publish(
             Message(
@@ -203,6 +293,16 @@ class AutopilotDemo(AirBorne):
                 recipients=["autopilot"],
                 topic="autopilot.command",
                 data={"command": "set_mode", "mode": AutopilotMode.ALTITUDE_HOLD.value},
+            )
+        )
+
+        # Check in with departure
+        self.message_queue.publish(
+            Message(
+                sender="demo",
+                recipients=["radio_plugin"],
+                topic="atc.request",
+                data={"request_type": "departure_checkin"},
             )
         )
 
@@ -233,6 +333,16 @@ class AutopilotDemo(AirBorne):
     def _init_phase_descent(self) -> None:
         """Phase 4: Descend to pattern altitude."""
         logger.info("Descending to pattern altitude (1500ft)")
+
+        # Start before landing checklist
+        self.message_queue.publish(
+            Message(
+                sender="demo",
+                recipients=["checklist_plugin"],
+                topic="checklist.start",
+                data={"checklist_name": "Before Landing"},
+            )
+        )
 
         # Reduce power
         self.message_queue.publish(
@@ -267,6 +377,36 @@ class AutopilotDemo(AirBorne):
     def _init_phase_approach(self) -> None:
         """Phase 5: Final approach and landing."""
         logger.info("Final approach - autopilot landing mode engaged")
+
+        # Lower landing gear
+        self.message_queue.publish(
+            Message(
+                sender="demo",
+                recipients=["*"],
+                topic=MessageTopic.CONTROL_INPUT,
+                data={"gear": 1.0},  # Gear down
+            )
+        )
+
+        # Extend flaps for landing
+        self.message_queue.publish(
+            Message(
+                sender="demo",
+                recipients=["*"],
+                topic=MessageTopic.CONTROL_INPUT,
+                data={"flaps": 0.5},  # Half flaps
+            )
+        )
+
+        # Request landing clearance
+        self.message_queue.publish(
+            Message(
+                sender="demo",
+                recipients=["radio_plugin"],
+                topic="atc.request",
+                data={"request_type": "landing_clearance"},
+            )
+        )
 
         # Engage auto-land mode
         self.message_queue.publish(
