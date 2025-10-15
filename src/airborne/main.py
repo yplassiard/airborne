@@ -363,6 +363,17 @@ class AirBorne:
                     remaining_events.append(event)
             elif (
                 event.type == pygame.KEYDOWN
+                and hasattr(self, "radio_plugin")
+                and self.radio_plugin
+                and self.radio_plugin.atc_menu
+                and self.radio_plugin.atc_menu.is_open()
+            ):
+                # ATC menu is open - intercept keys
+                handled = self._handle_atc_menu_key(event.key)
+                if not handled:
+                    remaining_events.append(event)
+            elif (
+                event.type == pygame.KEYDOWN
                 and hasattr(self, "control_panel_plugin")
                 and self.control_panel_plugin
                 and self.control_panel_plugin.handle_key_press(event.key, pygame.key.get_mods())
@@ -385,6 +396,8 @@ class AirBorne:
             True if key was handled, False otherwise
         """
         menu = self.checklist_plugin.checklist_menu
+        if not menu:
+            return False
 
         # ESC closes menu
         if key == pygame.K_ESCAPE:
@@ -418,6 +431,46 @@ class AirBorne:
             elif key == pygame.K_s:
                 menu.skip_item()
                 return True
+
+        return False
+
+    def _handle_atc_menu_key(self, key: int) -> bool:
+        """Handle key press when ATC menu is open.
+
+        Args:
+            key: pygame key constant
+
+        Returns:
+            True if key was handled, False otherwise
+        """
+        menu = self.radio_plugin.atc_menu
+        if not menu:
+            return False
+
+        # ESC closes menu
+        if key == pygame.K_ESCAPE:
+            menu.close()
+            return True
+
+        # Number keys select option
+        if pygame.K_1 <= key <= pygame.K_9:
+            number = key - pygame.K_0
+            menu.select_option(str(number))
+            return True
+
+        # Up/Down arrows navigate
+        if key == pygame.K_UP:
+            menu.move_selection_up()
+            return True
+
+        if key == pygame.K_DOWN:
+            menu.move_selection_down()
+            return True
+
+        # Enter selects current
+        if key in (pygame.K_RETURN, pygame.K_KP_ENTER):
+            menu.select_current()
+            return True
 
         return False
 

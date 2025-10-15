@@ -94,6 +94,7 @@ class ATCMenu:
         self._current_options: list[ATCMenuOption] = []
         self._current_phase: FlightPhase = FlightPhase.UNKNOWN
         self._last_aircraft_state: dict[str, Any] = {}
+        self._selected_index = 0  # For up/down navigation
 
         logger.info("ATC menu initialized")
 
@@ -122,6 +123,7 @@ class ATCMenu:
             return
 
         self._state = "OPEN"
+        self._selected_index = 0
         logger.info(f"ATC menu opened (phase: {self._current_phase.value})")
 
         # Read menu to player
@@ -136,6 +138,7 @@ class ATCMenu:
         if self._state != "CLOSED":
             self._state = "CLOSED"
             self._current_options = []
+            self._selected_index = 0
             logger.debug("ATC menu closed")
 
             # Provide audio feedback using message queue with message key (only if speak=True)
@@ -195,6 +198,57 @@ class ATCMenu:
         self._execute_option(selected_option)
 
         return True
+
+    def move_selection_up(self) -> bool:
+        """Move selection up in the list.
+
+        Returns:
+            True if selection moved, False if at top.
+        """
+        if self._state != "OPEN" or not self._current_options:
+            return False
+
+        if self._selected_index > 0:
+            self._selected_index -= 1
+            self._announce_current_selection()
+            return True
+
+        return False
+
+    def move_selection_down(self) -> bool:
+        """Move selection down in the list.
+
+        Returns:
+            True if selection moved, False if at bottom.
+        """
+        if self._state != "OPEN" or not self._current_options:
+            return False
+
+        # Only count enabled options
+        enabled_options = [opt for opt in self._current_options if opt.enabled]
+        if self._selected_index < len(enabled_options) - 1:
+            self._selected_index += 1
+            self._announce_current_selection()
+            return True
+
+        return False
+
+    def select_current(self) -> bool:
+        """Select the currently highlighted option.
+
+        Returns:
+            True if option was selected, False otherwise.
+        """
+        if self._state != "OPEN" or not self._current_options:
+            return False
+
+        # Get enabled options only
+        enabled_options = [opt for opt in self._current_options if opt.enabled]
+        if 0 <= self._selected_index < len(enabled_options):
+            selected_option = enabled_options[self._selected_index]
+            return self.select_option(selected_option.key)
+
+        return False
 
     def read_menu(self) -> None:
         """Read menu options aloud using TTS."""
@@ -466,6 +520,48 @@ class ATCMenu:
         if self._state == "WAITING_RESPONSE":
             self._state = "CLOSED"
             logger.debug("ATC response complete, menu returned to closed state")
+
+    def _announce_current_selection(self) -> None:
+        """Announce the currently selected option."""
+        if not (0 <= self._selected_index < len(self._current_options)):
+            return
+
+        # Get enabled options only
+        enabled_options = [opt for opt in self._current_options if opt.enabled]
+        if not (0 <= self._selected_index < len(enabled_options)):
+            return
+
+        option = enabled_options[self._selected_index]
+
+        # Map option labels to message keys
+        label_to_key = {
+            "Request Startup Clearance": "MSG_ATC_OPTION_REQUEST_STARTUP",
+            "Request ATIS": "MSG_ATC_OPTION_REQUEST_ATIS",
+            "Request Taxi": "MSG_ATC_OPTION_REQUEST_TAXI",
+            "Request Takeoff Clearance": "MSG_ATC_OPTION_REQUEST_TAKEOFF",
+            "Report Ready for Departure": "MSG_ATC_OPTION_READY_DEPARTURE",
+            "Check In with Departure": "MSG_ATC_OPTION_CHECKIN_DEPARTURE",
+            "Report Altitude": "MSG_ATC_OPTION_REPORT_ALTITUDE",
+            "Request Flight Following": "MSG_ATC_OPTION_REQUEST_FLIGHT_FOLLOWING",
+            "Report Position": "MSG_ATC_OPTION_REPORT_POSITION",
+        }
+
+        message_key = label_to_key.get(option.label)
+        if message_key and self._message_queue:
+            from airborne.core.messaging import Message, MessagePriority, MessageTopic
+
+            # Speak: "Number X: option label"
+            message_keys = [f"MSG_NUMBER_{option.key}", "MSG_WORD_COLON", message_key]
+
+            self._message_queue.publish(
+                Message(
+                    sender="atc_menu",
+                    recipients=["*"],
+                    topic=MessageTopic.TTS_SPEAK,
+                    data={"text": message_keys, "priority": "high", "interrupt": True},
+                    priority=MessagePriority.HIGH,
+                )
+            )
 
     def get_state(self) -> str:
         """Get current menu state.
