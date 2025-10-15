@@ -79,8 +79,8 @@ class TestAudioPluginInitialization:
         # Should register components
         assert context.plugin_registry.register.call_count == 3
 
-        # Should subscribe to four message topics: POSITION_UPDATED, TTS_SPEAK, CONTROL_INPUT, TTS_INTERRUPT
-        assert context.message_queue.subscribe.call_count == 4
+        # Should subscribe to six message topics: POSITION_UPDATED, TTS_SPEAK, CONTROL_INPUT, TTS_INTERRUPT, ENGINE_STATE, SYSTEM_STATE
+        assert context.message_queue.subscribe.call_count == 6
 
 
 class TestAudioPluginPositionHandling:
@@ -210,8 +210,8 @@ class TestAudioPluginShutdown:
         """Test audio plugin shutdown."""
         plugin.shutdown()
 
-        # Should unsubscribe from messages (POSITION_UPDATED, TTS_SPEAK, CONTROL_INPUT, TTS_INTERRUPT)
-        assert plugin.context.message_queue.unsubscribe.call_count == 4
+        # Should unsubscribe from messages (POSITION_UPDATED, TTS_SPEAK, CONTROL_INPUT, TTS_INTERRUPT, ENGINE_STATE, SYSTEM_STATE)
+        assert plugin.context.message_queue.unsubscribe.call_count == 6
 
         # Should unregister components
         assert plugin.context.plugin_registry.unregister.call_count == 3
@@ -267,3 +267,104 @@ class TestAudioPluginConfigUpdate:
 
         # TTS should be disabled (can't easily test without mocking internals)
         # Just verify no errors
+
+
+class TestAudioPluginInstrumentReadouts:
+    """Test audio plugin instrument readout functionality."""
+
+    @pytest.fixture
+    def event_bus(self) -> EventBus:
+        """Create event bus."""
+        return EventBus()
+
+    @pytest.fixture
+    def message_queue(self) -> Mock:
+        """Create mock message queue."""
+        return Mock()
+
+    @pytest.fixture
+    def registry(self) -> Mock:
+        """Create mock registry."""
+        return Mock()
+
+    @pytest.fixture
+    def context(self, event_bus: EventBus, message_queue: Mock, registry: Mock) -> PluginContext:
+        """Create plugin context."""
+        return PluginContext(
+            event_bus=event_bus,
+            message_queue=message_queue,
+            config={"audio": {}, "tts": {}},
+            plugin_registry=registry,
+        )
+
+    @pytest.fixture
+    def plugin(self, context: PluginContext) -> AudioPlugin:
+        """Create initialized audio plugin."""
+        plugin = AudioPlugin()
+        plugin.initialize(context)
+        return plugin
+
+    def test_handle_engine_state_message(self, plugin: AudioPlugin) -> None:
+        """Test handling ENGINE_STATE messages."""
+        message = Message(
+            sender="engine_plugin",
+            recipients=["*"],
+            topic=MessageTopic.ENGINE_STATE,
+            data={
+                "running": True,
+                "rpm": 2300.0,
+                "manifold_pressure": 23.5,
+                "oil_pressure": 55.0,
+                "oil_temp": 85.0,
+                "fuel_flow": 8.5,
+            },
+        )
+
+        plugin.handle_message(message)
+
+        assert plugin._engine_running is True
+        assert plugin._engine_rpm == 2300.0
+        assert plugin._manifold_pressure == 23.5
+        assert plugin._oil_pressure == 55.0
+        assert plugin._oil_temp == 85.0
+        assert plugin._fuel_flow == 8.5
+
+    def test_handle_electrical_system_state_message(self, plugin: AudioPlugin) -> None:
+        """Test handling SYSTEM_STATE messages for electrical system."""
+        message = Message(
+            sender="electrical_plugin",
+            recipients=["*"],
+            topic=MessageTopic.SYSTEM_STATE,
+            data={
+                "system": "electrical",
+                "battery_voltage": 12.6,
+                "battery_soc_percent": 85.0,
+                "battery_current_amps": 15.5,
+                "alternator_output_amps": 18.0,
+            },
+        )
+
+        plugin.handle_message(message)
+
+        assert plugin._battery_voltage == 12.6
+        assert plugin._battery_percent == 85.0
+        assert plugin._battery_current == 15.5
+        assert plugin._alternator_output == 18.0
+
+    def test_handle_fuel_system_state_message(self, plugin: AudioPlugin) -> None:
+        """Test handling SYSTEM_STATE messages for fuel system."""
+        message = Message(
+            sender="fuel_plugin",
+            recipients=["*"],
+            topic=MessageTopic.SYSTEM_STATE,
+            data={
+                "system": "fuel",
+                "total_quantity_gallons": 35.5,
+                "time_remaining_minutes": 240.0,
+            },
+        )
+
+        plugin.handle_message(message)
+
+        assert plugin._fuel_quantity == 35.5
+        assert plugin._fuel_remaining_minutes == 240.0

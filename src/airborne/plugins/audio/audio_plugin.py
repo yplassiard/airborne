@@ -88,6 +88,24 @@ class AudioPlugin(IPlugin):
         self._bank = 0.0  # degrees
         self._pitch = 0.0  # degrees
 
+        # Engine state for instrument readouts
+        self._engine_rpm = 0.0
+        self._manifold_pressure = 0.0  # inches Hg
+        self._oil_pressure = 0.0  # PSI
+        self._oil_temp = 0.0  # Celsius
+        self._fuel_flow = 0.0  # GPH
+        self._engine_running = False
+
+        # Electrical state for instrument readouts
+        self._battery_voltage = 0.0  # Volts
+        self._battery_percent = 0.0  # 0-100%
+        self._battery_current = 0.0  # Amps (positive = charging, negative = discharging)
+        self._alternator_output = 0.0  # Amps
+
+        # Fuel state for instrument readouts
+        self._fuel_quantity = 0.0  # Gallons
+        self._fuel_remaining_minutes = 0.0  # Minutes
+
     def get_metadata(self) -> PluginMetadata:
         """Return plugin metadata.
 
@@ -189,11 +207,13 @@ class AudioPlugin(IPlugin):
                 context.plugin_registry.register("sound_manager", self.sound_manager)
             context.plugin_registry.register("tts", self.tts_provider)
 
-        # Subscribe to position updates, TTS requests, control inputs, and input actions
+        # Subscribe to position updates, TTS requests, control inputs, and system states
         context.message_queue.subscribe(MessageTopic.POSITION_UPDATED, self.handle_message)
         context.message_queue.subscribe(MessageTopic.TTS_SPEAK, self.handle_message)
         context.message_queue.subscribe(MessageTopic.TTS_INTERRUPT, self.handle_message)
         context.message_queue.subscribe(MessageTopic.CONTROL_INPUT, self.handle_message)
+        context.message_queue.subscribe(MessageTopic.ENGINE_STATE, self.handle_message)
+        context.message_queue.subscribe(MessageTopic.SYSTEM_STATE, self.handle_message)
 
         # Subscribe to input action events from event bus for TTS feedback
         if context.event_bus:
@@ -244,6 +264,8 @@ class AudioPlugin(IPlugin):
             self.context.message_queue.unsubscribe(MessageTopic.TTS_SPEAK, self.handle_message)
             self.context.message_queue.unsubscribe(MessageTopic.TTS_INTERRUPT, self.handle_message)
             self.context.message_queue.unsubscribe(MessageTopic.CONTROL_INPUT, self.handle_message)
+            self.context.message_queue.unsubscribe(MessageTopic.ENGINE_STATE, self.handle_message)
+            self.context.message_queue.unsubscribe(MessageTopic.SYSTEM_STATE, self.handle_message)
 
             # Unregister components (only if they were registered)
             if self.context.plugin_registry:
@@ -385,6 +407,31 @@ class AudioPlugin(IPlugin):
                 elif isinstance(vel, (tuple, list)) and len(vel) >= 3:
                     self._listener_velocity = Vector3(float(vel[0]), float(vel[1]), float(vel[2]))
 
+        elif message.topic == MessageTopic.ENGINE_STATE:
+            # Update engine state for instrument readouts
+            data = message.data
+            self._engine_running = data.get("running", False)
+            self._engine_rpm = data.get("rpm", 0.0)
+            self._manifold_pressure = data.get("manifold_pressure", 0.0)
+            self._oil_pressure = data.get("oil_pressure", 0.0)
+            self._oil_temp = data.get("oil_temp", 0.0)
+            self._fuel_flow = data.get("fuel_flow", 0.0)
+
+        elif message.topic == MessageTopic.SYSTEM_STATE:
+            # Update system states for instrument readouts
+            data = message.data
+            system = data.get("system")
+
+            if system == "electrical":
+                self._battery_voltage = data.get("battery_voltage", 0.0)
+                self._battery_percent = data.get("battery_soc_percent", 0.0)
+                self._battery_current = data.get("battery_current_amps", 0.0)
+                self._alternator_output = data.get("alternator_output_amps", 0.0)
+
+            elif system == "fuel":
+                self._fuel_quantity = data.get("total_quantity_gallons", 0.0)
+                self._fuel_remaining_minutes = data.get("time_remaining_minutes", 0.0)
+
     def on_config_changed(self, config: dict[str, Any]) -> None:
         """Handle configuration changes.
 
@@ -452,6 +499,50 @@ class AudioPlugin(IPlugin):
                 message = f"Bank {abs(bank_int)} degrees {bank_dir}"
             else:
                 message = f"Bank {abs(bank_int)} {bank_dir}, pitch {abs(pitch_int)} {pitch_dir}"
+
+        # Engine instrument readouts
+        elif event.action == "read_rpm":
+            if self._engine_running:
+                message = f"Engine RPM {int(self._engine_rpm)}"
+            else:
+                message = "Engine stopped"
+        elif event.action == "read_manifold_pressure":
+            message = f"Manifold pressure {self._manifold_pressure:.1f} inches"
+        elif event.action == "read_oil_pressure":
+            message = f"Oil pressure {int(self._oil_pressure)} PSI"
+        elif event.action == "read_oil_temp":
+            # Convert Celsius to Fahrenheit for readout
+            oil_temp_f = self._oil_temp * 9 / 5 + 32
+            message = f"Oil temperature {int(oil_temp_f)} degrees"
+        elif event.action == "read_fuel_flow":
+            message = f"Fuel flow {self._fuel_flow:.1f} gallons per hour"
+
+        # Electrical instrument readouts
+        elif event.action == "read_battery_voltage":
+            message = f"Battery {self._battery_voltage:.1f} volts"
+        elif event.action == "read_battery_percent":
+            message = f"Battery {int(self._battery_percent)} percent"
+        elif event.action == "read_battery_status":
+            if self._battery_current > 1.0:
+                message = f"Battery charging at {self._battery_current:.1f} amps"
+            elif self._battery_current < -1.0:
+                message = f"Battery discharging at {abs(self._battery_current):.1f} amps"
+            else:
+                message = "Battery stable"
+        elif event.action == "read_alternator":
+            message = f"Alternator output {self._alternator_output:.1f} amps"
+
+        # Fuel instrument readouts
+        elif event.action == "read_fuel_quantity":
+            message = f"Fuel quantity {self._fuel_quantity:.1f} gallons"
+        elif event.action == "read_fuel_remaining":
+            hours = int(self._fuel_remaining_minutes / 60)
+            minutes = int(self._fuel_remaining_minutes % 60)
+            if hours > 0:
+                message = f"Fuel remaining {hours} hours {minutes} minutes"
+            else:
+                message = f"Fuel remaining {minutes} minutes"
+
         else:
             # Map actions to TTS announcements
             action_messages = {
