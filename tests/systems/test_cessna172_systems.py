@@ -1,10 +1,8 @@
 """Tests for Cessna 172 system implementations."""
 
-import pytest
-
 from airborne.systems.electrical.simple_12v import Simple12VElectricalSystem
-from airborne.systems.fuel.simple_gravity import SimpleGravityFuelSystem
 from airborne.systems.fuel.base import FuelSelectorPosition
+from airborne.systems.fuel.simple_gravity import SimpleGravityFuelSystem
 from airborne.systems.lighting.standard import StandardLightingSystem
 
 
@@ -21,11 +19,7 @@ class TestSimple12VElectricalSystem:
     def test_battery_discharge(self):
         """Test battery discharges under load."""
         system = Simple12VElectricalSystem()
-        system.initialize({
-            "loads": {
-                "nav_lights": {"amps": 1.5, "essential": False}
-            }
-        })
+        system.initialize({"loads": {"nav_lights": {"amps": 1.5, "essential": False}}})
 
         # Turn on master switch and nav lights
         system.set_master_switch(True)
@@ -42,11 +36,7 @@ class TestSimple12VElectricalSystem:
     def test_alternator_charging(self):
         """Test alternator charges battery when engine running."""
         system = Simple12VElectricalSystem()
-        system.initialize({
-            "loads": {
-                "nav_lights": {"amps": 1.5, "essential": False}
-            }
-        })
+        system.initialize({"loads": {"nav_lights": {"amps": 1.5, "essential": False}}})
 
         # Discharge battery a bit first
         system.battery_current_ah = 30.0
@@ -68,11 +58,7 @@ class TestSimple12VElectricalSystem:
     def test_starter_requires_voltage(self):
         """Test starter won't crank with low battery voltage."""
         system = Simple12VElectricalSystem()
-        system.initialize({
-            "loads": {
-                "starter_motor": {"amps": 150.0, "essential": True}
-            }
-        })
+        system.initialize({"loads": {"starter_motor": {"amps": 150.0, "essential": True}}})
 
         # Drain battery to critical level
         system.battery_current_ah = 2.0  # Very low
@@ -105,11 +91,7 @@ class TestSimple12VElectricalSystem:
     def test_alternator_failure(self):
         """Test alternator failure causes battery drain."""
         system = Simple12VElectricalSystem()
-        system.initialize({
-            "loads": {
-                "avionics": {"amps": 10.0, "essential": False}
-            }
-        })
+        system.initialize({"loads": {"avionics": {"amps": 10.0, "essential": False}}})
 
         system.set_master_switch(True)
         system.set_load_enabled("avionics", True)
@@ -131,22 +113,24 @@ class TestSimpleGravityFuelSystem:
     def test_initialization(self):
         """Test fuel system can be initialized."""
         system = SimpleGravityFuelSystem()
-        system.initialize({
-            "tanks": {
-                "left": {
-                    "capacity_total": 28.0,
-                    "capacity_usable": 26.0,
-                    "fuel_type": "avgas_100ll",
-                    "position": [-5.0, 0.0, -8.0]
-                },
-                "right": {
-                    "capacity_total": 28.0,
-                    "capacity_usable": 26.0,
-                    "fuel_type": "avgas_100ll",
-                    "position": [-5.0, 0.0, 8.0]
+        system.initialize(
+            {
+                "tanks": {
+                    "left": {
+                        "capacity_total": 28.0,
+                        "capacity_usable": 26.0,
+                        "fuel_type": "avgas_100ll",
+                        "position": [-5.0, 0.0, -8.0],
+                    },
+                    "right": {
+                        "capacity_total": 28.0,
+                        "capacity_usable": 26.0,
+                        "fuel_type": "avgas_100ll",
+                        "position": [-5.0, 0.0, 8.0],
+                    },
                 }
             }
-        })
+        )
 
         assert len(system.tanks) == 2
         assert "left" in system.tanks
@@ -155,26 +139,30 @@ class TestSimpleGravityFuelSystem:
     def test_fuel_consumption(self):
         """Test fuel is consumed during flight."""
         system = SimpleGravityFuelSystem()
-        system.initialize({
-            "tanks": {
-                "left": {
-                    "capacity_total": 28.0,
-                    "capacity_usable": 26.0,
-                    "fuel_type": "avgas_100ll",
-                    "position": [-5.0, 0.0, -8.0]
-                },
-                "right": {
-                    "capacity_total": 28.0,
-                    "capacity_usable": 26.0,
-                    "fuel_type": "avgas_100ll",
-                    "position": [-5.0, 0.0, 8.0]
+        system.initialize(
+            {
+                "tanks": {
+                    "left": {
+                        "capacity_total": 28.0,
+                        "capacity_usable": 26.0,
+                        "fuel_type": "avgas_100ll",
+                        "position": [-5.0, 0.0, -8.0],
+                    },
+                    "right": {
+                        "capacity_total": 28.0,
+                        "capacity_usable": 26.0,
+                        "fuel_type": "avgas_100ll",
+                        "position": [-5.0, 0.0, 8.0],
+                    },
                 }
             }
-        })
+        )
 
         system.set_selector_position(FuelSelectorPosition.BOTH)
 
-        initial_fuel = system.tanks["left"].current_quantity + system.tanks["right"].current_quantity
+        initial_fuel = (
+            system.tanks["left"].current_quantity + system.tanks["right"].current_quantity
+        )
 
         # Consume fuel at 8 GPH for 1 hour (should consume ~8 gallons)
         system.update(dt=3600.0, fuel_flow_gph=8.0)
@@ -188,24 +176,26 @@ class TestSimpleGravityFuelSystem:
     def test_fuel_exhaustion(self):
         """Test engine dies when fuel exhausted."""
         system = SimpleGravityFuelSystem()
-        system.initialize({
-            "tanks": {
-                "left": {
-                    "capacity_total": 28.0,
-                    "capacity_usable": 26.0,
-                    "initial_quantity": 0.1,  # Almost empty
-                    "fuel_type": "avgas_100ll",
-                    "position": [-5.0, 0.0, -8.0]
-                },
-                "right": {
-                    "capacity_total": 28.0,
-                    "capacity_usable": 26.0,
-                    "initial_quantity": 0.1,  # Almost empty
-                    "fuel_type": "avgas_100ll",
-                    "position": [-5.0, 0.0, 8.0]
+        system.initialize(
+            {
+                "tanks": {
+                    "left": {
+                        "capacity_total": 28.0,
+                        "capacity_usable": 26.0,
+                        "initial_quantity": 0.1,  # Almost empty
+                        "fuel_type": "avgas_100ll",
+                        "position": [-5.0, 0.0, -8.0],
+                    },
+                    "right": {
+                        "capacity_total": 28.0,
+                        "capacity_usable": 26.0,
+                        "initial_quantity": 0.1,  # Almost empty
+                        "fuel_type": "avgas_100ll",
+                        "position": [-5.0, 0.0, 8.0],
+                    },
                 }
             }
-        })
+        )
 
         system.set_selector_position(FuelSelectorPosition.BOTH)
 
@@ -222,16 +212,18 @@ class TestSimpleGravityFuelSystem:
     def test_fuel_selector_off(self):
         """Test fuel selector OFF stops fuel flow."""
         system = SimpleGravityFuelSystem()
-        system.initialize({
-            "tanks": {
-                "left": {
-                    "capacity_total": 28.0,
-                    "capacity_usable": 26.0,
-                    "fuel_type": "avgas_100ll",
-                    "position": [-5.0, 0.0, -8.0]
+        system.initialize(
+            {
+                "tanks": {
+                    "left": {
+                        "capacity_total": 28.0,
+                        "capacity_usable": 26.0,
+                        "fuel_type": "avgas_100ll",
+                        "position": [-5.0, 0.0, -8.0],
+                    }
                 }
             }
-        })
+        )
 
         system.set_selector_position(FuelSelectorPosition.OFF)
 
@@ -244,24 +236,26 @@ class TestSimpleGravityFuelSystem:
     def test_fuel_imbalance_warning(self):
         """Test fuel imbalance warning."""
         system = SimpleGravityFuelSystem()
-        system.initialize({
-            "tanks": {
-                "left": {
-                    "capacity_total": 28.0,
-                    "capacity_usable": 26.0,
-                    "initial_quantity": 20.0,  # More fuel
-                    "fuel_type": "avgas_100ll",
-                    "position": [-5.0, 0.0, -8.0]
-                },
-                "right": {
-                    "capacity_total": 28.0,
-                    "capacity_usable": 26.0,
-                    "initial_quantity": 10.0,  # Less fuel (10 gal difference)
-                    "fuel_type": "avgas_100ll",
-                    "position": [-5.0, 0.0, 8.0]
+        system.initialize(
+            {
+                "tanks": {
+                    "left": {
+                        "capacity_total": 28.0,
+                        "capacity_usable": 26.0,
+                        "initial_quantity": 20.0,  # More fuel
+                        "fuel_type": "avgas_100ll",
+                        "position": [-5.0, 0.0, -8.0],
+                    },
+                    "right": {
+                        "capacity_total": 28.0,
+                        "capacity_usable": 26.0,
+                        "initial_quantity": 10.0,  # Less fuel (10 gal difference)
+                        "fuel_type": "avgas_100ll",
+                        "position": [-5.0, 0.0, 8.0],
+                    },
                 }
             }
-        })
+        )
 
         state = system.get_state()
         assert "FUEL_IMBALANCE" in state.warnings
@@ -269,17 +263,19 @@ class TestSimpleGravityFuelSystem:
     def test_refueling(self):
         """Test ground refueling operation."""
         system = SimpleGravityFuelSystem()
-        system.initialize({
-            "tanks": {
-                "left": {
-                    "capacity_total": 28.0,
-                    "capacity_usable": 26.0,
-                    "initial_quantity": 10.0,
-                    "fuel_type": "avgas_100ll",
-                    "position": [-5.0, 0.0, -8.0]
+        system.initialize(
+            {
+                "tanks": {
+                    "left": {
+                        "capacity_total": 28.0,
+                        "capacity_usable": 26.0,
+                        "initial_quantity": 10.0,
+                        "fuel_type": "avgas_100ll",
+                        "position": [-5.0, 0.0, -8.0],
+                    }
                 }
             }
-        })
+        )
 
         # Refuel 10 gallons
         success = system.refuel("left", 10.0)
@@ -297,12 +293,9 @@ class TestStandardLightingSystem:
     def test_initialization(self):
         """Test lighting system can be initialized."""
         system = StandardLightingSystem()
-        system.initialize({
-            "lights": {
-                "nav_lights": {"power_draw": 1.5},
-                "beacon": {"power_draw": 2.0}
-            }
-        })
+        system.initialize(
+            {"lights": {"nav_lights": {"power_draw": 1.5}, "beacon": {"power_draw": 2.0}}}
+        )
 
         assert len(system.lights) == 2
         assert "nav_lights" in system.lights
@@ -310,11 +303,7 @@ class TestStandardLightingSystem:
     def test_lights_require_voltage(self):
         """Test lights dim/fail with low voltage."""
         system = StandardLightingSystem()
-        system.initialize({
-            "lights": {
-                "landing_light": {"power_draw": 8.0}
-            }
-        })
+        system.initialize({"lights": {"landing_light": {"power_draw": 8.0}}})
 
         system.set_light_enabled("landing_light", True)
 
@@ -336,13 +325,15 @@ class TestStandardLightingSystem:
     def test_power_consumption(self):
         """Test total power draw calculation."""
         system = StandardLightingSystem()
-        system.initialize({
-            "lights": {
-                "nav_lights": {"power_draw": 1.5},
-                "beacon": {"power_draw": 2.0},
-                "landing_light": {"power_draw": 8.0}
+        system.initialize(
+            {
+                "lights": {
+                    "nav_lights": {"power_draw": 1.5},
+                    "beacon": {"power_draw": 2.0},
+                    "landing_light": {"power_draw": 8.0},
+                }
             }
-        })
+        )
 
         # Turn on all lights
         system.set_light_enabled("nav_lights", True)

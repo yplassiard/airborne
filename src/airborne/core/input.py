@@ -135,6 +135,9 @@ class InputAction(Enum):
     ATC_SELECT_8 = "atc_select_8"
     ATC_SELECT_9 = "atc_select_9"
 
+    # Checklist controls
+    CHECKLIST_MENU = "checklist_menu"  # F2 - Open/close checklist menu
+
     # System controls
     PAUSE = "pause"
     QUIT = "quit"
@@ -370,7 +373,7 @@ class InputManager:  # pylint: disable=too-many-instance-attributes
         if not is_repeat:
             self._keys_just_pressed.add(key)
 
-        # Special handling for F1 with modifiers
+        # Special handling for F1 with modifiers (ATC menu)
         if key == pygame.K_F1:
             mods = pygame.key.get_mods()
             if mods & pygame.KMOD_SHIFT:
@@ -380,6 +383,13 @@ class InputManager:  # pylint: disable=too-many-instance-attributes
             else:
                 action = InputAction.ATC_MENU
 
+            if not is_repeat:
+                self._handle_action_pressed(action)
+            return
+
+        # Special handling for F2 (Checklist menu)
+        if key == pygame.K_F2:
+            action = InputAction.CHECKLIST_MENU
             if not is_repeat:
                 self._handle_action_pressed(action)
             return

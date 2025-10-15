@@ -2,8 +2,6 @@
 
 from unittest.mock import Mock
 
-import pytest
-
 from airborne.core.event_bus import EventBus
 from airborne.core.messaging import Message, MessagePriority, MessageQueue, MessageTopic
 from airborne.core.plugin import PluginContext

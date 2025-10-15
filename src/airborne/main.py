@@ -176,6 +176,15 @@ class AirBorne:
             }
             self.control_panel_plugin.initialize(self.plugin_context)
 
+            # Load checklist plugin
+            logger.info("Loading checklist plugin...")
+            from airborne.plugins.checklist.checklist_plugin import ChecklistPlugin
+
+            self.checklist_plugin = ChecklistPlugin()
+            # Configure checklist directory
+            self.plugin_context.config["checklists"] = {"directory": "config/checklists"}
+            self.checklist_plugin.initialize(self.plugin_context)
+
             # Build aircraft with systems
             builder = AircraftBuilder(self.plugin_loader, self.plugin_context)
             self.aircraft = builder.build(aircraft_config_path)
@@ -288,6 +297,18 @@ class AirBorne:
                     priority=MessagePriority.HIGH,
                 )
             )
+        # Checklist menu controls
+        elif event.action == "checklist_menu":
+            # Send to checklist plugin
+            self.message_queue.publish(
+                Message(
+                    sender="main",
+                    recipients=["checklist_plugin"],
+                    topic="input.checklist_menu",
+                    data={"action": "toggle"},
+                    priority=MessagePriority.HIGH,
+                )
+            )
 
     def run(self) -> None:
         """Run the main game loop."""
@@ -331,6 +352,17 @@ class AirBorne:
                 remaining_events.append(event)
             elif (
                 event.type == pygame.KEYDOWN
+                and hasattr(self, "checklist_plugin")
+                and self.checklist_plugin
+                and self.checklist_plugin.checklist_menu
+                and self.checklist_plugin.checklist_menu.is_open()
+            ):
+                # Checklist menu is open - intercept keys
+                handled = self._handle_checklist_menu_key(event.key)
+                if not handled:
+                    remaining_events.append(event)
+            elif (
+                event.type == pygame.KEYDOWN
                 and hasattr(self, "control_panel_plugin")
                 and self.control_panel_plugin
                 and self.control_panel_plugin.handle_key_press(event.key, pygame.key.get_mods())
@@ -342,6 +374,52 @@ class AirBorne:
 
         # Pass remaining events to input manager
         self.input_manager.process_events(remaining_events)
+
+    def _handle_checklist_menu_key(self, key: int) -> bool:
+        """Handle key press when checklist menu is open.
+
+        Args:
+            key: pygame key constant
+
+        Returns:
+            True if key was handled, False otherwise
+        """
+        menu = self.checklist_plugin.checklist_menu
+
+        # ESC closes menu
+        if key == pygame.K_ESCAPE:
+            menu.close()
+            return True
+
+        # Number keys select checklist (in selection mode)
+        if menu.get_state() == "CHECKLIST_SELECTION":
+            if pygame.K_1 <= key <= pygame.K_9:
+                number = key - pygame.K_0
+                menu.select_option(str(number))
+                return True
+            # Up/Down arrows navigate
+            elif key == pygame.K_UP:
+                menu.move_selection_up()
+                return True
+            elif key == pygame.K_DOWN:
+                menu.move_selection_down()
+                return True
+            # Enter selects current
+            elif key in (pygame.K_RETURN, pygame.K_KP_ENTER):
+                menu.select_current()
+                return True
+
+        # Space or Enter verifies checklist item (in execution mode)
+        elif menu.get_state() == "CHECKLIST_EXECUTION":
+            if key in (pygame.K_SPACE, pygame.K_RETURN, pygame.K_KP_ENTER):
+                menu.verify_item()
+                return True
+            # S skips item
+            elif key == pygame.K_s:
+                menu.skip_item()
+                return True
+
+        return False
 
     def _update(self, dt: float) -> None:
         """Update game state.

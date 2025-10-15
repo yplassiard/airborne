@@ -2,8 +2,6 @@
 
 from datetime import datetime, timedelta
 
-import pytest
-
 from airborne.systems.failure_analyzer import (
     FailureAnalyzer,
     FailureSnapshot,

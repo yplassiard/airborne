@@ -108,6 +108,7 @@ class ChecklistPlugin(IPlugin):
         self.context: PluginContext | None = None
         self.checklists: dict[str, Checklist] = {}
         self.active_checklist: Checklist | None = None
+        self.checklist_menu: Any | None = None  # ChecklistMenu instance
 
         # System state for auto-verification
         self._system_state: dict[str, Any] = {}
@@ -138,13 +139,25 @@ class ChecklistPlugin(IPlugin):
         # Load checklists from directory
         self._load_checklists(Path(checklist_dir))
 
+        # Create checklist menu
+        from airborne.plugins.checklist.checklist_menu import ChecklistMenu
+
+        self.checklist_menu = ChecklistMenu(
+            checklist_plugin=self,
+            message_queue=context.message_queue,
+        )
+
         # Register in component registry
         if context.plugin_registry:
             context.plugin_registry.register("checklist_manager", self)
+            context.plugin_registry.register("checklist_menu", self.checklist_menu)
 
         # Subscribe to system state updates
         context.message_queue.subscribe(MessageTopic.POSITION_UPDATED, self.handle_message)
         context.message_queue.subscribe(MessageTopic.SYSTEM_STATE_CHANGED, self.handle_message)
+
+        # Subscribe to input messages
+        context.message_queue.subscribe("input.checklist_menu", self.handle_message)
 
         logger.info("Checklist plugin initialized with %d checklists", len(self.checklists))
 
@@ -166,10 +179,12 @@ class ChecklistPlugin(IPlugin):
             self.context.message_queue.unsubscribe(
                 MessageTopic.SYSTEM_STATE_CHANGED, self.handle_message
             )
+            self.context.message_queue.unsubscribe("input.checklist_menu", self.handle_message)
 
-            # Unregister component
+            # Unregister components
             if self.context.plugin_registry:
                 self.context.plugin_registry.unregister("checklist_manager")
+                self.context.plugin_registry.unregister("checklist_menu")
 
         logger.info("Checklist plugin shutdown")
 
@@ -179,6 +194,14 @@ class ChecklistPlugin(IPlugin):
             # Update system state for auto-verification
             if "state" in message.data:
                 self._system_state.update(message.data["state"])
+        elif message.topic == "input.checklist_menu":
+            # Handle checklist menu toggle
+            action = message.data.get("action")
+            if action == "toggle" and self.checklist_menu:
+                if self.checklist_menu.is_open():
+                    self.checklist_menu.close()
+                else:
+                    self.checklist_menu.open()
 
     def _load_checklists(self, checklist_dir: Path) -> None:
         """Load checklists from YAML files."""
@@ -268,9 +291,13 @@ class ChecklistPlugin(IPlugin):
         current_item.state = ChecklistItemState.COMPLETED
         current_item.completed_by = "manual" if manual else "auto"
 
-        # Announce completion
+        # Announce completion with pilot readback
         if self.context:
-            self._speak(f"{current_item.challenge}... {current_item.response}... Check")
+            # Pilot reads back: challenge + response + "check"
+            challenge_key = self._get_challenge_message_key(current_item.challenge)
+            response_key = self._get_response_message_key(current_item.response)
+            message_keys = [challenge_key, response_key, "MSG_WORD_CHECK"]
+            self._speak(message_keys)
 
         # Move to next item
         return self._advance_to_next_item()
@@ -293,7 +320,9 @@ class ChecklistPlugin(IPlugin):
 
         # Announce skip
         if self.context:
-            self._speak(f"{current_item.challenge}... Skipped")
+            challenge_key = self._get_challenge_message_key(current_item.challenge)
+            message_keys = [challenge_key, "MSG_WORD_SKIPPED"]
+            self._speak(message_keys)
 
         # Move to next item
         return self._advance_to_next_item()
@@ -384,7 +413,12 @@ class ChecklistPlugin(IPlugin):
         if not self.active_checklist or not self.context:
             return
 
-        self._speak(f"Starting checklist: {self.active_checklist.name}")
+        # Build message: "Starting checklist" + checklist name
+        message_keys = [
+            "MSG_CHECKLIST_STARTING",
+            self._get_checklist_message_key(self.active_checklist.name),
+        ]
+        self._speak(message_keys)
 
     def _announce_current_item(self) -> None:
         """Announce current checklist item via TTS."""
@@ -393,23 +427,55 @@ class ChecklistPlugin(IPlugin):
 
         current_item = self.active_checklist.get_current_item()
         if current_item:
-            self._speak(f"{current_item.challenge}?")
+            # Generate MSG key for challenge
+            challenge_key = self._get_challenge_message_key(current_item.challenge)
+            self._speak(challenge_key)
 
     def _announce_checklist_complete(self) -> None:
         """Announce checklist completion via TTS."""
         if not self.active_checklist or not self.context:
             return
 
-        completion = self.active_checklist.get_completion_percentage()
-        self._speak(
-            f"Checklist {self.active_checklist.name} complete. {completion:.0f} percent completed."
-        )
+        # Build message: "Checklist" + name + "complete"
+        message_keys = [
+            "MSG_CHECKLIST_TEXT",
+            self._get_checklist_message_key(self.active_checklist.name),
+            "MSG_CHECKLIST_COMPLETE",
+        ]
+        self._speak(message_keys)
 
-    def _speak(self, text: str) -> None:
+    def _get_checklist_message_key(self, checklist_name: str) -> str:
+        """Get MSG key for checklist name."""
+        name_to_key = {
+            "Before Engine Start": "MSG_CHECKLIST_BEFORE_START",
+            "Engine Start": "MSG_CHECKLIST_ENGINE_START",
+            "Before Takeoff": "MSG_CHECKLIST_BEFORE_TAKEOFF",
+            "Takeoff": "MSG_CHECKLIST_TAKEOFF",
+            "Before Landing": "MSG_CHECKLIST_BEFORE_LANDING",
+            "After Landing": "MSG_CHECKLIST_AFTER_LANDING",
+            "Shutdown": "MSG_CHECKLIST_SHUTDOWN",
+        }
+        return name_to_key.get(checklist_name, "MSG_CHECKLIST_UNKNOWN")
+
+    def _get_challenge_message_key(self, challenge: str) -> str:
+        """Get MSG key for checklist challenge item."""
+        # Map challenges to MSG keys
+        # We'll generate these as needed
+        challenge_normalized = challenge.upper().replace(" ", "_")
+        return f"MSG_CHALLENGE_{challenge_normalized}"
+
+    def _get_response_message_key(self, response: str) -> str:
+        """Get MSG key for checklist response item."""
+        # Map responses to MSG keys
+        # We'll generate these as needed
+        response_normalized = response.upper().replace(" ", "_")
+        return f"MSG_RESPONSE_{response_normalized}"
+
+    def _speak(self, text: str | list[str]) -> None:
         """Speak text via TTS.
 
         Args:
-            text: Text to speak.
+            text: Message key or list of message keys to speak.
         """
         if not self.context:
             return
@@ -418,9 +484,9 @@ class ChecklistPlugin(IPlugin):
         self.context.message_queue.publish(
             Message(
                 sender="checklist_plugin",
-                recipients=["tts_provider"],
+                recipients=["*"],
                 topic=MessageTopic.TTS_SPEAK,
-                data={"text": text, "priority": "high"},
+                data={"text": text, "priority": "high", "interrupt": False},
                 priority=MessagePriority.HIGH,
             )
         )
