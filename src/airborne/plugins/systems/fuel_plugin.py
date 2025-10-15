@@ -76,8 +76,10 @@ class FuelPlugin(IPlugin):
         # Initialize fuel system
         self.fuel_system.initialize(fuel_config)
 
-        # Subscribe to control and engine messages
-        context.message_queue.subscribe(MessageTopic.CONTROL_INPUT, self.handle_message)
+        # Subscribe to control and engine messages - panel-specific topics
+        context.message_queue.subscribe("fuel.selector", self.handle_message)
+        context.message_queue.subscribe("fuel.shutoff", self.handle_message)
+        context.message_queue.subscribe("fuel.pump", self.handle_message)
         context.message_queue.subscribe(MessageTopic.ENGINE_STATE, self.handle_message)
 
         # Register component
@@ -151,7 +153,9 @@ class FuelPlugin(IPlugin):
         """Shutdown the fuel plugin."""
         if self.context:
             # Unsubscribe from messages
-            self.context.message_queue.unsubscribe(MessageTopic.CONTROL_INPUT, self.handle_message)
+            self.context.message_queue.unsubscribe("fuel.selector", self.handle_message)
+            self.context.message_queue.unsubscribe("fuel.shutoff", self.handle_message)
+            self.context.message_queue.unsubscribe("fuel.pump", self.handle_message)
             self.context.message_queue.unsubscribe(MessageTopic.ENGINE_STATE, self.handle_message)
 
             # Unregister component
@@ -174,26 +178,27 @@ class FuelPlugin(IPlugin):
             data = message.data
             self.current_fuel_flow_gph = data.get("fuel_flow", 0.0)
 
-        elif message.topic == MessageTopic.CONTROL_INPUT:
-            # Handle fuel control inputs
-            data = message.data
-            control_type = data.get("control_type")
+        elif message.topic == "fuel.selector":
+            # Fuel selector valve
+            state = message.data.get("state", "OFF")
+            try:
+                position = FuelSelectorPosition[state.upper()]
+                self.fuel_system.set_selector_position(position)
+            except (KeyError, AttributeError):
+                logger.warning("Invalid fuel selector position: %s", state)
 
-            if control_type == "fuel":
-                # Fuel selector
-                if "selector_position" in data:
-                    position_str = data["selector_position"].upper()
-                    try:
-                        position = FuelSelectorPosition[position_str]
-                        self.fuel_system.set_selector_position(position)
-                    except KeyError:
-                        logger.warning("Invalid fuel selector position: %s", position_str)
+        elif message.topic == "fuel.shutoff":
+            # Fuel shutoff valve - set selector to OFF when closed
+            state = message.data.get("state", "CLOSED")
+            if state == "CLOSED":
+                self.fuel_system.set_selector_position(FuelSelectorPosition.OFF)
 
-                # Fuel pump
-                if "pump_name" in data:
-                    pump_name = data["pump_name"]
-                    enabled = bool(data.get("enabled", False))
-                    self.fuel_system.set_pump_enabled(pump_name, enabled)
+        elif message.topic == "fuel.pump":
+            # Electric fuel pump
+            state = message.data.get("state", "OFF")
+            enabled = state == "ON"
+            # Assume boost pump name based on aircraft config
+            self.fuel_system.set_pump_enabled("boost_pump", enabled)
 
     def on_config_changed(self, config: dict[str, Any]) -> None:
         """Handle configuration changes.

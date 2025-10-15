@@ -92,8 +92,13 @@ class EnginePlugin(IPlugin):
         # Initialize engine
         self.engine.initialize(engine_config)
 
-        # Subscribe to control and system state messages
-        context.message_queue.subscribe(MessageTopic.CONTROL_INPUT, self.handle_message)
+        # Subscribe to control and system state messages - panel-specific topics
+        context.message_queue.subscribe("engine.mixture", self.handle_message)
+        context.message_queue.subscribe("engine.carb_heat", self.handle_message)
+        context.message_queue.subscribe("engine.throttle", self.handle_message)
+        context.message_queue.subscribe("engine.primer", self.handle_message)
+        context.message_queue.subscribe("engine.magnetos", self.handle_message)
+        context.message_queue.subscribe("engine.starter", self.handle_message)
         context.message_queue.subscribe(MessageTopic.SYSTEM_STATE, self.handle_message)
 
         # Register component
@@ -167,7 +172,12 @@ class EnginePlugin(IPlugin):
         """Shutdown the engine plugin."""
         if self.context:
             # Unsubscribe from messages
-            self.context.message_queue.unsubscribe(MessageTopic.CONTROL_INPUT, self.handle_message)
+            self.context.message_queue.unsubscribe("engine.mixture", self.handle_message)
+            self.context.message_queue.unsubscribe("engine.carb_heat", self.handle_message)
+            self.context.message_queue.unsubscribe("engine.throttle", self.handle_message)
+            self.context.message_queue.unsubscribe("engine.primer", self.handle_message)
+            self.context.message_queue.unsubscribe("engine.magnetos", self.handle_message)
+            self.context.message_queue.unsubscribe("engine.starter", self.handle_message)
             self.context.message_queue.unsubscribe(MessageTopic.SYSTEM_STATE, self.handle_message)
 
             # Unregister component
@@ -199,33 +209,61 @@ class EnginePlugin(IPlugin):
                 # Get available fuel flow
                 self.fuel_available_gph = data.get("available_fuel_flow_gph", 0.0)
 
-        elif message.topic == MessageTopic.CONTROL_INPUT:
-            # Handle engine control inputs
-            data = message.data
-            control_type = data.get("control_type")
+        elif message.topic == "engine.throttle":
+            # Throttle lever (0-100%)
+            value = message.data.get("value", 0.0)
+            self.controls.throttle = value / 100.0  # Normalize to 0.0-1.0
 
-            if control_type == "engine":
-                # Update controls
-                if "throttle" in data:
-                    self.controls.throttle = float(data["throttle"])
+        elif message.topic == "engine.mixture":
+            # Mixture lever: IDLE_CUTOFF, LEAN, RICH
+            state = message.data.get("state", "IDLE_CUTOFF")
+            if state == "IDLE_CUTOFF":
+                self.controls.mixture = 0.0
+            elif state == "LEAN":
+                self.controls.mixture = 0.5
+            elif state == "RICH":
+                self.controls.mixture = 1.0
 
-                if "mixture" in data:
-                    self.controls.mixture = float(data["mixture"])
+        elif message.topic == "engine.carb_heat":
+            # Carburetor heat: COLD, HOT
+            state = message.data.get("state", "COLD")
+            self.controls.carburetor_heat = state == "HOT"
 
-                if "propeller" in data:
-                    self.controls.propeller_rpm = float(data["propeller"])
+        elif message.topic == "engine.magnetos":
+            # Magneto switch: OFF, R, L, BOTH, START
+            state = message.data.get("state", "OFF")
+            if state == "OFF":
+                self.controls.magneto_left = False
+                self.controls.magneto_right = False
+                self.controls.starter = False
+            elif state == "R":
+                self.controls.magneto_left = False
+                self.controls.magneto_right = True
+                self.controls.starter = False
+            elif state == "L":
+                self.controls.magneto_left = True
+                self.controls.magneto_right = False
+                self.controls.starter = False
+            elif state == "BOTH":
+                self.controls.magneto_left = True
+                self.controls.magneto_right = True
+                self.controls.starter = False
+            elif state == "START":
+                self.controls.magneto_left = True
+                self.controls.magneto_right = True
+                self.controls.starter = True
 
-                if "starter" in data:
-                    self.controls.starter = bool(data["starter"])
+        elif message.topic == "engine.starter":
+            # Starter button (momentary)
+            action = message.data.get("action")
+            if action == "pressed":
+                # Momentary starter engagement
+                self.controls.starter = True
 
-                if "magneto_left" in data:
-                    self.controls.magneto_left = bool(data["magneto_left"])
-
-                if "magneto_right" in data:
-                    self.controls.magneto_right = bool(data["magneto_right"])
-
-                if "fuel_cutoff" in data:
-                    self.controls.fuel_cutoff = bool(data["fuel_cutoff"])
+        elif message.topic == "engine.primer":
+            # Primer pump (momentary) - not directly modeled in simple engine
+            # In real aircraft, this enriches mixture for cold starts
+            pass
 
     def on_config_changed(self, config: dict[str, Any]) -> None:
         """Handle configuration changes.

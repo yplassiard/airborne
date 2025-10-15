@@ -77,8 +77,17 @@ class ElectricalPlugin(IPlugin):
         # Initialize electrical system
         self.electrical_system.initialize(electrical_config)
 
-        # Subscribe to control messages
-        context.message_queue.subscribe(MessageTopic.CONTROL_INPUT, self.handle_message)
+        # Subscribe to control messages - panel-specific topics
+        context.message_queue.subscribe("electrical.master_switch", self.handle_message)
+        context.message_queue.subscribe("electrical.avionics_master", self.handle_message)
+        context.message_queue.subscribe("electrical.beacon", self.handle_message)
+        context.message_queue.subscribe("electrical.nav_lights", self.handle_message)
+        context.message_queue.subscribe("electrical.strobe", self.handle_message)
+        context.message_queue.subscribe("electrical.taxi_light", self.handle_message)
+        context.message_queue.subscribe("electrical.landing_light", self.handle_message)
+        context.message_queue.subscribe("electrical.pitot_heat", self.handle_message)
+
+        # Subscribe to engine state for alternator
         context.message_queue.subscribe(MessageTopic.ENGINE_STATE, self.handle_message)
 
         # Register component
@@ -152,7 +161,16 @@ class ElectricalPlugin(IPlugin):
         """Shutdown the electrical plugin."""
         if self.context:
             # Unsubscribe from messages
-            self.context.message_queue.unsubscribe(MessageTopic.CONTROL_INPUT, self.handle_message)
+            self.context.message_queue.unsubscribe("electrical.master_switch", self.handle_message)
+            self.context.message_queue.unsubscribe(
+                "electrical.avionics_master", self.handle_message
+            )
+            self.context.message_queue.unsubscribe("electrical.beacon", self.handle_message)
+            self.context.message_queue.unsubscribe("electrical.nav_lights", self.handle_message)
+            self.context.message_queue.unsubscribe("electrical.strobe", self.handle_message)
+            self.context.message_queue.unsubscribe("electrical.taxi_light", self.handle_message)
+            self.context.message_queue.unsubscribe("electrical.landing_light", self.handle_message)
+            self.context.message_queue.unsubscribe("electrical.pitot_heat", self.handle_message)
             self.context.message_queue.unsubscribe(MessageTopic.ENGINE_STATE, self.handle_message)
 
             # Unregister component
@@ -175,21 +193,37 @@ class ElectricalPlugin(IPlugin):
             data = message.data
             self.engine_rpm = data.get("rpm", 0.0)
 
-        elif message.topic == MessageTopic.CONTROL_INPUT:
-            # Handle electrical control inputs
-            data = message.data
-            control_type = data.get("control_type")
+        elif message.topic == "electrical.master_switch":
+            # Master switch control
+            state = message.data.get("state", "OFF")
+            enabled = state == "ON"
+            if hasattr(self.electrical_system, "set_master_switch"):
+                self.electrical_system.set_master_switch(enabled)
 
-            if control_type == "electrical":
-                # Master switch
-                if "master_switch" in data and hasattr(self.electrical_system, "set_master_switch"):
-                    self.electrical_system.set_master_switch(bool(data["master_switch"]))
-
-                # Individual loads
-                load_name = data.get("load_name")
-                if load_name:
-                    enabled = bool(data.get("enabled", False))
-                    self.electrical_system.set_load_enabled(load_name, enabled)
+        elif message.topic in [
+            "electrical.avionics_master",
+            "electrical.beacon",
+            "electrical.nav_lights",
+            "electrical.strobe",
+            "electrical.taxi_light",
+            "electrical.landing_light",
+            "electrical.pitot_heat",
+        ]:
+            # Map topic to load name
+            topic_to_load = {
+                "electrical.avionics_master": "avionics",
+                "electrical.beacon": "beacon",
+                "electrical.nav_lights": "nav_lights",
+                "electrical.strobe": "strobe",
+                "electrical.taxi_light": "taxi_light",
+                "electrical.landing_light": "landing_light",
+                "electrical.pitot_heat": "pitot_heat",
+            }
+            load_name = topic_to_load.get(message.topic)
+            if load_name:
+                state = message.data.get("state", "OFF")
+                enabled = state == "ON"
+                self.electrical_system.set_load_enabled(load_name, enabled)
 
     def on_config_changed(self, config: dict[str, Any]) -> None:
         """Handle configuration changes.
