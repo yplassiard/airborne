@@ -78,7 +78,7 @@ def generate_with_say(text, output_path, voice_name, rate):
     else:
         # Rename AIFF to MP3 (will still work with most players)
         temp_path.rename(output_path.with_suffix(".aiff"))
-        print(f"    Warning: ffmpeg not available, kept as AIFF")
+        print("    Warning: ffmpeg not available, kept as AIFF")
 
 
 def generate_with_pyttsx3(text, output_path, voice_name, rate):
@@ -134,7 +134,7 @@ def generate_with_pyttsx3(text, output_path, voice_name, rate):
     else:
         # Keep as WAV
         temp_path.rename(output_path.with_suffix(".wav"))
-        print(f"    Warning: ffmpeg not available, kept as WAV")
+        print("    Warning: ffmpeg not available, kept as WAV")
 
 
 def generate_speech_file(message_key, text, voice_config, output_dir, force=False):
@@ -261,7 +261,7 @@ def generate_voice_messages(voice_name, voice_config, messages, base_dir, force=
 
     # Generate checklist challenges and responses (only for pilot voice)
     if voice_name == "pilot":
-        print(f"\n  Extracting checklist challenges and responses...")
+        print("\n  Extracting checklist challenges and responses...")
         challenges, responses = extract_checklist_items("config/checklists")
 
         print(f"  Found {len(challenges)} challenges, {len(responses)} responses")

@@ -146,6 +146,7 @@ class RadioPlugin(IPlugin):
         context.message_queue.subscribe("input.atc_acknowledge", self.handle_message)
         context.message_queue.subscribe("input.atc_repeat", self.handle_message)
         context.message_queue.subscribe("aircraft.state", self.handle_message)
+        context.message_queue.subscribe("atc.request", self.handle_message)
 
         # Register components
         if context.plugin_registry:
@@ -191,6 +192,7 @@ class RadioPlugin(IPlugin):
             self.context.message_queue.unsubscribe("input.atc_acknowledge", self)
             self.context.message_queue.unsubscribe("input.atc_repeat", self)
             self.context.message_queue.unsubscribe("aircraft.state", self)
+            self.context.message_queue.unsubscribe("atc.request", self)
 
         logger.info("Radio plugin shutdown")
 
@@ -221,6 +223,8 @@ class RadioPlugin(IPlugin):
             self._handle_atc_repeat(message)
         elif message.topic == "aircraft.state":
             self._handle_aircraft_state(message)
+        elif message.topic == "atc.request":
+            self._handle_atc_request(message)
 
     def _handle_position_update(self, message: Message) -> None:
         """Handle position updates from physics plugin.
@@ -546,6 +550,49 @@ class RadioPlugin(IPlugin):
         data = message.data
         self._engine_running = data.get("engine_running", False)
         self._on_ground = data.get("on_ground", True)
+
+    def _handle_atc_request(self, message: Message) -> None:
+        """Handle ATC request from autopilot demo or other sources.
+
+        Args:
+            message: ATC request message with request_type.
+        """
+        if not self.atc_queue:
+            logger.warning("ATC queue not available")
+            return
+
+        data = message.data
+        request_type = data.get("request_type", "")
+
+        logger.info(f"Processing ATC request: {request_type}")
+
+        # Map request types to ATC responses
+        if request_type == "takeoff_clearance":
+            # ATC clears for takeoff
+            self.atc_queue.queue_message(
+                message_key="cleared_for_takeoff",
+                airport="AIRPORT",
+                callsign=self._callsign,
+                runway="31",
+            )
+        elif request_type == "departure_checkin":
+            # Check in with departure after takeoff
+            self.atc_queue.queue_message(
+                message_key="contact_departure",
+                airport="AIRPORT",
+                callsign=self._callsign,
+                frequency="124.5",
+            )
+        elif request_type == "landing_clearance":
+            # ATC clears to land
+            self.atc_queue.queue_message(
+                message_key="cleared_to_land",
+                airport="AIRPORT",
+                callsign=self._callsign,
+                runway="31",
+            )
+        else:
+            logger.warning(f"Unknown ATC request type: {request_type}")
 
     def on_config_changed(self, config: dict[str, Any]) -> None:
         """Handle configuration changes.

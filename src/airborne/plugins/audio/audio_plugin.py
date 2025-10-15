@@ -399,6 +399,12 @@ class AudioPlugin(IPlugin):
                 airspeed = data["airspeed"]
                 self.sound_manager.update_wind_sound(airspeed)
 
+            # Update rolling sound based on ground speed and on_ground status
+            if "groundspeed" in data and "on_ground" in data and self.sound_manager:
+                ground_speed = data["groundspeed"]
+                on_ground = data["on_ground"]
+                self.sound_manager.update_rolling_sound(ground_speed, on_ground)
+
             if "position" in data:
                 pos = data["position"]
                 if isinstance(pos, dict):
@@ -451,6 +457,13 @@ class AudioPlugin(IPlugin):
             system = data.get("system")
 
             if system == "electrical":
+                # Play switch sound if master switch state changed
+                if "master_switch" in data and self.sound_manager:
+                    master_switch = data.get("master_switch", False)
+                    if master_switch != getattr(self, "_last_master_switch", None):
+                        self.sound_manager.play_switch_sound(master_switch)
+                        self._last_master_switch = master_switch
+
                 self._battery_voltage = data.get("battery_voltage", 0.0)
                 self._battery_percent = data.get("battery_soc_percent", 0.0)
                 self._battery_current = data.get("battery_current_amps", 0.0)

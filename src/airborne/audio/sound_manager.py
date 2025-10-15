@@ -370,3 +370,90 @@ class SoundManager:
             self.play_sound_2d(path, volume=0.7)
         except FileNotFoundError:
             logger.warning(f"Brakes sound not found: {path}")
+
+    def play_switch_sound(self, switch_on: bool) -> None:
+        """Play switch click sound.
+
+        Args:
+            switch_on: True for switch on, False for switch off.
+        """
+        if switch_on:
+            path = "assets/sounds/aircraft/switch_on.wav"
+        else:
+            path = "assets/sounds/aircraft/switch_off.wav"
+
+        try:
+            self.play_sound_2d(path, volume=0.5)
+        except FileNotFoundError:
+            logger.warning(f"Switch sound not found: {path}")
+
+    def play_button_sound(self) -> None:
+        """Play button press sound."""
+        path = "assets/sounds/aircraft/button_press.wav"
+
+        try:
+            self.play_sound_2d(path, volume=0.5)
+        except FileNotFoundError:
+            logger.warning(f"Button sound not found: {path}")
+
+    def play_knob_sound(self) -> None:
+        """Play knob turn sound."""
+        path = "assets/sounds/aircraft/knob_turn.wav"
+
+        try:
+            self.play_sound_2d(path, volume=0.4)
+        except FileNotFoundError:
+            logger.warning(f"Knob sound not found: {path}")
+
+    def start_rolling_sound(self, path: str = "assets/sounds/aircraft/rolling.wav") -> None:
+        """Start looping rolling/tire sound.
+
+        Args:
+            path: Path to rolling sound file.
+        """
+        if not self._audio_engine:
+            return
+
+        # Check if we already have a rolling source
+        if hasattr(self, "_rolling_source_id") and self._rolling_source_id is not None:
+            return  # Already playing
+
+        # Start new looping rolling sound at zero volume (controlled by ground speed)
+        try:
+            self._rolling_source_id = self.play_sound_2d(path, volume=0.0, pitch=1.0, loop=True)
+            logger.debug("Rolling sound started")
+        except FileNotFoundError:
+            logger.warning(f"Rolling sound not found: {path}")
+
+    def update_rolling_sound(self, ground_speed: float, on_ground: bool) -> None:
+        """Update rolling sound based on ground speed.
+
+        Args:
+            ground_speed: Ground speed in knots
+            on_ground: Whether aircraft is on the ground
+        """
+        if not self._audio_engine:
+            return
+
+        if not hasattr(self, "_rolling_source_id"):
+            self._rolling_source_id = None
+
+        # Start rolling sound if on ground and not already playing
+        if on_ground and self._rolling_source_id is None:
+            self.start_rolling_sound()
+
+        # Stop rolling sound if airborne
+        if not on_ground and self._rolling_source_id is not None:
+            self._audio_engine.stop_source(self._rolling_source_id)
+            self._rolling_source_id = None
+            return
+
+        # Update volume and pitch based on ground speed
+        if self._rolling_source_id is not None:
+            # Volume: 0 at 0 knots, 1.0 at 50+ knots
+            volume = min(ground_speed / 50.0, 1.0)
+            # Pitch: 0.5 at 0 knots, 2.0 at 100+ knots
+            pitch = 0.5 + (min(ground_speed / 100.0, 1.0) * 1.5)
+
+            self._audio_engine.update_source_volume(self._rolling_source_id, volume)
+            self._audio_engine.update_source_pitch(self._rolling_source_id, pitch)

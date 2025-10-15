@@ -1,6 +1,5 @@
 """Tests for SimplePistonEngine implementation."""
 
-
 from airborne.systems.engines.base import EngineControls, EngineType
 from airborne.systems.engines.piston_simple import SimplePistonEngine
 
