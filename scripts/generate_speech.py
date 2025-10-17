@@ -204,6 +204,47 @@ def extract_checklist_items(checklist_dir):
     return challenges, responses
 
 
+def extract_panel_controls(panel_dir):
+    """Extract all panel names and control names from panel files.
+
+    Args:
+        panel_dir: Path to panels directory
+
+    Returns:
+        Tuple of (panel_names_set, control_names_set, control_states_dict)
+    """
+    panel_names = set()
+    control_names = set()
+    control_states = {}  # control_name -> set of states
+
+    panel_path = Path(panel_dir)
+    if not panel_path.exists():
+        print(f"Warning: Panel directory not found: {panel_dir}")
+        return panel_names, control_names, control_states
+
+    for yaml_file in panel_path.glob("*.yaml"):
+        try:
+            with open(yaml_file) as f:
+                data = yaml.safe_load(f)
+                for panel in data.get("panels", []):
+                    panel_names.add(panel["name"])
+                    for control in panel.get("controls", []):
+                        control_name = control["name"]
+                        control_names.add(control_name)
+
+                        # Collect states for this control
+                        if control_name not in control_states:
+                            control_states[control_name] = set()
+
+                        states = control.get("states", [])
+                        for state in states:
+                            control_states[control_name].add(str(state))
+        except Exception as e:
+            print(f"Warning: Failed to parse {yaml_file}: {e}")
+
+    return panel_names, control_names, control_states
+
+
 def extract_atc_messages(atc_config_file):
     """Extract ATC messages from atc_en.yaml config.
 
@@ -346,6 +387,44 @@ def generate_voice_messages(voice_name, voice_config, messages, base_dir, force=
             else:
                 skipped += 1
 
+    # Generate panel and control names (only for cockpit voice)
+    if voice_name == "cockpit":
+        print("\n  Extracting panel and control names...")
+        panel_names, control_names, control_states = extract_panel_controls("config/panels")
+
+        print(
+            f"  Found {len(panel_names)} panels, {len(control_names)} controls, "
+            f"{sum(len(states) for states in control_states.values())} states"
+        )
+
+        # Generate panel names
+        for panel_name in sorted(panel_names):
+            msg_key = "MSG_PANEL_" + sanitize_filename(panel_name)
+            print(f"  {msg_key}: '{panel_name}'")
+            if generate_speech_file(msg_key, panel_name, voice_config, output_dir, force):
+                generated += 1
+            else:
+                skipped += 1
+
+        # Generate control names
+        for control_name in sorted(control_names):
+            msg_key = "MSG_CONTROL_" + sanitize_filename(control_name)
+            print(f"  {msg_key}: '{control_name}'")
+            if generate_speech_file(msg_key, control_name, voice_config, output_dir, force):
+                generated += 1
+            else:
+                skipped += 1
+
+        # Generate control states
+        for control_name in sorted(control_states.keys()):
+            for state in sorted(control_states[control_name]):
+                msg_key = "MSG_STATE_" + sanitize_filename(state)
+                print(f"  {msg_key}: '{state}'")
+                if generate_speech_file(msg_key, state, voice_config, output_dir, force):
+                    generated += 1
+                else:
+                    skipped += 1
+
     print(f"  Generated: {generated}, Skipped: {skipped}")
     return generated
 
@@ -369,7 +448,7 @@ def generate_atc_messages(language, base_dir, force=False):
         print(f"\nNo ATC messages found in {atc_config_file}")
         return 0
 
-    print(f"\nATC Messages (Evan @ 180 WPM):")
+    print("\nATC Messages (Evan @ 180 WPM):")
     print(f"  Output: {base_dir}")
     print(f"  Found {len(messages)} ATC messages")
 
