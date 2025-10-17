@@ -180,10 +180,10 @@ class InputConfig:
             pygame.K_RIGHT: InputAction.ROLL_RIGHT,
             pygame.K_COMMA: InputAction.YAW_LEFT,  # Changed from Q (now Ctrl+Q for quit)
             pygame.K_e: InputAction.YAW_RIGHT,
-            pygame.K_HOME: InputAction.THROTTLE_INCREASE,
-            pygame.K_END: InputAction.THROTTLE_DECREASE,
-            pygame.K_PAGEUP: InputAction.THROTTLE_FULL,
-            pygame.K_PAGEDOWN: InputAction.THROTTLE_IDLE,
+            pygame.K_PAGEUP: InputAction.THROTTLE_INCREASE,
+            pygame.K_PAGEDOWN: InputAction.THROTTLE_DECREASE,
+            pygame.K_HOME: InputAction.PITCH_DOWN,
+            pygame.K_END: InputAction.PITCH_UP,
             # Brakes and gear
             pygame.K_b: InputAction.BRAKES,
             pygame.K_p: InputAction.PARKING_BRAKE,
