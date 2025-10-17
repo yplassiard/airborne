@@ -286,8 +286,12 @@ class ATCAudioManager:
             oscillator.set_parameter_float(1, frequency)  # Frequency
             oscillator.set_parameter_float(2, volume)  # Volume
 
-            # Create channel and add oscillator
-            channel = system.play_dsp(oscillator, paused=False)
+            # Create channel and add oscillator (play_dsp returns tuple: (channel, dsp_connection))
+            result = system.play_dsp(oscillator)
+            if isinstance(result, tuple):
+                channel, _ = result
+            else:
+                channel = result
 
             # Wait for duration
             time.sleep(duration_ms / 1000.0)
