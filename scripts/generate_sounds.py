@@ -7,7 +7,6 @@ This script creates simple sound effects for:
 - Rolling/tire sounds
 """
 
-import math
 import sys
 import wave
 from pathlib import Path

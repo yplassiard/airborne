@@ -310,113 +310,113 @@ messages:
     voice: cockpit
     filename: master
   MSG_MASTER_OFF:
-    text: master_off
+    text: 'off'
     voice: cockpit
-    filename: master_off
+    filename: 'off'
   MSG_MASTER_ON:
-    text: master_on
+    text: 'on'
     voice: cockpit
-    filename: master_on
+    filename: 'on'
   MSG_AVIONICS_MASTER:
     text: avionics_master
     voice: cockpit
     filename: avionics_master
   MSG_AVIONICS_MASTER_OFF:
-    text: avionics_off
+    text: 'off'
     voice: cockpit
-    filename: avionics_master_off
+    filename: 'off'
   MSG_AVIONICS_MASTER_ON:
-    text: avionics_on
+    text: 'on'
     voice: cockpit
-    filename: avionics_master_on
+    filename: 'on'
   MSG_BEACON:
     text: beacon
     voice: cockpit
     filename: beacon
   MSG_BEACON_OFF:
-    text: beacon_off
+    text: 'off'
     voice: cockpit
-    filename: beacon_off
+    filename: 'off'
   MSG_BEACON_ON:
-    text: beacon_on
+    text: 'on'
     voice: cockpit
-    filename: beacon_on
+    filename: 'on'
   MSG_NAV_LIGHTS:
     text: nav_lights
     voice: cockpit
     filename: nav_lights
   MSG_NAV_LIGHTS_OFF:
-    text: nav_lights_off
+    text: 'off'
     voice: cockpit
-    filename: nav_lights_off
+    filename: 'off'
   MSG_NAV_LIGHTS_ON:
-    text: nav_lights_on
+    text: 'on'
     voice: cockpit
-    filename: nav_lights_on
+    filename: 'on'
   MSG_STROBE:
     text: strobe
     voice: cockpit
     filename: strobe
   MSG_STROBE_OFF:
-    text: strobe_off
+    text: 'off'
     voice: cockpit
-    filename: strobe_off
+    filename: 'off'
   MSG_STROBE_ON:
-    text: strobe_on
+    text: 'on'
     voice: cockpit
-    filename: strobe_on
+    filename: 'on'
   MSG_TAXI_LIGHT:
     text: taxi_light
     voice: cockpit
     filename: taxi_light
   MSG_TAXI_LIGHT_OFF:
-    text: taxi_light_off
+    text: 'off'
     voice: cockpit
-    filename: taxi_light_off
+    filename: 'off'
   MSG_TAXI_LIGHT_ON:
-    text: taxi_light_on
+    text: 'on'
     voice: cockpit
-    filename: taxi_light_on
+    filename: 'on'
   MSG_LANDING_LIGHT:
     text: landing_light
     voice: cockpit
     filename: landing_light
   MSG_LANDING_LIGHT_OFF:
-    text: landing_light_off
+    text: 'off'
     voice: cockpit
-    filename: landing_light_off
+    filename: 'off'
   MSG_LANDING_LIGHT_ON:
-    text: landing_light_on
+    text: 'on'
     voice: cockpit
-    filename: landing_light_on
+    filename: 'on'
   MSG_MIXTURE:
     text: mixture
     voice: cockpit
     filename: mixture
   MSG_MIXTURE_IDLE_CUTOFF:
-    text: mixture_idle_cutoff
+    text: idle cutoff
     voice: cockpit
-    filename: mixture_idle_cutoff
+    filename: idle_cutoff
   MSG_MIXTURE_LEAN:
-    text: mixture_lean
+    text: lean
     voice: cockpit
-    filename: mixture_lean
+    filename: lean
   MSG_MIXTURE_RICH:
-    text: mixture_rich
+    text: rich
     voice: cockpit
-    filename: mixture_rich
+    filename: rich
   MSG_CARBURETOR_HEAT:
     text: carburetor_heat
     voice: cockpit
     filename: carburetor_heat
   MSG_CARBURETOR_HEAT_COLD:
-    text: carb_heat_cold
+    text: cold
     voice: cockpit
-    filename: carburetor_heat_cold
+    filename: cold
   MSG_CARBURETOR_HEAT_HOT:
-    text: carb_heat_hot
+    text: hot
     voice: cockpit
-    filename: carburetor_heat_hot
+    filename: hot
   MSG_THROTTLE:
     text: throttle
     voice: cockpit
@@ -426,121 +426,121 @@ messages:
     voice: cockpit
     filename: fuel_selector
   MSG_FUEL_SELECTOR_OFF:
-    text: fuel_off
+    text: 'off'
     voice: cockpit
-    filename: fuel_selector_off
+    filename: 'off'
   MSG_FUEL_SELECTOR_LEFT:
-    text: fuel_left
+    text: left
     voice: cockpit
-    filename: fuel_selector_left
+    filename: left
   MSG_FUEL_SELECTOR_RIGHT:
-    text: fuel_right
+    text: right
     voice: cockpit
-    filename: fuel_selector_right
+    filename: right
   MSG_FUEL_SELECTOR_BOTH:
-    text: fuel_both
+    text: both
     voice: cockpit
-    filename: fuel_selector_both
+    filename: both
   MSG_FUEL_SHUTOFF:
     text: fuel_shutoff_valve
     voice: cockpit
     filename: fuel_shutoff
   MSG_FUEL_SHUTOFF_OPEN:
-    text: fuel_shutoff_open
+    text: open
     voice: cockpit
-    filename: fuel_shutoff_open
+    filename: open
   MSG_FUEL_SHUTOFF_CLOSED:
-    text: fuel_shutoff_closed
+    text: closed
     voice: cockpit
-    filename: fuel_shutoff_closed
+    filename: closed
   MSG_FUEL_PUMP:
     text: fuel_pump
     voice: cockpit
     filename: fuel_pump
   MSG_FUEL_PUMP_OFF:
-    text: fuel_pump_off
+    text: 'off'
     voice: cockpit
-    filename: fuel_pump_off
+    filename: 'off'
   MSG_FUEL_PUMP_ON:
-    text: fuel_pump_on
+    text: 'on'
     voice: cockpit
-    filename: fuel_pump_on
+    filename: 'on'
   MSG_PRIMER:
     text: primer
     voice: cockpit
     filename: primer
   MSG_PRIMER_PRESSED:
-    text: primer_pressed
+    text: pressed
     voice: cockpit
-    filename: primer_pressed
+    filename: pressed
   MSG_MAGNETO:
     text: magnetos
     voice: cockpit
     filename: magneto
   MSG_MAGNETO_OFF:
-    text: magnetos_off
+    text: 'off'
     voice: cockpit
-    filename: magneto_off
+    filename: 'off'
   MSG_MAGNETO_R:
-    text: magnetos_right
+    text: right
     voice: cockpit
-    filename: magneto_r
+    filename: right
   MSG_MAGNETO_L:
-    text: magnetos_left
+    text: left
     voice: cockpit
-    filename: magneto_l
+    filename: left
   MSG_MAGNETO_BOTH:
-    text: magnetos_both
+    text: both
     voice: cockpit
-    filename: magneto_both
+    filename: both
   MSG_MAGNETO_START:
-    text: magnetos_start
+    text: start
     voice: cockpit
-    filename: magneto_start
+    filename: start
   MSG_STARTER:
     text: starter
     voice: cockpit
     filename: starter
   MSG_STARTER_PRESSED:
-    text: starter_pressed
+    text: pressed
     voice: cockpit
-    filename: starter_pressed
+    filename: pressed
   MSG_PITOT_HEAT:
     text: pitot_heat
     voice: cockpit
     filename: pitot_heat
   MSG_PITOT_HEAT_OFF:
-    text: pitot_heat_off
+    text: 'off'
     voice: cockpit
-    filename: pitot_heat_off
+    filename: 'off'
   MSG_PITOT_HEAT_ON:
-    text: pitot_heat_on
+    text: 'on'
     voice: cockpit
-    filename: pitot_heat_on
+    filename: 'on'
   MSG_FLAPS:
     text: flaps
     voice: cockpit
     filename: flaps
   MSG_FLAPS_UP:
-    text: flaps_up
+    text: up
     voice: cockpit
-    filename: flaps_up
+    filename: up
   MSG_FLAPS_10:
-    text: flaps_10
+    text: '10'
     voice: cockpit
-    filename: flaps_10
+    filename: '10'
   MSG_FLAPS_20:
-    text: flaps_20
+    text: '20'
     voice: cockpit
-    filename: flaps_20
+    filename: '20'
   MSG_FLAPS_30:
-    text: flaps_30
+    text: '30'
     voice: cockpit
-    filename: flaps_30
+    filename: '30'
   MSG_FLAPS_FULL:
-    text: flaps_full
+    text: full
     voice: cockpit
-    filename: flaps_full
+    filename: full
   MSG_ELEVATOR_TRIM:
     text: elevator_trim
     voice: cockpit
@@ -550,10 +550,94 @@ messages:
     voice: cockpit
     filename: parking_brake
   MSG_PARKING_BRAKE_SET:
-    text: parking_brake_set
+    text: set
     voice: cockpit
-    filename: parking_brake_set
+    filename: set
   MSG_PARKING_BRAKE_RELEASED:
-    text: parking_brake_released
+    text: released
     voice: cockpit
-    filename: parking_brake_released
+    filename: released
+  MSG_ON:
+    text: 'on'
+    voice: cockpit
+    filename: 'on'
+  MSG_OFF:
+    text: 'off'
+    voice: cockpit
+    filename: 'off'
+  MSG_RICH:
+    text: rich
+    voice: cockpit
+    filename: rich
+  MSG_LEAN:
+    text: lean
+    voice: cockpit
+    filename: lean
+  MSG_IDLE_CUTOFF:
+    text: idle cutoff
+    voice: cockpit
+    filename: idle_cutoff
+  MSG_BOTH:
+    text: both
+    voice: cockpit
+    filename: both
+  MSG_LEFT:
+    text: left
+    voice: cockpit
+    filename: left
+  MSG_RIGHT:
+    text: right
+    voice: cockpit
+    filename: right
+  MSG_HOT:
+    text: hot
+    voice: cockpit
+    filename: hot
+  MSG_COLD:
+    text: cold
+    voice: cockpit
+    filename: cold
+  MSG_OPEN:
+    text: open
+    voice: cockpit
+    filename: open
+  MSG_CLOSED:
+    text: closed
+    voice: cockpit
+    filename: closed
+  MSG_SET:
+    text: set
+    voice: cockpit
+    filename: set
+  MSG_RELEASED:
+    text: released
+    voice: cockpit
+    filename: released
+  MSG_PRESSED:
+    text: pressed
+    voice: cockpit
+    filename: pressed
+  MSG_UP:
+    text: up
+    voice: cockpit
+    filename: up
+  MSG_10:
+    text: '10'
+    voice: cockpit
+    filename: '10'
+  MSG_20:
+    text: '20'
+    voice: cockpit
+    filename: '20'
+  MSG_30:
+    text: '30'
+    voice: cockpit
+    filename: '30'
+  MSG_FULL:
+    text: full
+    voice: cockpit
+    filename: full
+  MSG_START:
+    text: start
+    voice: cockpit
+    filename: start
