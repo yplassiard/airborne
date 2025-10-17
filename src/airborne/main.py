@@ -135,6 +135,14 @@ class AirBorne:
                 "flight_model": {"type": "simple_6dof", **flight_model_config}
             }
 
+            # Extract audio config from aircraft config
+            audio_config = config.get("aircraft", {}).get("audio", {})
+            if audio_config:
+                # Merge with existing audio config (if any)
+                if "audio" not in self.plugin_context.config:
+                    self.plugin_context.config["audio"] = {}
+                self.plugin_context.config["audio"]["aircraft"] = audio_config
+
             # Load physics plugin
             logger.info("Loading physics plugin...")
             from airborne.plugins.core.physics_plugin import PhysicsPlugin

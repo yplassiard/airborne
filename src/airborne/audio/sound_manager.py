@@ -49,6 +49,10 @@ class SoundManager:
         self._engine_source_id: int | None = None
         self._wind_source_id: int | None = None
 
+        # Engine sound pitch configuration (can be overridden per aircraft)
+        self._engine_pitch_idle = 0.7  # Pitch at 0% throttle
+        self._engine_pitch_full = 1.3  # Pitch at 100% throttle
+
     def initialize(
         self,
         audio_engine: IAudioEngine,
@@ -278,13 +282,26 @@ class SoundManager:
         if not self._audio_engine or self._engine_source_id is None:
             return
 
-        # Map throttle to pitch (0.5 at idle to 2.0 at full throttle)
-        pitch = 0.5 + (throttle * 1.5)
+        # Map throttle to pitch using configured range
+        pitch = self._engine_pitch_idle + (
+            throttle * (self._engine_pitch_full - self._engine_pitch_idle)
+        )
         # Map throttle to volume (0.3 at idle to 1.0 at full throttle)
         volume = 0.3 + (throttle * 0.7)
 
         self._audio_engine.update_source_pitch(self._engine_source_id, pitch)
         self._audio_engine.update_source_volume(self._engine_source_id, volume)
+
+    def set_engine_pitch_range(self, pitch_idle: float, pitch_full: float) -> None:
+        """Configure engine sound pitch range.
+
+        Args:
+            pitch_idle: Audio pitch at 0% throttle.
+            pitch_full: Audio pitch at 100% throttle.
+        """
+        self._engine_pitch_idle = pitch_idle
+        self._engine_pitch_full = pitch_full
+        logger.debug(f"Engine pitch range set: {pitch_idle} to {pitch_full}")
 
     def start_wind_sound(self, path: str = "assets/sounds/aircraft/wind.mp3") -> None:
         """Start looping wind sound.

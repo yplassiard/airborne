@@ -17,6 +17,7 @@ Typical usage example:
 
 import logging
 import logging.handlers
+import time
 from pathlib import Path
 from typing import Any
 
@@ -84,7 +85,7 @@ def _get_default_config() -> dict[str, Any]:
         "version": 1,
         "level": "INFO",
         "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-        "date_format": "%Y-%m-%d %H:%M:%S",
+        "date_format": "%Y-%m-%d %H:%M:%S.%f",
         "log_dir": "logs",
         "combined_log": {
             "enabled": True,
@@ -139,6 +140,21 @@ def _configure_root_logger() -> None:
         root_logger.addHandler(file_handler)
 
 
+class MillisecondFormatter(logging.Formatter):
+    """Custom formatter that shows milliseconds with dot separator."""
+
+    def formatTime(self, record, datefmt=None):
+        """Format time with milliseconds using dot separator."""
+        ct = self.converter(record.created)
+        if datefmt:
+            s = time.strftime(datefmt, ct)
+        else:
+            s = time.strftime("%Y-%m-%d %H:%M:%S", ct)
+        # Add milliseconds with dot separator
+        s = f"{s}.{int(record.msecs):03d}"
+        return s
+
+
 def _get_formatter() -> logging.Formatter:
     """Get the configured log formatter.
 
@@ -147,7 +163,10 @@ def _get_formatter() -> logging.Formatter:
     """
     fmt = _logging_config.get("format", "%(asctime)s - %(name)s - %(levelname)s - %(message)s")
     datefmt = _logging_config.get("date_format", "%Y-%m-%d %H:%M:%S")
-    return logging.Formatter(fmt, datefmt)
+
+    # Create formatter with millisecond precision
+    formatter = MillisecondFormatter(fmt, datefmt)
+    return formatter
 
 
 def get_logger(name: str) -> logging.Logger:

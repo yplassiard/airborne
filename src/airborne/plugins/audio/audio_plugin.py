@@ -222,9 +222,26 @@ class AudioPlugin(IPlugin):
 
             context.event_bus.subscribe(InputActionEvent, self._handle_input_action)
 
-        # Start engine and wind sounds if sound manager available
+        # Configure engine sound pitch range from aircraft config
         if self.sound_manager:
-            self.sound_manager.start_engine_sound()
+            aircraft_audio = audio_config.get("aircraft", {})
+            engine_sounds = aircraft_audio.get("engine_sounds", {})
+            if engine_sounds:
+                pitch_idle = engine_sounds.get("pitch_idle", 0.7)
+                pitch_full = engine_sounds.get("pitch_full", 1.3)
+                self.sound_manager.set_engine_pitch_range(pitch_idle, pitch_full)
+                logger.info(f"Engine pitch range configured: {pitch_idle} to {pitch_full}")
+
+                # Use custom engine sound file if specified
+                engine_sound_path = engine_sounds.get("running")
+                if engine_sound_path:
+                    self.sound_manager.start_engine_sound(engine_sound_path)
+                    logger.info(f"Using custom engine sound: {engine_sound_path}")
+                else:
+                    self.sound_manager.start_engine_sound()
+            else:
+                self.sound_manager.start_engine_sound()
+
             self.sound_manager.start_wind_sound()
             self._engine_started = True
 

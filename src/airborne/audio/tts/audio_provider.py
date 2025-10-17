@@ -22,6 +22,13 @@ from typing import Any
 
 import yaml
 
+try:
+    import pyfmodex
+    from pyfmodex.enums import CHANNELCONTROL_CALLBACK_TYPE
+except ImportError:
+    pyfmodex = None
+    CHANNELCONTROL_CALLBACK_TYPE = None
+
 from airborne.audio.tts.base import ITTSProvider, TTSPriority, TTSState
 from airborne.core.logging_system import get_logger
 
@@ -76,7 +83,7 @@ class AudioSpeechProvider(ITTSProvider):
         self._speech_dir = Path("data/speech")
         self._config_dir = Path("config")
         self._language = "en"
-        self._file_extension = "mp3"
+        self._file_extension = "wav"
         self._message_map: dict[str, dict[str, str]] = {}  # key -> {text, voice}
         self._voice_dirs: dict[str, Path] = {}  # voice -> directory path
 
@@ -85,8 +92,9 @@ class AudioSpeechProvider(ITTSProvider):
         self._current_source_id: int | None = None
 
         # Sequential playback queue
-        self._playback_queue: deque[Path] = deque()
+        self._playback_queue: deque[Any] = deque()  # Preloaded sound objects
         self._playing = False
+        self._callback_lock = threading.Lock()  # Protect callback access
 
     def initialize(self, config: dict[str, Any]) -> None:
         """Initialize audio speech provider.
@@ -124,7 +132,7 @@ class AudioSpeechProvider(ITTSProvider):
             try:
                 with open(config_file, encoding="utf-8") as f:
                     speech_config = yaml.safe_load(f)
-                self._file_extension = speech_config.get("file_extension", "mp3")
+                self._file_extension = speech_config.get("file_extension", "wav")
                 # Convert old format to new format
                 old_messages = speech_config.get("messages", {})
                 self._message_map = {key: {"text": key, "voice": "cockpit"} for key in old_messages}
@@ -147,7 +155,7 @@ class AudioSpeechProvider(ITTSProvider):
 
                 # Load messages
                 self._message_map = speech_config.get("messages", {})
-                self._file_extension = "mp3"  # New format always uses mp3
+                self._file_extension = "wav"  # New format uses WAV to avoid MP3 decoder latency
 
                 logger.info(
                     "Loaded %d speech messages from %s (%d voices)",
@@ -214,8 +222,8 @@ class AudioSpeechProvider(ITTSProvider):
         if interrupt or priority == TTSPriority.CRITICAL:
             self.stop()
 
-        # Resolve all file paths
-        filepaths = []
+        # Resolve all file paths and preload sounds
+        sound_objects = []
         for key in message_keys:
             message_config = self._message_map.get(key)
             if not message_config:
@@ -226,21 +234,29 @@ class AudioSpeechProvider(ITTSProvider):
             voice = message_config.get("voice", "cockpit")
             voice_dir = self._voice_dirs.get(voice, self._speech_dir)
 
-            # Build filename (key name is the filename)
-            filename = f"{key}.{self._file_extension}"
+            # Build filename (use filename field from config, fallback to key name)
+            filename_base = message_config.get("filename", key)
+            filename = f"{filename_base}.{self._file_extension}"
             filepath = voice_dir / filename
 
             if not filepath.exists():
                 logger.warning(f"Speech file not found: {filepath}")
                 continue
 
-            filepaths.append(filepath)
+            # Preload sound to avoid delays during playback
+            if self._audio_engine:
+                try:
+                    sound = self._audio_engine.load_sound(str(filepath))
+                    sound_objects.append(sound)
+                except Exception as e:  # pylint: disable=broad-exception-caught
+                    logger.error(f"Error preloading sound {filepath}: {e}")
+                    continue
 
-        if not filepaths:
+        if not sound_objects:
             logger.error(f"No valid speech files found for keys: {message_keys}")
             return
 
-        # Add files to playback queue
+        # Add preloaded sounds to playback queue
         # If interrupt, clear existing queue
         if interrupt or priority == TTSPriority.CRITICAL:
             self._playback_queue.clear()
@@ -250,11 +266,15 @@ class AudioSpeechProvider(ITTSProvider):
                     self._audio_engine.stop_source(self._current_source_id)
             self._current_source_id = None
 
-        # Add new files to queue
-        self._playback_queue.extend(filepaths)
+        # Add new sounds to queue
+        self._playback_queue.extend(sound_objects)
 
         self._state = TTSState.SPEAKING
-        logger.info(f"Playing speech sequence: {message_keys} -> {len(filepaths)} files")
+        logger.info(f"Queued speech sequence: {message_keys} ({len(sound_objects)} files)")
+
+        # Start playback if not already playing
+        if not self._playing:
+            self._play_next_in_sequence()
 
     def stop(self) -> None:
         """Stop current speech immediately."""
@@ -333,60 +353,94 @@ class AudioSpeechProvider(ITTSProvider):
         """
         return []
 
+    def _on_sound_end(self, channelcontrol, controltype, callbacktype, data1, data2) -> None:
+        """Callback when a sound finishes - immediately play next in sequence.
+
+        This is called by FMOD's callback system when a channel stops.
+        """
+        try:
+            with self._callback_lock:
+                logger.debug("Sound finished via callback, playing next")
+                self._playing = False
+                self._current_source_id = None
+                self._play_next_in_sequence()
+        except Exception as e:  # pylint: disable=broad-exception-caught
+            logger.error(f"Error in sound end callback: {e}")
+
+    def _play_next_in_sequence(self) -> None:
+        """Play the next sound in the sequence (if any).
+
+        Called either initially or from the callback when a sound finishes.
+        """
+        # Check state and pop sound from queue within lock
+        with self._callback_lock:
+            if not self._playback_queue:
+                self._playing = False
+                self._state = TTSState.IDLE
+                logger.info("TTS playback complete")
+                return
+
+            if self._playing:
+                return
+
+            # Mark as playing before releasing lock
+            self._playing = True
+            sound = self._playback_queue.popleft()
+
+        # Play sound OUTSIDE the lock to avoid blocking update()
+        try:
+            source_id = self._audio_engine.play_2d(
+                sound,
+                volume=1.0,
+                pitch=1.0,
+                loop=False,
+            )
+            self._current_source_id = source_id
+            logger.info(
+                f"TTS playing sound (source_id={source_id}, {len(self._playback_queue)} remaining)"
+            )
+
+            # Callback setup removed - using polling in update() instead
+            # FMOD callbacks are complex and fallback polling works fine
+
+        except Exception as e:  # pylint: disable=broad-exception-caught
+            logger.error(f"Error playing speech sound: {e}")
+            self._playing = False
+            # Try next sound
+            if self._playback_queue:
+                self._play_next_in_sequence()
+
     def update(self) -> None:
         """Update sequential playback - call every frame.
 
-        Checks if current sound finished and plays next in queue.
+        Uses polling to detect when sounds finish and trigger the next in sequence.
         """
         if not self._initialized or not self._audio_engine:
             return
 
-        # Check if we have files to play
-        if not self._playback_queue:
-            if self._playing:
-                self._playing = False
-                self._state = TTSState.IDLE
-            return
-
-        # Check if currently playing
-        if self._playing:
-            # Check if current sound finished
-            if self._current_source_id is not None:
-                try:
-                    # Get channel from audio engine's _channels dict
-                    if hasattr(self._audio_engine, "_channels"):
-                        channel = self._audio_engine._channels.get(self._current_source_id)
-                        if channel:
-                            # Check if channel is still playing
-                            try:
-                                if channel.is_playing:
-                                    return  # Still playing, wait
-                            except Exception:  # pylint: disable=broad-exception-caught
-                                # Channel might be invalid, treat as finished
-                                pass
-                except Exception:  # pylint: disable=broad-exception-caught
-                    pass  # Assume finished if error checking
-
-            # Current sound finished, ready for next
-            self._playing = False
-            self._current_source_id = None
-
-        # Play next file in queue
-        if not self._playing and self._playback_queue:
+        # Fallback polling - check if sound finished
+        if self._playing and self._current_source_id is not None:
             try:
-                filepath = self._playback_queue.popleft()
-                sound = self._audio_engine.load_sound(str(filepath))
-                source_id = self._audio_engine.play_2d(
-                    sound,
-                    volume=1.0,
-                    pitch=1.0,
-                    loop=False,
-                )
-                self._current_source_id = source_id
-                self._playing = True
+                if hasattr(self._audio_engine, "_channels"):
+                    channel = self._audio_engine._channels.get(self._current_source_id)
+                    if channel:
+                        try:
+                            if not channel.is_playing:
+                                # Sound finished - trigger next
+                                logger.info("TTS sound finished")
+                                self._playing = False
+                                self._current_source_id = None
+                                self._play_next_in_sequence()
+                        except Exception as e:  # pylint: disable=broad-exception-caught
+                            logger.error(f"Error checking channel.is_playing: {e}")
+                    else:
+                        # Channel not found means it was removed after finishing
+                        logger.info("TTS sound finished")
+                        self._playing = False
+                        self._current_source_id = None
+                        self._play_next_in_sequence()
             except Exception as e:  # pylint: disable=broad-exception-caught
-                logger.error(f"Error playing speech file: {e}")
-                self._playing = False
+                logger.error(f"Error in update() polling: {e}")
 
     def clear_queue(self) -> None:
         """Clear the speech queue."""

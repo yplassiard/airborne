@@ -52,7 +52,6 @@ def generate_with_say_batch(items, voice_name, rate, batch_size=8):
         batch_size: Number of files to process simultaneously
     """
     import concurrent.futures
-    import tempfile
 
     # Process in batches
     for i in range(0, len(items), batch_size):
@@ -91,7 +90,9 @@ def generate_with_say_batch(items, voice_name, rate, batch_size=8):
                             "-y",
                             str(output_path),
                         ]
-                        future = executor.submit(subprocess.run, cmd, capture_output=True, check=True)
+                        future = executor.submit(
+                            subprocess.run, cmd, capture_output=True, check=True
+                        )
                         futures.append((future, temp_path))
 
                 # Wait for all conversions and cleanup
@@ -491,7 +492,10 @@ def generate_voice_messages(voice_name, voice_config, messages, base_dir, force=
             for text, output_path in items_to_generate:
                 try:
                     generate_with_pyttsx3(
-                        text, output_path, voice_config.get("voice_name", "default"), voice_config["rate"]
+                        text,
+                        output_path,
+                        voice_config.get("voice_name", "default"),
+                        voice_config["rate"],
                     )
                 except Exception as e:
                     print(f"    Error: {e}")

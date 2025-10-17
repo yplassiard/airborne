@@ -431,8 +431,8 @@ class ControlPanelPlugin(IPlugin):
         # Update internal state tracking
         self._update_control_state(control.id, control.target_plugin, current_state)
 
-        # Announce state change
-        self._speak(f"{control.name}, {current_state}")
+        # Announce state change using pre-recorded messages if available
+        self._announce_control_state(control, current_state)
 
         # Send message to target plugin
         if control.target_plugin and control.message_topic:
@@ -555,13 +555,50 @@ class ControlPanelPlugin(IPlugin):
         control = self.get_current_control()
         if control:
             state = control.get_current_state()
-            self._speak(f"{control.name}, {state}")
+            self._announce_control_state(control, state)
+
+    def _announce_control_state(self, control: PanelControl, state: str) -> None:
+        """Announce control and its state using pre-recorded messages.
+
+        Args:
+            control: The control to announce.
+            state: The current state value.
+        """
+        # Build message keys for pre-recorded announcements
+        # Convert control ID to message key base (e.g., "master_switch" -> "MSG_MASTER_SWITCH")
+        control_key_base = control.id.upper().replace("_SWITCH", "").replace("_LEVER", "")
+        control_key_base = control_key_base.replace("_BUTTON", "").replace("_VALVE", "")
+        control_msg_key = f"MSG_{control_key_base}"
+
+        # For continuous controls (sliders), only announce the control name without state
+        # since the numeric values change continuously and we don't have MP3s for all values
+        if control.is_continuous():
+            logger.debug(f"Announcing continuous control: {control.id} -> [{control_msg_key}]")
+            self._speak(control_msg_key)
+            return
+
+        # Convert state to message key (e.g., "ON" -> "MSG_MASTER_SWITCH_ON")
+        # Handle boolean values (True/False -> ON/OFF)
+        if isinstance(state, bool):
+            state_str = "ON" if state else "OFF"
+        else:
+            state_str = str(state)
+        state_normalized = state_str.upper().replace(" ", "_").replace("%", "")
+        control_state_msg_key = f"{control_msg_key}_{state_normalized}"
+
+        # Always use pre-recorded messages - no fallback to dynamic text
+        # The TTS provider will log warnings if keys don't exist
+        # If messages are missing, they need to be generated with scripts/generate_speech.py
+        logger.debug(
+            f"Announcing control: {control.id} -> [{control_msg_key}, {control_state_msg_key}]"
+        )
+        self._speak_sequence([control_msg_key, control_state_msg_key])
 
     def _speak(self, text: str) -> None:
         """Speak text via TTS.
 
         Args:
-            text: Text to speak.
+            text: Text to speak (message key or dynamic text).
         """
         if not self.context:
             return
@@ -573,6 +610,27 @@ class ControlPanelPlugin(IPlugin):
                 recipients=["tts_provider"],
                 topic=MessageTopic.TTS_SPEAK,
                 data={"text": text, "priority": "normal"},
+                priority=MessagePriority.NORMAL,
+            )
+        )
+
+    def _speak_sequence(self, message_keys: list[str]) -> None:
+        """Speak a sequence of pre-recorded message keys.
+
+        Args:
+            message_keys: List of message keys to speak in sequence.
+        """
+        if not self.context:
+            return
+
+        # Send the list of message keys to the TTS provider
+        # The audio provider's speak() method handles lists of keys
+        self.context.message_queue.publish(
+            Message(
+                sender="control_panel_plugin",
+                recipients=["tts_provider"],
+                topic=MessageTopic.TTS_SPEAK,
+                data={"text": message_keys, "priority": "normal"},
                 priority=MessagePriority.NORMAL,
             )
         )
