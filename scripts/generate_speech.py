@@ -88,10 +88,6 @@ def generate_with_say_batch(items, voice_name, rate, batch_size=8):
                             str(temp_path),
                             "-af",
                             "silenceremove=start_periods=1:start_duration=0:start_threshold=-40dB:stop_periods=-1:stop_duration=0.1:stop_threshold=-40dB,areverse,silenceremove=start_periods=1:start_duration=0:start_threshold=-40dB:stop_periods=-1:stop_duration=0.1:stop_threshold=-40dB,areverse",
-                            "-codec:a",
-                            "libmp3lame",
-                            "-q:a",
-                            "2",
                             "-y",
                             str(output_path),
                         ]
@@ -195,7 +191,7 @@ def generate_speech_file(message_key, text, voice_config, output_dir, force=Fals
     Returns:
         True if generated, False if skipped
     """
-    output_path = output_dir / f"{message_key}.mp3"
+    output_path = output_dir / f"{message_key}.wav"
 
     # Skip if exists and not forcing
     if output_path.exists() and not force:
@@ -404,8 +400,10 @@ def generate_voice_messages(voice_name, voice_config, messages, base_dir, force=
     # Collect configured messages
     for msg_key, msg_config in messages.items():
         if msg_config.get("voice") == voice_name:
-            print(f"  {msg_key}: '{msg_config['text']}'")
-            output_path = output_dir / f"{msg_key}.mp3"
+            # Use explicit filename from config, fallback to msg_key
+            filename_base = msg_config.get("filename", msg_key)
+            print(f"  {msg_key}: '{msg_config['text']}' -> {filename_base}.wav")
+            output_path = output_dir / f"{filename_base}.wav"
             if output_path.exists() and not force:
                 skipped += 1
             else:
@@ -421,7 +419,7 @@ def generate_voice_messages(voice_name, voice_config, messages, base_dir, force=
         for challenge in sorted(challenges):
             msg_key = "MSG_CHALLENGE_" + sanitize_filename(challenge)
             print(f"  {msg_key}: '{challenge}'")
-            output_path = output_dir / f"{msg_key}.mp3"
+            output_path = output_dir / f"{msg_key}.wav"
             if output_path.exists() and not force:
                 skipped += 1
             else:
@@ -431,7 +429,7 @@ def generate_voice_messages(voice_name, voice_config, messages, base_dir, force=
         for response in sorted(responses):
             msg_key = "MSG_RESPONSE_" + sanitize_filename(response)
             print(f"  {msg_key}: '{response}'")
-            output_path = output_dir / f"{msg_key}.mp3"
+            output_path = output_dir / f"{msg_key}.wav"
             if output_path.exists() and not force:
                 skipped += 1
             else:
@@ -451,7 +449,7 @@ def generate_voice_messages(voice_name, voice_config, messages, base_dir, force=
         for panel_name in sorted(panel_names):
             msg_key = "MSG_PANEL_" + sanitize_filename(panel_name)
             print(f"  {msg_key}: '{panel_name}'")
-            output_path = output_dir / f"{msg_key}.mp3"
+            output_path = output_dir / f"{msg_key}.wav"
             if output_path.exists() and not force:
                 skipped += 1
             else:
@@ -461,7 +459,7 @@ def generate_voice_messages(voice_name, voice_config, messages, base_dir, force=
         for control_name in sorted(control_names):
             msg_key = "MSG_CONTROL_" + sanitize_filename(control_name)
             print(f"  {msg_key}: '{control_name}'")
-            output_path = output_dir / f"{msg_key}.mp3"
+            output_path = output_dir / f"{msg_key}.wav"
             if output_path.exists() and not force:
                 skipped += 1
             else:
@@ -472,7 +470,7 @@ def generate_voice_messages(voice_name, voice_config, messages, base_dir, force=
             for state in sorted(control_states[control_name]):
                 msg_key = "MSG_STATE_" + sanitize_filename(state)
                 print(f"  {msg_key}: '{state}'")
-                output_path = output_dir / f"{msg_key}.mp3"
+                output_path = output_dir / f"{msg_key}.wav"
                 if output_path.exists() and not force:
                     skipped += 1
                 else:

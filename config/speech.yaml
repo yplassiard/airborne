@@ -1,273 +1,559 @@
-# Unified Speech Configuration for AirBorne
-# Defines all voice types, TTS engines, and message mappings
-
-# Default language
 default_language: en
-
-# Voice definitions
 voices:
-  # Pilot voice - for pilot transmissions and checklist readbacks
   pilot:
-    description: "Pilot transmitting on radio and reading checklists"
-    engine: "say"  # macOS: "say", Windows/Linux: "pyttsx3"
+    description: Pilot transmitting on radio and reading checklists
+    engine: say
     language: en-US
-    voice_name: "Oliver"  # macOS voice name
-    rate: 200  # Words per minute
-    volume: 1.0  # 0.0 to 1.0
-    output_dir: "pilot"
-
-  # Cockpit voice - for instrument readouts and system announcements
-  cockpit:
-    description: "Cockpit computer for instrument readouts"
-    engine: "say"
-    language: en-US
-    voice_name: "Samantha"
+    voice_name: Oliver
     rate: 200
     volume: 1.0
-    output_dir: "cockpit"
-
-  # Ground/Delivery voice - for clearance delivery
+    output_dir: pilot
+  cockpit:
+    description: Cockpit computer for instrument readouts
+    engine: say
+    language: en-US
+    voice_name: Samantha
+    rate: 200
+    volume: 1.0
+    output_dir: cockpit
   ground:
-    description: "Ground control / Clearance delivery"
-    engine: "say"
+    description: Ground control / Clearance delivery
+    engine: say
     language: en-US
-    voice_name: "Evan"
+    voice_name: Evan
     rate: 180
     volume: 1.0
-    output_dir: "atc/ground"
-
-  # Tower voice - for tower controllers
+    output_dir: atc/ground
   tower:
-    description: "Tower control"
-    engine: "say"
+    description: Tower control
+    engine: say
     language: en-US
-    voice_name: "Evan"
+    voice_name: Evan
     rate: 180
     volume: 1.0
-    output_dir: "atc/tower"
-
-  # Approach/Departure voice - for approach and departure control
+    output_dir: atc/tower
   approach:
-    description: "Approach/Departure control"
-    engine: "say"
+    description: Approach/Departure control
+    engine: say
     language: en-US
-    voice_name: "Evan"
+    voice_name: Evan
     rate: 180
     volume: 1.0
-    output_dir: "atc/approach"
-
-  # ATIS voice - for automated terminal information
+    output_dir: atc/approach
   atis:
-    description: "Automated Terminal Information Service"
-    engine: "say"
+    description: Automated Terminal Information Service
+    engine: say
     language: en-US
-    voice_name: "Samantha"
+    voice_name: Samantha
     rate: 160
     volume: 1.0
-    output_dir: "atc/atis"
-
-  # Cabin crew voice - for flight attendant announcements
+    output_dir: atc/atis
   steward:
-    description: "Flight attendant / cabin crew"
-    engine: "say"
+    description: Flight attendant / cabin crew
+    engine: say
     language: en-US
-    voice_name: "Samantha"
+    voice_name: Samantha
     rate: 170
     volume: 1.0
-    output_dir: "cabin"
-
-# Message definitions - maps message keys to text and voice type
+    output_dir: cabin
 messages:
-  # System messages (cockpit voice)
   MSG_STARTUP:
-    text: "airborne flight simulator"
+    text: airborne flight simulator
     voice: cockpit
+    filename: startup
   MSG_READY:
-    text: "ready for flight"
+    text: ready for flight
     voice: cockpit
+    filename: ready
   MSG_ERROR:
-    text: "error"
+    text: error
     voice: cockpit
+    filename: error
   MSG_PAUSED:
-    text: "paused"
+    text: paused
     voice: cockpit
-
-  # Checklist menu messages (cockpit voice)
+    filename: paused
   MSG_CHECKLIST_MENU_OPENED:
-    text: "checklist menu opened"
+    text: checklist menu opened
     voice: cockpit
+    filename: checklist_menu_opened
   MSG_CHECKLIST_MENU_CLOSED:
-    text: "checklist menu closed"
+    text: checklist menu closed
     voice: cockpit
+    filename: checklist_menu_closed
   MSG_CHECKLIST_INVALID_OPTION:
-    text: "invalid option"
+    text: invalid option
     voice: cockpit
+    filename: checklist_invalid_option
   MSG_CHECKLIST_PRESS_ESC:
-    text: "press escape to close"
+    text: press escape to close
     voice: cockpit
+    filename: checklist_press_esc
   MSG_CHECKLIST_NONE_AVAILABLE:
-    text: "no checklists available"
+    text: no checklists available
     voice: cockpit
+    filename: checklist_none_available
   MSG_CHECKLIST_START_FAILED:
-    text: "checklist start failed"
+    text: checklist start failed
     voice: cockpit
-
-  # Checklist state messages (pilot voice)
+    filename: checklist_start_failed
   MSG_CHECKLIST_STARTING:
-    text: "starting checklist"
+    text: starting checklist
     voice: pilot
+    filename: checklist_starting
   MSG_CHECKLIST_TEXT:
-    text: "checklist"
+    text: checklist
     voice: pilot
+    filename: checklist_text
   MSG_CHECKLIST_COMPLETE:
-    text: "complete"
+    text: complete
     voice: pilot
-
-  # Checklist names (cockpit voice for menu)
+    filename: checklist_complete
   MSG_CHECKLIST_BEFORE_START:
-    text: "before engine start"
+    text: before engine start
     voice: cockpit
+    filename: checklist_before_start
   MSG_CHECKLIST_ENGINE_START:
-    text: "engine start"
+    text: engine start
     voice: cockpit
+    filename: checklist_engine_start
   MSG_CHECKLIST_BEFORE_TAKEOFF:
-    text: "before takeoff"
+    text: before takeoff
     voice: cockpit
+    filename: checklist_before_takeoff
   MSG_CHECKLIST_TAKEOFF:
-    text: "takeoff"
+    text: takeoff
     voice: cockpit
+    filename: checklist_takeoff
   MSG_CHECKLIST_BEFORE_LANDING:
-    text: "before landing"
+    text: before landing
     voice: cockpit
+    filename: checklist_before_landing
   MSG_CHECKLIST_AFTER_LANDING:
-    text: "after landing"
+    text: after landing
     voice: cockpit
+    filename: checklist_after_landing
   MSG_CHECKLIST_SHUTDOWN:
-    text: "shutdown"
+    text: shutdown
     voice: cockpit
+    filename: checklist_shutdown
   MSG_CHECKLIST_UNKNOWN:
-    text: "unknown checklist"
+    text: unknown checklist
     voice: cockpit
-
-  # Common words
+    filename: checklist_unknown
   MSG_WORD_CHECK:
-    text: "check"
+    text: check
     voice: pilot
+    filename: word_check
   MSG_WORD_SKIPPED:
-    text: "skipped"
+    text: skipped
     voice: pilot
+    filename: word_skipped
   MSG_WORD_COLON:
-    text: ":"
+    text: ':'
     voice: cockpit
-
-  # Numbers 0-9 (cockpit voice)
+    filename: word_colon
   MSG_NUMBER_0:
-    text: "0"
+    text: '0'
     voice: cockpit
+    filename: number_0
   MSG_NUMBER_1:
-    text: "1"
+    text: '1'
     voice: cockpit
+    filename: number_1
   MSG_NUMBER_2:
-    text: "2"
+    text: '2'
     voice: cockpit
+    filename: number_2
   MSG_NUMBER_3:
-    text: "3"
+    text: '3'
     voice: cockpit
+    filename: number_3
   MSG_NUMBER_4:
-    text: "4"
+    text: '4'
     voice: cockpit
+    filename: number_4
   MSG_NUMBER_5:
-    text: "5"
+    text: '5'
     voice: cockpit
+    filename: number_5
   MSG_NUMBER_6:
-    text: "6"
+    text: '6'
     voice: cockpit
+    filename: number_6
   MSG_NUMBER_7:
-    text: "7"
+    text: '7'
     voice: cockpit
+    filename: number_7
   MSG_NUMBER_8:
-    text: "8"
+    text: '8'
     voice: cockpit
+    filename: number_8
   MSG_NUMBER_9:
-    text: "9"
+    text: '9'
     voice: cockpit
-
-  # ATC Menu messages (cockpit voice)
+    filename: number_9
   MSG_ATC_MENU_OPENED:
-    text: "atc menu"
+    text: atc menu
     voice: cockpit
+    filename: atc_menu_opened
   MSG_ATC_MENU_CLOSED:
-    text: "menu closed"
+    text: menu closed
     voice: cockpit
+    filename: atc_menu_closed
   MSG_ATC_INVALID_OPTION:
-    text: "invalid option"
+    text: invalid option
     voice: cockpit
+    filename: atc_invalid_option
   MSG_ATC_PRESS_ESC:
-    text: "press escape to close"
+    text: press escape to close
     voice: cockpit
-
-  # ATC menu options (cockpit voice)
+    filename: atc_press_esc
   MSG_ATC_OPTION_REQUEST_STARTUP:
-    text: "request startup clearance"
+    text: request startup clearance
     voice: cockpit
+    filename: atc_option_request_startup
   MSG_ATC_OPTION_REQUEST_ATIS:
-    text: "request ATIS"
+    text: request ATIS
     voice: cockpit
+    filename: atc_option_request_atis
   MSG_ATC_OPTION_REQUEST_TAXI:
-    text: "request taxi"
+    text: request taxi
     voice: cockpit
+    filename: atc_option_request_taxi
   MSG_ATC_OPTION_REQUEST_TAKEOFF:
-    text: "request takeoff clearance"
+    text: request takeoff clearance
     voice: cockpit
+    filename: atc_option_request_takeoff
   MSG_ATC_OPTION_READY_DEPARTURE:
-    text: "report ready for departure"
+    text: report ready for departure
     voice: cockpit
+    filename: atc_option_ready_departure
   MSG_ATC_OPTION_CHECKIN_DEPARTURE:
-    text: "check in with departure"
+    text: check in with departure
     voice: cockpit
+    filename: atc_option_checkin_departure
   MSG_ATC_OPTION_REPORT_ALTITUDE:
-    text: "report altitude"
+    text: report altitude
     voice: cockpit
+    filename: atc_option_report_altitude
   MSG_ATC_OPTION_REQUEST_FLIGHT_FOLLOWING:
-    text: "request flight following"
+    text: request flight following
     voice: cockpit
+    filename: atc_option_request_flight_following
   MSG_ATC_OPTION_REPORT_POSITION:
-    text: "report position"
+    text: report position
     voice: cockpit
-
-  # Instrument readouts (cockpit voice)
+    filename: atc_option_report_position
   MSG_AIRSPEED:
-    text: "airspeed"
+    text: airspeed
     voice: cockpit
+    filename: airspeed
   MSG_ALTITUDE:
-    text: "altitude"
+    text: altitude
     voice: cockpit
+    filename: altitude
   MSG_VERTICAL_SPEED:
-    text: "vertical speed"
+    text: vertical speed
     voice: cockpit
+    filename: vertical_speed
   MSG_HEADING:
-    text: "heading"
+    text: heading
     voice: cockpit
+    filename: heading
   MSG_BANK_ANGLE:
-    text: "bank angle"
+    text: bank angle
     voice: cockpit
+    filename: bank_angle
   MSG_PITCH_ANGLE:
-    text: "pitch angle"
+    text: pitch angle
     voice: cockpit
-
-  # Gear/Flaps
+    filename: pitch_angle
   MSG_GEAR_DOWN:
-    text: "gear down"
+    text: gear down
     voice: cockpit
+    filename: gear_down
   MSG_GEAR_UP:
-    text: "gear up"
+    text: gear up
     voice: cockpit
+    filename: gear_up
   MSG_FLAPS_EXTENDING:
-    text: "flaps extending"
+    text: flaps extending
     voice: cockpit
+    filename: flaps_extending
   MSG_FLAPS_RETRACTING:
-    text: "flaps retracting"
+    text: flaps retracting
     voice: cockpit
-
-# Note: Checklist challenges and responses are dynamically extracted from checklist YAML files
-# They will be generated with pilot voice for challenges and responses
+    filename: flaps_retracting
+  MSG_PANEL_INSTRUMENT_PANEL:
+    text: instrument panel
+    voice: cockpit
+    filename: panel_instrument_panel
+  MSG_PANEL_PEDESTAL:
+    text: pedestal
+    voice: cockpit
+    filename: panel_pedestal
+  MSG_PANEL_ENGINE_CONTROLS:
+    text: engine controls
+    voice: cockpit
+    filename: panel_engine_controls
+  MSG_PANEL_OVERHEAD_PANEL:
+    text: overhead panel
+    voice: cockpit
+    filename: panel_overhead_panel
+  MSG_PANEL_FLIGHT_CONTROLS:
+    text: flight controls
+    voice: cockpit
+    filename: panel_flight_controls
+  MSG_MASTER:
+    text: master_switch
+    voice: cockpit
+    filename: master
+  MSG_MASTER_OFF:
+    text: master_off
+    voice: cockpit
+    filename: master_off
+  MSG_MASTER_ON:
+    text: master_on
+    voice: cockpit
+    filename: master_on
+  MSG_AVIONICS_MASTER:
+    text: avionics_master
+    voice: cockpit
+    filename: avionics_master
+  MSG_AVIONICS_MASTER_OFF:
+    text: avionics_off
+    voice: cockpit
+    filename: avionics_master_off
+  MSG_AVIONICS_MASTER_ON:
+    text: avionics_on
+    voice: cockpit
+    filename: avionics_master_on
+  MSG_BEACON:
+    text: beacon
+    voice: cockpit
+    filename: beacon
+  MSG_BEACON_OFF:
+    text: beacon_off
+    voice: cockpit
+    filename: beacon_off
+  MSG_BEACON_ON:
+    text: beacon_on
+    voice: cockpit
+    filename: beacon_on
+  MSG_NAV_LIGHTS:
+    text: nav_lights
+    voice: cockpit
+    filename: nav_lights
+  MSG_NAV_LIGHTS_OFF:
+    text: nav_lights_off
+    voice: cockpit
+    filename: nav_lights_off
+  MSG_NAV_LIGHTS_ON:
+    text: nav_lights_on
+    voice: cockpit
+    filename: nav_lights_on
+  MSG_STROBE:
+    text: strobe
+    voice: cockpit
+    filename: strobe
+  MSG_STROBE_OFF:
+    text: strobe_off
+    voice: cockpit
+    filename: strobe_off
+  MSG_STROBE_ON:
+    text: strobe_on
+    voice: cockpit
+    filename: strobe_on
+  MSG_TAXI_LIGHT:
+    text: taxi_light
+    voice: cockpit
+    filename: taxi_light
+  MSG_TAXI_LIGHT_OFF:
+    text: taxi_light_off
+    voice: cockpit
+    filename: taxi_light_off
+  MSG_TAXI_LIGHT_ON:
+    text: taxi_light_on
+    voice: cockpit
+    filename: taxi_light_on
+  MSG_LANDING_LIGHT:
+    text: landing_light
+    voice: cockpit
+    filename: landing_light
+  MSG_LANDING_LIGHT_OFF:
+    text: landing_light_off
+    voice: cockpit
+    filename: landing_light_off
+  MSG_LANDING_LIGHT_ON:
+    text: landing_light_on
+    voice: cockpit
+    filename: landing_light_on
+  MSG_MIXTURE:
+    text: mixture
+    voice: cockpit
+    filename: mixture
+  MSG_MIXTURE_IDLE_CUTOFF:
+    text: mixture_idle_cutoff
+    voice: cockpit
+    filename: mixture_idle_cutoff
+  MSG_MIXTURE_LEAN:
+    text: mixture_lean
+    voice: cockpit
+    filename: mixture_lean
+  MSG_MIXTURE_RICH:
+    text: mixture_rich
+    voice: cockpit
+    filename: mixture_rich
+  MSG_CARBURETOR_HEAT:
+    text: carburetor_heat
+    voice: cockpit
+    filename: carburetor_heat
+  MSG_CARBURETOR_HEAT_COLD:
+    text: carb_heat_cold
+    voice: cockpit
+    filename: carburetor_heat_cold
+  MSG_CARBURETOR_HEAT_HOT:
+    text: carb_heat_hot
+    voice: cockpit
+    filename: carburetor_heat_hot
+  MSG_THROTTLE:
+    text: throttle
+    voice: cockpit
+    filename: throttle
+  MSG_FUEL_SELECTOR:
+    text: fuel_selector
+    voice: cockpit
+    filename: fuel_selector
+  MSG_FUEL_SELECTOR_OFF:
+    text: fuel_off
+    voice: cockpit
+    filename: fuel_selector_off
+  MSG_FUEL_SELECTOR_LEFT:
+    text: fuel_left
+    voice: cockpit
+    filename: fuel_selector_left
+  MSG_FUEL_SELECTOR_RIGHT:
+    text: fuel_right
+    voice: cockpit
+    filename: fuel_selector_right
+  MSG_FUEL_SELECTOR_BOTH:
+    text: fuel_both
+    voice: cockpit
+    filename: fuel_selector_both
+  MSG_FUEL_SHUTOFF:
+    text: fuel_shutoff_valve
+    voice: cockpit
+    filename: fuel_shutoff
+  MSG_FUEL_SHUTOFF_OPEN:
+    text: fuel_shutoff_open
+    voice: cockpit
+    filename: fuel_shutoff_open
+  MSG_FUEL_SHUTOFF_CLOSED:
+    text: fuel_shutoff_closed
+    voice: cockpit
+    filename: fuel_shutoff_closed
+  MSG_FUEL_PUMP:
+    text: fuel_pump
+    voice: cockpit
+    filename: fuel_pump
+  MSG_FUEL_PUMP_OFF:
+    text: fuel_pump_off
+    voice: cockpit
+    filename: fuel_pump_off
+  MSG_FUEL_PUMP_ON:
+    text: fuel_pump_on
+    voice: cockpit
+    filename: fuel_pump_on
+  MSG_PRIMER:
+    text: primer
+    voice: cockpit
+    filename: primer
+  MSG_PRIMER_PRESSED:
+    text: primer_pressed
+    voice: cockpit
+    filename: primer_pressed
+  MSG_MAGNETO:
+    text: magnetos
+    voice: cockpit
+    filename: magneto
+  MSG_MAGNETO_OFF:
+    text: magnetos_off
+    voice: cockpit
+    filename: magneto_off
+  MSG_MAGNETO_R:
+    text: magnetos_right
+    voice: cockpit
+    filename: magneto_r
+  MSG_MAGNETO_L:
+    text: magnetos_left
+    voice: cockpit
+    filename: magneto_l
+  MSG_MAGNETO_BOTH:
+    text: magnetos_both
+    voice: cockpit
+    filename: magneto_both
+  MSG_MAGNETO_START:
+    text: magnetos_start
+    voice: cockpit
+    filename: magneto_start
+  MSG_STARTER:
+    text: starter
+    voice: cockpit
+    filename: starter
+  MSG_STARTER_PRESSED:
+    text: starter_pressed
+    voice: cockpit
+    filename: starter_pressed
+  MSG_PITOT_HEAT:
+    text: pitot_heat
+    voice: cockpit
+    filename: pitot_heat
+  MSG_PITOT_HEAT_OFF:
+    text: pitot_heat_off
+    voice: cockpit
+    filename: pitot_heat_off
+  MSG_PITOT_HEAT_ON:
+    text: pitot_heat_on
+    voice: cockpit
+    filename: pitot_heat_on
+  MSG_FLAPS:
+    text: flaps
+    voice: cockpit
+    filename: flaps
+  MSG_FLAPS_UP:
+    text: flaps_up
+    voice: cockpit
+    filename: flaps_up
+  MSG_FLAPS_10:
+    text: flaps_10
+    voice: cockpit
+    filename: flaps_10
+  MSG_FLAPS_20:
+    text: flaps_20
+    voice: cockpit
+    filename: flaps_20
+  MSG_FLAPS_30:
+    text: flaps_30
+    voice: cockpit
+    filename: flaps_30
+  MSG_FLAPS_FULL:
+    text: flaps_full
+    voice: cockpit
+    filename: flaps_full
+  MSG_ELEVATOR_TRIM:
+    text: elevator_trim
+    voice: cockpit
+    filename: elevator_trim
+  MSG_PARKING_BRAKE:
+    text: parking_brake
+    voice: cockpit
+    filename: parking_brake
+  MSG_PARKING_BRAKE_SET:
+    text: parking_brake_set
+    voice: cockpit
+    filename: parking_brake_set
+  MSG_PARKING_BRAKE_RELEASED:
+    text: parking_brake_released
+    voice: cockpit
+    filename: parking_brake_released
