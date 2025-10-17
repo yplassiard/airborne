@@ -42,8 +42,80 @@ def check_ffmpeg():
         return False
 
 
+def generate_with_say_batch(items, voice_name, rate, batch_size=8):
+    """Generate speech using macOS 'say' command in batches.
+
+    Args:
+        items: List of (text, output_path) tuples
+        voice_name: macOS voice name (e.g., "Oliver", "Samantha")
+        rate: Words per minute
+        batch_size: Number of files to process simultaneously
+    """
+    import concurrent.futures
+    import tempfile
+
+    # Process in batches
+    for i in range(0, len(items), batch_size):
+        batch = items[i : i + batch_size]
+
+        # Step 1: Generate all AIFFs in parallel
+        temp_paths = []
+        with concurrent.futures.ThreadPoolExecutor(max_workers=batch_size) as executor:
+            futures = []
+            for text, output_path in batch:
+                temp_path = output_path.with_suffix(".aiff")
+                temp_paths.append((temp_path, output_path))
+                cmd = ["say", "-v", voice_name, "-r", str(rate), "-o", str(temp_path), text]
+                future = executor.submit(subprocess.run, cmd, capture_output=True, check=True)
+                futures.append(future)
+
+            # Wait for all to complete
+            for future in concurrent.futures.as_completed(futures):
+                try:
+                    future.result()
+                except Exception as e:
+                    print(f"    Error generating AIFF: {e}")
+
+        # Step 2: Convert all AIFFs to MP3 in parallel with ffmpeg
+        if check_ffmpeg():
+            with concurrent.futures.ThreadPoolExecutor(max_workers=batch_size) as executor:
+                futures = []
+                for temp_path, output_path in temp_paths:
+                    if temp_path.exists():
+                        cmd = [
+                            "ffmpeg",
+                            "-i",
+                            str(temp_path),
+                            "-af",
+                            "silenceremove=start_periods=1:start_duration=0:start_threshold=-40dB:stop_periods=-1:stop_duration=0.1:stop_threshold=-40dB,areverse,silenceremove=start_periods=1:start_duration=0:start_threshold=-40dB:stop_periods=-1:stop_duration=0.1:stop_threshold=-40dB,areverse",
+                            "-codec:a",
+                            "libmp3lame",
+                            "-q:a",
+                            "2",
+                            "-y",
+                            str(output_path),
+                        ]
+                        future = executor.submit(subprocess.run, cmd, capture_output=True, check=True)
+                        futures.append((future, temp_path))
+
+                # Wait for all conversions and cleanup
+                for future, temp_path in futures:
+                    try:
+                        future.result()
+                        if temp_path.exists():
+                            temp_path.unlink()
+                    except Exception as e:
+                        print(f"    Error converting to MP3: {e}")
+        else:
+            # No ffmpeg, just rename
+            for temp_path, output_path in temp_paths:
+                if temp_path.exists():
+                    temp_path.rename(output_path.with_suffix(".aiff"))
+            print("    Warning: ffmpeg not available, kept as AIFF")
+
+
 def generate_with_say(text, output_path, voice_name, rate):
-    """Generate speech using macOS 'say' command.
+    """Generate speech using macOS 'say' command (single file - legacy).
 
     Args:
         text: Text to speak
@@ -51,34 +123,7 @@ def generate_with_say(text, output_path, voice_name, rate):
         voice_name: macOS voice name (e.g., "Oliver", "Samantha")
         rate: Words per minute
     """
-    temp_path = output_path.with_suffix(".aiff")
-
-    # Generate AIFF with say
-    cmd = ["say", "-v", voice_name, "-r", str(rate), "-o", str(temp_path), text]
-    subprocess.run(cmd, capture_output=True, check=True)
-
-    # Convert to MP3 with ffmpeg
-    if check_ffmpeg():
-        subprocess.run(
-            [
-                "ffmpeg",
-                "-i",
-                str(temp_path),
-                "-codec:a",
-                "libmp3lame",
-                "-q:a",
-                "2",
-                "-y",
-                str(output_path),
-            ],
-            capture_output=True,
-            check=True,
-        )
-        temp_path.unlink()
-    else:
-        # Rename AIFF to MP3 (will still work with most players)
-        temp_path.rename(output_path.with_suffix(".aiff"))
-        print("    Warning: ffmpeg not available, kept as AIFF")
+    generate_with_say_batch([(text, output_path)], voice_name, rate, batch_size=1)
 
 
 def generate_with_pyttsx3(text, output_path, voice_name, rate):
@@ -353,41 +398,47 @@ def generate_voice_messages(voice_name, voice_config, messages, base_dir, force=
     )
     print(f"  Output: {output_dir}")
 
-    # Generate configured messages
+    # Collect all items to generate
+    items_to_generate = []
+
+    # Collect configured messages
     for msg_key, msg_config in messages.items():
         if msg_config.get("voice") == voice_name:
             print(f"  {msg_key}: '{msg_config['text']}'")
-            if generate_speech_file(msg_key, msg_config["text"], voice_config, output_dir, force):
-                generated += 1
-            else:
+            output_path = output_dir / f"{msg_key}.mp3"
+            if output_path.exists() and not force:
                 skipped += 1
+            else:
+                items_to_generate.append((msg_config["text"], output_path))
+                generated += 1
 
-    # Generate checklist challenges and responses (only for pilot voice)
+    # Collect checklist challenges and responses (only for pilot voice)
     if voice_name == "pilot":
         print("\n  Extracting checklist challenges and responses...")
         challenges, responses = extract_checklist_items("config/checklists")
-
         print(f"  Found {len(challenges)} challenges, {len(responses)} responses")
 
-        # Generate challenges
         for challenge in sorted(challenges):
             msg_key = "MSG_CHALLENGE_" + sanitize_filename(challenge)
             print(f"  {msg_key}: '{challenge}'")
-            if generate_speech_file(msg_key, challenge, voice_config, output_dir, force):
-                generated += 1
-            else:
+            output_path = output_dir / f"{msg_key}.mp3"
+            if output_path.exists() and not force:
                 skipped += 1
+            else:
+                items_to_generate.append((challenge, output_path))
+                generated += 1
 
-        # Generate responses
         for response in sorted(responses):
             msg_key = "MSG_RESPONSE_" + sanitize_filename(response)
             print(f"  {msg_key}: '{response}'")
-            if generate_speech_file(msg_key, response, voice_config, output_dir, force):
-                generated += 1
-            else:
+            output_path = output_dir / f"{msg_key}.mp3"
+            if output_path.exists() and not force:
                 skipped += 1
+            else:
+                items_to_generate.append((response, output_path))
+                generated += 1
 
-    # Generate panel and control names (only for cockpit voice)
+    # Collect panel and control names (only for cockpit voice)
     if voice_name == "cockpit":
         print("\n  Extracting panel and control names...")
         panel_names, control_names, control_states = extract_panel_controls("config/panels")
@@ -397,33 +448,55 @@ def generate_voice_messages(voice_name, voice_config, messages, base_dir, force=
             f"{sum(len(states) for states in control_states.values())} states"
         )
 
-        # Generate panel names
         for panel_name in sorted(panel_names):
             msg_key = "MSG_PANEL_" + sanitize_filename(panel_name)
             print(f"  {msg_key}: '{panel_name}'")
-            if generate_speech_file(msg_key, panel_name, voice_config, output_dir, force):
-                generated += 1
-            else:
+            output_path = output_dir / f"{msg_key}.mp3"
+            if output_path.exists() and not force:
                 skipped += 1
+            else:
+                items_to_generate.append((panel_name, output_path))
+                generated += 1
 
-        # Generate control names
         for control_name in sorted(control_names):
             msg_key = "MSG_CONTROL_" + sanitize_filename(control_name)
             print(f"  {msg_key}: '{control_name}'")
-            if generate_speech_file(msg_key, control_name, voice_config, output_dir, force):
-                generated += 1
-            else:
+            output_path = output_dir / f"{msg_key}.mp3"
+            if output_path.exists() and not force:
                 skipped += 1
+            else:
+                items_to_generate.append((control_name, output_path))
+                generated += 1
 
-        # Generate control states
         for control_name in sorted(control_states.keys()):
             for state in sorted(control_states[control_name]):
                 msg_key = "MSG_STATE_" + sanitize_filename(state)
                 print(f"  {msg_key}: '{state}'")
-                if generate_speech_file(msg_key, state, voice_config, output_dir, force):
-                    generated += 1
-                else:
+                output_path = output_dir / f"{msg_key}.mp3"
+                if output_path.exists() and not force:
                     skipped += 1
+                else:
+                    items_to_generate.append((state, output_path))
+                    generated += 1
+
+    # Batch generate all collected items
+    if items_to_generate:
+        platform_type = detect_platform()
+        engine = voice_config.get("engine", "say")
+        if platform_type == "macos" and engine == "say":
+            print(f"\n  Batch generating {len(items_to_generate)} files...")
+            generate_with_say_batch(
+                items_to_generate, voice_config["voice_name"], voice_config["rate"], batch_size=8
+            )
+        else:
+            # pyttsx3 doesn't benefit from batching, process normally
+            for text, output_path in items_to_generate:
+                try:
+                    generate_with_pyttsx3(
+                        text, output_path, voice_config.get("voice_name", "default"), voice_config["rate"]
+                    )
+                except Exception as e:
+                    print(f"    Error: {e}")
 
     print(f"  Generated: {generated}, Skipped: {skipped}")
     return generated

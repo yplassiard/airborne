@@ -526,7 +526,29 @@ class ControlPanelPlugin(IPlugin):
         """Announce current panel via TTS."""
         panel = self.get_current_panel()
         if panel:
-            self._speak(f"Panel: {panel.name}")
+            # Use pre-recorded panel announcement messages
+            from airborne.audio.tts.speech_messages import (
+                MSG_PANEL_ENGINE_CONTROLS,
+                MSG_PANEL_FLIGHT_CONTROLS,
+                MSG_PANEL_INSTRUMENT_PANEL,
+                MSG_PANEL_OVERHEAD_PANEL,
+                MSG_PANEL_PEDESTAL,
+            )
+
+            panel_name_to_msg = {
+                "Instrument Panel": MSG_PANEL_INSTRUMENT_PANEL,
+                "Pedestal": MSG_PANEL_PEDESTAL,
+                "Engine Controls": MSG_PANEL_ENGINE_CONTROLS,
+                "Overhead Panel": MSG_PANEL_OVERHEAD_PANEL,
+                "Flight Controls": MSG_PANEL_FLIGHT_CONTROLS,
+            }
+
+            msg_id = panel_name_to_msg.get(panel.name)
+            if msg_id:
+                self._speak(msg_id)
+            else:
+                # Fallback to dynamic speech if no pre-recorded message
+                self._speak(f"Panel: {panel.name}")
 
     def _announce_control(self) -> None:
         """Announce current control via TTS."""
@@ -605,6 +627,8 @@ class ControlPanelPlugin(IPlugin):
                 return self.navigate_to_panel(3)
             elif key == pygame.K_5:
                 return self.navigate_to_panel(4)
+            # For other Ctrl+ combinations, check if they're panel-specific
+            # If not handled below, consume them to prevent fallthrough
 
         # Get current panel to determine which control mappings to use
         panel = self.get_current_panel()
@@ -787,4 +811,71 @@ class ControlPanelPlugin(IPlugin):
                     self._on_control_state_changed(control)
                     return True
 
-        return False
+        # Allow certain keys to fall through to InputManager (flight controls, menus, etc.)
+        passthrough_keys = {
+            # Flight controls (arrow keys, home/end for throttle, etc.)
+            pygame.K_UP,
+            pygame.K_DOWN,
+            pygame.K_LEFT,
+            pygame.K_RIGHT,
+            pygame.K_HOME,
+            pygame.K_END,
+            pygame.K_PAGEUP,
+            pygame.K_PAGEDOWN,
+            pygame.K_COMMA,  # Yaw left
+            pygame.K_e,  # Yaw right (unless in Flight Controls panel)
+            # Brakes
+            pygame.K_b,  # Brakes (unless in Flight Controls or Instrument Panel)
+            # Brackets for flaps (different from panel flaps control)
+            pygame.K_LEFTBRACKET,
+            pygame.K_RIGHTBRACKET,
+            # Menu keys
+            pygame.K_F1,  # ATC menu
+            pygame.K_F2,  # Checklist menu
+            pygame.K_TAB,  # Menu toggle
+            pygame.K_RETURN,  # Menu select
+            pygame.K_ESCAPE,  # Menu back
+            # Instrument readout keys
+            pygame.K_s,  # Speed (unless in Engine Controls panel)
+            pygame.K_l,  # Altitude (unless in Instrument Panel)
+            pygame.K_h,  # Heading (unless in Overhead Panel)
+            pygame.K_w,  # Vertical speed
+            pygame.K_t,  # Attitude (unless in Instrument Panel)
+            # TTS controls
+            pygame.K_n,  # Next (unless in Instrument Panel)
+            pygame.K_r,  # Repeat (unless in Pedestal)
+            pygame.K_i,  # Interrupt
+            # View controls
+            pygame.K_v,  # View next (unless in Pedestal)
+            pygame.K_c,  # View prev (unless in Pedestal)
+            # ATC number keys
+            pygame.K_1,
+            pygame.K_2,
+            pygame.K_3,
+            pygame.K_4,
+            pygame.K_5,
+            pygame.K_6,
+            pygame.K_7,
+            pygame.K_8,
+            pygame.K_9,
+            # System
+            pygame.K_SPACE,  # Pause
+        }
+
+        # Check if this key should pass through
+        # However, if the key was explicitly handled in a panel context above, don't pass through
+        # So we only pass through keys that weren't handled by any panel
+
+        # Keys that were handled in panel-specific code would have returned True already
+        # So if we're here, the key wasn't handled by the current panel
+
+        # For panel-context-aware keys: only block if they could interfere with panel controls
+        # For now, block 'G' specifically since it conflicts with Engine Controls panel magnetos
+        if key == pygame.K_g:
+            # G is gear toggle in InputManager but magnetos in Engine Controls panel
+            # Block it to prevent accidental gear toggle when on other panels
+            return True
+
+        # Allow other keys to pass through if they're in the passthrough list
+        # Block all other keys to prevent unexpected panel interactions
+        return key not in passthrough_keys
