@@ -202,6 +202,26 @@ class SimpleElectricalSystem(IPlugin):
             )
         )
 
+        # Publish SYSTEM_STATE message for audio plugin (legacy compatibility)
+        self.context.message_queue.publish(
+            Message(
+                sender="simple_electrical_system",
+                recipients=["*"],
+                topic=MessageTopic.SYSTEM_STATE,
+                data={
+                    "system": "electrical",
+                    "battery_voltage": self.battery_voltage,
+                    "battery_soc_percent": self._get_battery_percentage(),
+                    "battery_current_amps": self.alternator_current - self.total_load
+                    if self.alternator_online
+                    else -self.total_load,
+                    "alternator_output_amps": self.alternator_current,
+                    "master_switch": self.battery_master,
+                },
+                priority=MessagePriority.NORMAL,
+            )
+        )
+
     def shutdown(self) -> None:
         """Shutdown the electrical system plugin."""
         if self.context:

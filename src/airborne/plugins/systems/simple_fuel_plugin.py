@@ -195,6 +195,26 @@ class SimpleFuelSystem(IPlugin):
             )
         )
 
+        # Publish SYSTEM_STATE message for audio plugin (legacy compatibility)
+        # Calculate time remaining
+        time_remaining_minutes = 0.0
+        if self.fuel_flow > 0:
+            time_remaining_minutes = (self._get_total_fuel() / self.fuel_flow) * 60.0
+
+        self.context.message_queue.publish(
+            Message(
+                sender="simple_fuel_system",
+                recipients=["*"],
+                topic=MessageTopic.SYSTEM_STATE,
+                data={
+                    "system": "fuel",
+                    "total_quantity_gallons": self._get_total_fuel(),
+                    "time_remaining_minutes": time_remaining_minutes,
+                },
+                priority=MessagePriority.NORMAL,
+            )
+        )
+
     def shutdown(self) -> None:
         """Shutdown the fuel system plugin."""
         if self.context:
