@@ -247,6 +247,50 @@ class SimplePistonEngine(IPlugin):
             if "fuel_available" in data:
                 self._fuel_available = bool(data["fuel_available"])
 
+        elif message.topic == "engine.magnetos":
+            # Handle magneto switch from panel control
+            # Panel sends: {"state": "BOTH", "state_index": 3}
+            # States: [OFF, R, L, BOTH, START]
+            data = message.data
+            if "state_index" in data:
+                state_index = int(data["state_index"])
+                # Map state_index to magneto positions
+                if state_index == 0:  # OFF
+                    self.magneto_left = False
+                    self.magneto_right = False
+                    self.starter_engaged = False
+                elif state_index == 1:  # R
+                    self.magneto_left = False
+                    self.magneto_right = True
+                    self.starter_engaged = False
+                elif state_index == 2:  # L
+                    self.magneto_left = True
+                    self.magneto_right = False
+                    self.starter_engaged = False
+                elif state_index == 3:  # BOTH
+                    self.magneto_left = True
+                    self.magneto_right = True
+                    self.starter_engaged = False
+                elif state_index == 4:  # START
+                    self.magneto_left = True
+                    self.magneto_right = True
+                    self.starter_engaged = True
+
+        elif message.topic == "engine.mixture":
+            # Handle mixture lever from panel control
+            # Panel sends: {"state": "RICH", "state_index": 2}
+            # States: [IDLE_CUTOFF, LEAN, RICH]
+            data = message.data
+            if "state_index" in data:
+                state_index = int(data["state_index"])
+                # Map state_index to mixture values (0.0 to 1.0)
+                if state_index == 0:  # IDLE_CUTOFF
+                    self.mixture = 0.0
+                elif state_index == 1:  # LEAN
+                    self.mixture = 0.5
+                elif state_index == 2:  # RICH
+                    self.mixture = 1.0
+
     def _update_combustion(self, dt: float) -> None:
         """Update combustion process.
 
