@@ -136,6 +136,9 @@ class SimpleFuelSystem(IPlugin):
         # Subscribe to fuel control messages
         context.message_queue.subscribe(MessageTopic.FUEL_STATE, self.handle_message)
 
+        # Publish initial state immediately after initialization
+        self._publish_state()
+
     def update(self, dt: float) -> None:
         """Update fuel system state.
 
@@ -153,6 +156,14 @@ class SimpleFuelSystem(IPlugin):
 
         # Consume fuel from selected tanks
         self._consume_fuel(dt)
+
+        # Publish state
+        self._publish_state()
+
+    def _publish_state(self) -> None:
+        """Publish current fuel state to event bus and message queue."""
+        if not self.context:
+            return
 
         # Publish state event
         self.context.event_bus.publish(

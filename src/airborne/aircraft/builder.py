@@ -103,7 +103,7 @@ class AircraftBuilder:
         for plugin_config in sorted_plugins:
             try:
                 instance_id = plugin_config["instance_id"]
-                plugin = self._load_plugin(plugin_config)
+                plugin = self._load_plugin(plugin_config, aircraft_config)
                 aircraft.add_system(instance_id, plugin)
                 logger.debug("Added system '%s' to aircraft", instance_id)
             except Exception as e:
@@ -145,7 +145,9 @@ class AircraftBuilder:
         # The plugin system should handle dependency ordering via update_priority
         return plugins_config
 
-    def _load_plugin(self, plugin_config: dict[str, Any]) -> IPlugin:
+    def _load_plugin(
+        self, plugin_config: dict[str, Any], aircraft_config: dict[str, Any]
+    ) -> IPlugin:
         """Load and initialize a plugin from configuration.
 
         Args:
@@ -153,6 +155,7 @@ class AircraftBuilder:
                 - plugin: Plugin name (e.g., "simple_piston_engine")
                 - instance_id: Unique instance identifier
                 - config: Plugin-specific configuration
+            aircraft_config: Full aircraft configuration for extracting system-specific configs
 
         Returns:
             Initialized plugin instance.
@@ -166,7 +169,7 @@ class AircraftBuilder:
             ...     "plugin": "simple_piston_engine",
             ...     "instance_id": "engine",
             ...     "config": {"max_power_hp": 180}
-            ... })
+            ... }, aircraft_config)
         """
         plugin_name = plugin_config.get("plugin")
         if not plugin_name:
@@ -179,11 +182,22 @@ class AircraftBuilder:
         # Get plugin-specific config
         plugin_specific_config = plugin_config.get("config", {})
 
-        # Create plugin context with plugin-specific config merged
+        # Check for system-specific config sections in aircraft_config
+        # For example, electrical plugin gets aircraft_config["electrical"]
+        system_config = aircraft_config.get(instance_id, {})
+
+        # Merge configs: base context < plugin-specific < system-specific
+        merged_config = {
+            **self.context.config,
+            **plugin_specific_config,
+            **system_config,
+        }
+
+        # Create plugin context with merged config
         plugin_context = PluginContext(
             event_bus=self.context.event_bus,
             message_queue=self.context.message_queue,
-            config={**self.context.config, **plugin_specific_config},
+            config=merged_config,
             plugin_registry=self.context.plugin_registry,
         )
 

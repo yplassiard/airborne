@@ -139,6 +139,9 @@ class SimpleElectricalSystem(IPlugin):
         # Subscribe to electrical control messages
         context.message_queue.subscribe(MessageTopic.ELECTRICAL_STATE, self.handle_message)
 
+        # Publish initial state immediately after initialization
+        self._publish_state()
+
     def update(self, dt: float) -> None:
         """Update electrical system state.
 
@@ -159,6 +162,14 @@ class SimpleElectricalSystem(IPlugin):
 
         # Update battery charging/discharging
         self._update_battery(dt)
+
+        # Publish state
+        self._publish_state()
+
+    def _publish_state(self) -> None:
+        """Publish current electrical state to event bus and message queue."""
+        if not self.context:
+            return
 
         # Publish state event
         self.context.event_bus.publish(
