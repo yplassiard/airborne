@@ -472,8 +472,14 @@ class ControlPanelPlugin(IPlugin):
         if not self.context:
             return
 
-        # Announce button press
-        self._speak(f"{control.name}, pressed")
+        # Announce button press using MSG_* format
+        # Build message keys like MSG_PRIMER_PUMP, MSG_PRIMER_PUMP_PRESSED
+        control_key_base = control.id.upper().replace("_SWITCH", "").replace("_LEVER", "")
+        control_key_base = control_key_base.replace("_BUTTON", "").replace("_VALVE", "")
+        control_msg_key = f"MSG_{control_key_base}"
+        control_state_msg_key = f"{control_msg_key}_PRESSED"
+
+        self._speak_sequence([control_msg_key, control_state_msg_key])
 
         # Send button press message
         if control.target_plugin and control.message_topic:
@@ -603,6 +609,17 @@ class ControlPanelPlugin(IPlugin):
         if not self.context:
             return
 
+        # Interrupt any ongoing cockpit speech before speaking
+        self.context.message_queue.publish(
+            Message(
+                sender="control_panel_plugin",
+                recipients=["tts_provider"],
+                topic=MessageTopic.TTS_INTERRUPT,
+                data={},
+                priority=MessagePriority.HIGH,
+            )
+        )
+
         # Publish TTS message
         self.context.message_queue.publish(
             Message(
@@ -622,6 +639,17 @@ class ControlPanelPlugin(IPlugin):
         """
         if not self.context:
             return
+
+        # Interrupt any ongoing cockpit speech before speaking
+        self.context.message_queue.publish(
+            Message(
+                sender="control_panel_plugin",
+                recipients=["tts_provider"],
+                topic=MessageTopic.TTS_INTERRUPT,
+                data={},
+                priority=MessagePriority.HIGH,
+            )
+        )
 
         # Send the list of message keys to the TTS provider
         # The audio provider's speak() method handles lists of keys

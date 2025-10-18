@@ -546,6 +546,20 @@ class AudioPlugin(IPlugin):
             logger.warning("No TTS provider available for input action feedback")
             return
 
+        # Interrupt any ongoing cockpit speech before speaking instrument readouts
+        if self.context:
+            from airborne.core.messaging import MessagePriority
+
+            self.context.message_queue.publish(
+                Message(
+                    sender="audio_plugin",
+                    recipients=["tts_provider"],
+                    topic=MessageTopic.TTS_INTERRUPT,
+                    data={},
+                    priority=MessagePriority.HIGH,
+                )
+            )
+
         message: str | None = None
 
         # Handle instrument readouts

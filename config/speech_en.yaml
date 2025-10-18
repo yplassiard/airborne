@@ -314,6 +314,8 @@ messages:
   # Pedestal - Primer Pump
   MSG_PRIMER: "primer"
   MSG_PRIMER_PRESSED: "primer_pressed"
+  MSG_PRIMER_PUMP: "primer"
+  MSG_PRIMER_PUMP_PRESSED: "primer_pressed"
 
   # Engine Controls - Magnetos
   MSG_MAGNETOS: "magnetos"
@@ -345,6 +347,9 @@ messages:
   MSG_TRIM_NOSE_DOWN: "trim_nose_down"
   MSG_TRIM_NEUTRAL: "trim_neutral"
   MSG_TRIM_NOSE_UP: "trim_nose_up"
+  MSG_ELEVATOR_TRIM_NOSE_DOWN: "trim_nose_down"
+  MSG_ELEVATOR_TRIM_NEUTRAL: "trim_neutral"
+  MSG_ELEVATOR_TRIM_NOSE_UP: "trim_nose_up"
 
   # Flight Controls - Parking Brake
   MSG_PARKING_BRAKE: "parking_brake"
