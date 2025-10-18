@@ -232,18 +232,16 @@ class AudioPlugin(IPlugin):
                 self.sound_manager.set_engine_pitch_range(pitch_idle, pitch_full)
                 logger.info(f"Engine pitch range configured: {pitch_idle} to {pitch_full}")
 
-                # Use custom engine sound file if specified
-                engine_sound_path = engine_sounds.get("running")
-                if engine_sound_path:
-                    self.sound_manager.start_engine_sound(engine_sound_path)
-                    logger.info(f"Using custom engine sound: {engine_sound_path}")
-                else:
-                    self.sound_manager.start_engine_sound()
+                # Store custom engine sound file path for later use
+                self._engine_sound_path = engine_sounds.get(
+                    "running", "assets/sounds/aircraft/engine.wav"
+                )
+                logger.info(f"Engine sound configured: {self._engine_sound_path}")
             else:
-                self.sound_manager.start_engine_sound()
+                self._engine_sound_path = "assets/sounds/aircraft/engine.wav"
 
             self.sound_manager.start_wind_sound()
-            self._engine_started = True
+            self._engine_started = False  # Engine starts off
 
         logger.info("Audio plugin initialized")
 
@@ -461,7 +459,30 @@ class AudioPlugin(IPlugin):
         elif message.topic == MessageTopic.ENGINE_STATE:
             # Update engine state for instrument readouts
             data = message.data
-            self._engine_running = data.get("running", False)
+            engine_running = data.get("running", False)
+
+            # Start/stop engine sound based on engine state
+            if self.sound_manager and hasattr(self, "_engine_started"):
+                if engine_running and not self._engine_started:
+                    # Engine just started - start engine sound
+                    engine_sound_path = getattr(
+                        self, "_engine_sound_path", "assets/sounds/aircraft/engine.wav"
+                    )
+                    self.sound_manager.start_engine_sound(engine_sound_path)
+                    self._engine_started = True
+                    logger.info("Engine sound started")
+                elif not engine_running and self._engine_started:
+                    # Engine just stopped - stop engine sound
+                    if (
+                        hasattr(self.sound_manager, "_engine_source_id")
+                        and self.sound_manager._engine_source_id is not None
+                    ):
+                        self.sound_manager.stop_sound(self.sound_manager._engine_source_id)
+                        self.sound_manager._engine_source_id = None
+                        self._engine_started = False
+                        logger.info("Engine sound stopped")
+
+            self._engine_running = engine_running
             self._engine_rpm = data.get("rpm", 0.0)
             self._manifold_pressure = data.get("manifold_pressure", 0.0)
             self._oil_pressure = data.get("oil_pressure", 0.0)
