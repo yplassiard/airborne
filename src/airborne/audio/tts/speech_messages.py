@@ -96,6 +96,30 @@ class SpeechMessages:
     MSG_WORD_FLIGHT_LEVEL = "MSG_WORD_FLIGHT_LEVEL"
     MSG_WORD_FEET = "MSG_WORD_FEET"
     MSG_WORD_KNOTS = "MSG_WORD_KNOTS"
+    MSG_WORD_AIRSPEED = "MSG_WORD_AIRSPEED"
+    MSG_WORD_ALTITUDE = "MSG_WORD_ALTITUDE"
+    MSG_WORD_VERTICAL_SPEED = "MSG_WORD_VERTICAL_SPEED"
+    MSG_WORD_CLIMBING = "MSG_WORD_CLIMBING"
+    MSG_WORD_DESCENDING = "MSG_WORD_DESCENDING"
+    MSG_WORD_FEET_PER_MINUTE = "MSG_WORD_FEET_PER_MINUTE"
+    MSG_WORD_PITCH = "MSG_WORD_PITCH"
+    MSG_WORD_BANK = "MSG_WORD_BANK"
+    MSG_WORD_ENGINE = "MSG_WORD_ENGINE"
+    MSG_WORD_RPM = "MSG_WORD_RPM"
+    MSG_WORD_ENGINE_STOPPED = "MSG_WORD_ENGINE_STOPPED"
+    MSG_WORD_ELECTRICAL = "MSG_WORD_ELECTRICAL"
+    MSG_WORD_BATTERY = "MSG_WORD_BATTERY"
+    MSG_WORD_VOLTS = "MSG_WORD_VOLTS"
+    MSG_WORD_PERCENT = "MSG_WORD_PERCENT"
+    MSG_WORD_CHARGING = "MSG_WORD_CHARGING"
+    MSG_WORD_DISCHARGING = "MSG_WORD_DISCHARGING"
+    MSG_WORD_AMPS = "MSG_WORD_AMPS"
+    MSG_WORD_FUEL = "MSG_WORD_FUEL"
+    MSG_WORD_GALLONS = "MSG_WORD_GALLONS"
+    MSG_WORD_REMAINING = "MSG_WORD_REMAINING"
+    MSG_WORD_HOURS = "MSG_WORD_HOURS"
+    MSG_WORD_MINUTES = "MSG_WORD_MINUTES"
+    MSG_WORD_POINT = "MSG_WORD_POINT"
 
     @staticmethod
     def _digits_to_keys(number: int, num_digits: int = 0) -> list[str]:
@@ -115,71 +139,50 @@ class SpeechMessages:
         return [f"MSG_DIGIT_{d}" for d in num_str]
 
     @staticmethod
-    def airspeed(knots: int) -> str | list[str]:
+    def airspeed(knots: int) -> list[str]:
         """Get message key(s) for airspeed readout.
 
         Args:
             knots: Airspeed in knots (0-300).
 
         Returns:
-            Message key or list of keys to assemble the message.
+            List of keys to assemble the message.
         """
         # Round to nearest 5 knots
         rounded = round(knots / 5) * 5
         rounded = max(0, min(300, rounded))
 
-        # Use pre-recorded for common speeds
-        if rounded in [0, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150, 160, 170, 180]:
-            return f"MSG_AIRSPEED_{rounded}"
-
-        # Assemble from digits + "knots"
-        return SpeechMessages._digits_to_keys(rounded) + [SpeechMessages.MSG_WORD_KNOTS]
+        # Always use composable parts: "airspeed" + digits + "knots"
+        return (
+            [SpeechMessages.MSG_WORD_AIRSPEED]
+            + SpeechMessages._digits_to_keys(rounded)
+            + [SpeechMessages.MSG_WORD_KNOTS]
+        )
 
     @staticmethod
-    def altitude(feet: int) -> str:
+    def altitude(feet: int) -> list[str]:
         """Get message key for altitude readout.
 
         Args:
             feet: Altitude in feet.
 
         Returns:
-            Message key (e.g., "MSG_ALTITUDE_5000" or "MSG_FL_180").
+            List of keys to assemble the message.
         """
         # Use flight levels for altitudes above 18,000 feet
         if feet >= 18000:
             # Convert to flight level (round to nearest 1000 feet, then divide by 100)
             fl = round(feet / 1000) * 10
             fl = max(10, min(600, fl))  # Clamp to FL010-FL600
-            return f"MSG_FL_{fl}"
+            # Always use composable parts: "flight level" + digits
+            return [SpeechMessages.MSG_WORD_FLIGHT_LEVEL] + SpeechMessages._digits_to_keys(fl, 3)
 
-        # Define available altitude levels for lower altitudes
-        levels = [
-            0,
-            100,
-            200,
-            300,
-            400,
-            500,
-            1000,
-            1500,
-            2000,
-            2500,
-            3000,
-            4000,
-            5000,
-            6000,
-            7000,
-            8000,
-            9000,
-            10000,
-            12000,
-            15000,
-            20000,
-        ]
-
-        # Find closest level
-        closest = min(levels, key=lambda x: abs(x - feet))
-        return f"MSG_ALTITUDE_{closest}"
+        # Always use composable parts: "altitude" + digits + "feet"
+        return (
+            [SpeechMessages.MSG_WORD_ALTITUDE]
+            + SpeechMessages._digits_to_keys(feet)
+            + [SpeechMessages.MSG_WORD_FEET]
+        )
 
     @staticmethod
     def heading(degrees: int) -> list[str]:
@@ -198,27 +201,30 @@ class SpeechMessages:
         return [SpeechMessages.MSG_WORD_HEADING] + SpeechMessages._digits_to_keys(degrees, 3)
 
     @staticmethod
-    def vertical_speed(fpm: int) -> str:
+    def vertical_speed(fpm: int) -> list[str]:
         """Get message key for vertical speed readout.
 
         Args:
             fpm: Vertical speed in feet per minute.
 
         Returns:
-            Message key (e.g., "MSG_CLIMBING_500").
+            List of keys to assemble the message.
         """
+        # Always start with "vertical speed"
         if abs(fpm) < 50:
-            return "MSG_LEVEL_FLIGHT"
+            return [SpeechMessages.MSG_WORD_VERTICAL_SPEED, SpeechMessages.MSG_LEVEL_FLIGHT]
 
-        # Define available VS levels
-        levels = [100, 200, 300, 500, 1000, 1500, 2000]
+        # Always use composable parts: "vertical speed" + "climbing/descending" + digits + "feet per minute"
+        direction_word = (
+            SpeechMessages.MSG_WORD_CLIMBING if fpm > 0 else SpeechMessages.MSG_WORD_DESCENDING
+        )
 
-        # Find closest level
         abs_fpm = abs(fpm)
-        closest = min(levels, key=lambda x: abs(x - abs_fpm))
-
-        direction = "CLIMBING" if fpm > 0 else "DESCENDING"
-        return f"MSG_{direction}_{closest}"
+        return (
+            [SpeechMessages.MSG_WORD_VERTICAL_SPEED, direction_word]
+            + SpeechMessages._digits_to_keys(abs_fpm)
+            + [SpeechMessages.MSG_WORD_FEET_PER_MINUTE]
+        )
 
     @staticmethod
     def pitch(degrees: int) -> str:
@@ -590,6 +596,120 @@ class SpeechMessages:
                 f"MSG_NUMBER_{mins}",
                 SpeechMessages.MSG_WORD_MINUTES,
             ]
+
+    @staticmethod
+    def _decimal_to_keys(value: float, decimal_places: int = 1) -> list[str]:
+        """Convert a decimal number to message keys.
+
+        Args:
+            value: The decimal value to convert.
+            decimal_places: Number of decimal places to read.
+
+        Returns:
+            List of message keys for the decimal number.
+        """
+        # Split into integer and decimal parts
+        int_part = int(value)
+        decimal_part = int(round((value - int_part) * (10**decimal_places)))
+
+        result = SpeechMessages._digits_to_keys(int_part)
+        if decimal_part > 0:
+            result.append(SpeechMessages.MSG_WORD_POINT)
+            result.extend(SpeechMessages._digits_to_keys(decimal_part))
+
+        return result
+
+    @staticmethod
+    def engine_status(rpm: int, running: bool) -> list[str]:
+        """Get comprehensive engine status readout.
+
+        Args:
+            rpm: Engine RPM.
+            running: Whether engine is running.
+
+        Returns:
+            List of message keys for engine status.
+        """
+        if not running:
+            return [SpeechMessages.MSG_WORD_ENGINE, SpeechMessages.MSG_WORD_ENGINE_STOPPED]
+
+        # Round RPM to nearest 100
+        rpm_rounded = round(rpm / 100) * 100
+
+        return (
+            [SpeechMessages.MSG_WORD_ENGINE]
+            + SpeechMessages._digits_to_keys(rpm_rounded)
+            + [SpeechMessages.MSG_WORD_RPM]
+        )
+
+    @staticmethod
+    def electrical_status(voltage: float, percent: int, current: float) -> list[str]:
+        """Get comprehensive electrical status readout.
+
+        Args:
+            voltage: Battery voltage in volts.
+            percent: Battery state of charge percentage (0-100).
+            current: Battery current in amps (positive=charging, negative=discharging).
+
+        Returns:
+            List of message keys for electrical status.
+        """
+        result = [SpeechMessages.MSG_WORD_ELECTRICAL, SpeechMessages.MSG_WORD_BATTERY]
+
+        # Voltage (e.g., "12.6 volts")
+        result.extend(SpeechMessages._decimal_to_keys(voltage, 1))
+        result.append(SpeechMessages.MSG_WORD_VOLTS)
+
+        # State of charge (e.g., "85 percent")
+        result.extend(SpeechMessages._digits_to_keys(percent))
+        result.append(SpeechMessages.MSG_WORD_PERCENT)
+
+        # Charging/discharging status
+        if current > 1.0:
+            result.append(SpeechMessages.MSG_WORD_CHARGING)
+            result.extend(SpeechMessages._decimal_to_keys(current, 1))
+            result.append(SpeechMessages.MSG_WORD_AMPS)
+        elif current < -1.0:
+            result.append(SpeechMessages.MSG_WORD_DISCHARGING)
+            result.extend(SpeechMessages._decimal_to_keys(abs(current), 1))
+            result.append(SpeechMessages.MSG_WORD_AMPS)
+
+        return result
+
+    @staticmethod
+    def fuel_status(quantity: float, remaining_minutes: float) -> list[str]:
+        """Get comprehensive fuel status readout.
+
+        Args:
+            quantity: Total fuel quantity in gallons.
+            remaining_minutes: Estimated time remaining in minutes.
+
+        Returns:
+            List of message keys for fuel status.
+        """
+        result = [SpeechMessages.MSG_WORD_FUEL]
+
+        # Quantity (e.g., "24.5 gallons")
+        result.extend(SpeechMessages._decimal_to_keys(quantity, 1))
+        result.append(SpeechMessages.MSG_WORD_GALLONS)
+
+        # Time remaining (e.g., "2 hours 30 minutes")
+        hours = int(remaining_minutes / 60)
+        mins = int(remaining_minutes % 60)
+
+        result.append(SpeechMessages.MSG_WORD_REMAINING)
+
+        if hours > 0:
+            result.extend(SpeechMessages._digits_to_keys(hours))
+            result.append(SpeechMessages.MSG_WORD_HOURS)
+            if mins > 0:
+                result.extend(SpeechMessages._digits_to_keys(mins))
+                result.append(SpeechMessages.MSG_WORD_MINUTES)
+        else:
+            result.extend(SpeechMessages._digits_to_keys(mins))
+            result.append(SpeechMessages.MSG_WORD_MINUTES)
+
+        return result
 
 
 # Export commonly used constants at module level for convenience

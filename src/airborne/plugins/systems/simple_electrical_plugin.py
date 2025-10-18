@@ -117,6 +117,22 @@ class SimpleElectricalSystem(IPlugin):
         """
         self.context = context
 
+        # Read configuration from aircraft config if available
+        if hasattr(context, "config") and context.config:
+            cfg = context.config
+            if "battery_voltage" in cfg:
+                self.battery_voltage = float(cfg["battery_voltage"])
+            if "battery_capacity_ah" in cfg:
+                self.battery_capacity_ah = float(cfg["battery_capacity_ah"])
+                # Initialize charge to full capacity
+                self.battery_charge_ah = self.battery_capacity_ah
+            if "alternator_voltage" in cfg:
+                pass  # Already hardcoded at 14V in _update_bus_voltage
+            if "alternator_amps" in cfg:
+                pass  # Max amps already hardcoded at 60A in _update_alternator
+            if "base_load_amps" in cfg:
+                self.base_load = float(cfg["base_load_amps"])
+
         # Subscribe to engine state for alternator RPM
         context.message_queue.subscribe(MessageTopic.ENGINE_STATE, self.handle_message)
 

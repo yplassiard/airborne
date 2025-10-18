@@ -114,6 +114,22 @@ class SimpleFuelSystem(IPlugin):
         """
         self.context = context
 
+        # Read configuration from aircraft config if available
+        if hasattr(context, "config") and context.config:
+            cfg = context.config
+            if "left_tank_capacity" in cfg:
+                self.left_tank_capacity = float(cfg["left_tank_capacity"])
+                # Initialize quantity to full capacity
+                self.left_tank_quantity = self.left_tank_capacity
+            if "right_tank_capacity" in cfg:
+                self.right_tank_capacity = float(cfg["right_tank_capacity"])
+                # Initialize quantity to full capacity
+                self.right_tank_quantity = self.right_tank_capacity
+            if "unusable_fuel" in cfg:
+                self.unusable_fuel = float(cfg["unusable_fuel"])
+            if "fuel_selector" in cfg:
+                self.fuel_selector = str(cfg["fuel_selector"])
+
         # Subscribe to engine state for fuel consumption
         context.message_queue.subscribe(MessageTopic.ENGINE_STATE, self.handle_message)
 

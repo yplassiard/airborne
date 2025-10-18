@@ -142,61 +142,64 @@ class Simple12VElectricalSystem(IElectricalSystem):
             dt: Delta time in seconds
             engine_rpm: Engine RPM (drives alternator, 0 if engine off)
         """
-        # Only operate if master switch is on
+        # Handle battery self-discharge when master switch is off
         if not self.master_switch_on:
             # Battery self-discharge even when off
             self_discharge_ah = (self.battery_self_discharge_rate / 3600.0) * dt
             self.battery_current_ah = max(0.0, self.battery_current_ah - self_discharge_ah)
             self._update_battery_voltage()
             self.main_bus.voltage_current = 0.0
-            return
-
-        # Calculate total load
-        total_load_amps = sum(
-            load.current_draw_amps for load in self.loads.values() if load.enabled
-        )
-
-        # Add master relay load
-        if "master_relay" in self.loads and self.master_switch_on:
-            total_load_amps += self.loads["master_relay"].current_draw_amps
-
-        # Alternator output
-        alternator_output = 0.0
-        if not self.alternator_failed and engine_rpm >= self.alternator_rpm_threshold:
-            # Alternator can supply up to max amps at regulated voltage
-            # Supply what's needed, up to maximum capacity
-            alternator_output = min(self.alternator_max_amps, total_load_amps + 20.0)
-
-        # Net battery current (positive = charging, negative = discharging)
-        net_current = alternator_output - total_load_amps
-
-        # Update battery state of charge
-        ah_change = (net_current / 3600.0) * dt  # Convert amps to amp-hours
-        self.battery_current_ah += ah_change
-
-        # Battery capacity limits (can't charge beyond capacity or discharge below 0)
-        self.battery_current_ah = max(0.0, min(self.battery_capacity_ah, self.battery_current_ah))
-
-        # Update battery voltage based on state of charge
-        self._update_battery_voltage()
-
-        # Calculate bus voltage
-        if alternator_output > 0:
-            # Alternator feeding bus (regulated voltage)
-            self.main_bus.voltage_current = self.alternator_voltage_regulated
-            self.main_bus.power_sources = [PowerSource.BATTERY, PowerSource.ALTERNATOR]
+            # Don't return - continue to allow state publishing
         else:
-            # Battery feeding bus (voltage drop due to load and internal resistance)
-            voltage_drop = total_load_amps * self.battery_internal_resistance
-            self.main_bus.voltage_current = max(0.0, self.battery_voltage - voltage_drop)
-            self.main_bus.power_sources = [PowerSource.BATTERY]
+            # Master switch is ON - calculate loads and alternator
+            # Calculate total load
+            total_load_amps = sum(
+                load.current_draw_amps for load in self.loads.values() if load.enabled
+            )
 
-        # Disable loads if voltage too low (brownout)
-        if self.main_bus.voltage_current < 10.0:
-            # Heavy loads fail first
-            for load in self.loads.values():
-                if load.current_draw_amps > 5.0 and not load.essential:
-                    load.enabled = False
+            # Add master relay load
+            if "master_relay" in self.loads and self.master_switch_on:
+                total_load_amps += self.loads["master_relay"].current_draw_amps
+
+            # Alternator output
+            alternator_output = 0.0
+            if not self.alternator_failed and engine_rpm >= self.alternator_rpm_threshold:
+                # Alternator can supply up to max amps at regulated voltage
+                # Supply what's needed, up to maximum capacity
+                alternator_output = min(self.alternator_max_amps, total_load_amps + 20.0)
+
+            # Net battery current (positive = charging, negative = discharging)
+            net_current = alternator_output - total_load_amps
+
+            # Update battery state of charge
+            ah_change = (net_current / 3600.0) * dt  # Convert amps to amp-hours
+            self.battery_current_ah += ah_change
+
+            # Battery capacity limits (can't charge beyond capacity or discharge below 0)
+            self.battery_current_ah = max(
+                0.0, min(self.battery_capacity_ah, self.battery_current_ah)
+            )
+
+            # Update battery voltage based on state of charge
+            self._update_battery_voltage()
+
+            # Calculate bus voltage
+            if alternator_output > 0:
+                # Alternator feeding bus (regulated voltage)
+                self.main_bus.voltage_current = self.alternator_voltage_regulated
+                self.main_bus.power_sources = [PowerSource.BATTERY, PowerSource.ALTERNATOR]
+            else:
+                # Battery feeding bus (voltage drop due to load and internal resistance)
+                voltage_drop = total_load_amps * self.battery_internal_resistance
+                self.main_bus.voltage_current = max(0.0, self.battery_voltage - voltage_drop)
+                self.main_bus.power_sources = [PowerSource.BATTERY]
+
+            # Disable loads if voltage too low (brownout)
+            if self.main_bus.voltage_current < 10.0:
+                # Heavy loads fail first
+                for load in self.loads.values():
+                    if load.current_draw_amps > 5.0 and not load.essential:
+                        load.enabled = False
 
     def get_state(self) -> ElectricalState:
         """Get current electrical system state.

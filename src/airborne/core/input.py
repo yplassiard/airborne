@@ -120,6 +120,9 @@ class InputAction(Enum):
     READ_HEADING = "read_heading"
     READ_VSPEED = "read_vspeed"
     READ_ATTITUDE = "read_attitude"  # Bank and pitch angles
+    READ_ENGINE = "read_engine"  # Engine status (RPM, manifold pressure, etc.)
+    READ_ELECTRICAL = "read_electrical"  # Electrical status (battery, alternator)
+    READ_FUEL = "read_fuel"  # Fuel status (quantity, consumption, remaining time)
 
     # ATC/Radio controls
     ATC_MENU = "atc_menu"  # F1 - Open/close ATC menu
@@ -400,6 +403,24 @@ class InputManager:  # pylint: disable=too-many-instance-attributes
             if mods & pygame.KMOD_CTRL:
                 if not is_repeat:
                     self._handle_action_pressed(InputAction.QUIT)
+                return
+
+        # Special handling for Alt+number keys for instrument readouts
+        mods = pygame.key.get_mods()
+        if mods & (pygame.KMOD_ALT | pygame.KMOD_LALT | pygame.KMOD_RALT):
+            alt_number_actions = {
+                pygame.K_1: InputAction.READ_AIRSPEED,  # Alt+1: Airspeed
+                pygame.K_2: InputAction.READ_ALTITUDE,  # Alt+2: Altitude
+                pygame.K_3: InputAction.READ_HEADING,  # Alt+3: Heading
+                pygame.K_4: InputAction.READ_VSPEED,  # Alt+4: Vertical speed
+                pygame.K_5: InputAction.READ_ENGINE,  # Alt+5: Engine status
+                pygame.K_6: InputAction.READ_ELECTRICAL,  # Alt+6: Electrical status
+                pygame.K_7: InputAction.READ_FUEL,  # Alt+7: Fuel status
+                pygame.K_8: InputAction.READ_ATTITUDE,  # Alt+8: Attitude (bank/pitch)
+            }
+            if key in alt_number_actions:
+                if not is_repeat:
+                    self._handle_action_pressed(alt_number_actions[key])
                 return
 
         # Special handling for Control key alone to stop TTS

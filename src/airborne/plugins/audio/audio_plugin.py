@@ -622,6 +622,24 @@ class AudioPlugin(IPlugin):
             else:
                 message = f"Fuel remaining {minutes} minutes"
 
+        # Comprehensive status readouts (Alt+5, Alt+6, Alt+7)
+        elif event.action == "read_engine":
+            if self._engine_running:
+                message = f"Engine {int(self._engine_rpm)} RPM"
+            else:
+                message = "Engine stopped"
+        elif event.action == "read_electrical":
+            message = (
+                f"Battery {self._battery_voltage:.1f} volts {int(self._battery_percent)} percent"
+            )
+        elif event.action == "read_fuel":
+            hours = int(self._fuel_remaining_minutes / 60)
+            minutes = int(self._fuel_remaining_minutes % 60)
+            if hours > 0:
+                message = f"Fuel {self._fuel_quantity:.1f} gallons remaining {hours} hours {minutes} minutes"
+            else:
+                message = f"Fuel {self._fuel_quantity:.1f} gallons remaining {minutes} minutes"
+
         else:
             # Map actions to TTS announcements
             action_messages = {
@@ -650,13 +668,13 @@ class AudioPlugin(IPlugin):
 
         # Handle both str and list[str] cases
         if isinstance(message_key, list):
-            # If it's a list, join with spaces or use the first one
-            text_to_speak = " ".join(message_key) if message_key else message
+            # Log the list of keys for debugging
+            logger.info(f"Speaking: {' '.join(message_key)} ({message})")
+            # Pass the list directly to TTS provider for composable playback
+            self.tts_provider.speak(message_key, priority=TTSPriority.NORMAL)
         else:
-            text_to_speak = message_key
-
-        logger.info(f"Speaking: {text_to_speak} ({message})")
-        self.tts_provider.speak(text_to_speak, priority=TTSPriority.NORMAL)
+            logger.info(f"Speaking: {message_key} ({message})")
+            self.tts_provider.speak(message_key, priority=TTSPriority.NORMAL)
 
     def _get_message_key(self, message: str, action: str) -> str | list[str]:
         """Convert human-readable message to message key.
@@ -680,19 +698,24 @@ class AudioPlugin(IPlugin):
         elif action == "read_vspeed":
             return SpeechMessages.vertical_speed(int(self._vspeed))
         elif action == "read_attitude":
-            # For attitude, we need bank/pitch combination
+            # For attitude, we read pitch first, then bank
+            # Always include instrument names
             bank_int = int(self._bank)
             pitch_int = int(self._pitch)
-            if abs(bank_int) < 3 and abs(pitch_int) < 3:
-                return SpeechMessages.MSG_LEVEL_ATTITUDE
-            elif abs(bank_int) < 3:
-                return SpeechMessages.pitch(pitch_int)
-            elif abs(pitch_int) < 3:
-                return SpeechMessages.bank(bank_int)
+
+            result = [SpeechMessages.MSG_WORD_PITCH]
+            if abs(pitch_int) < 3:
+                result.append(SpeechMessages.MSG_LEVEL_ATTITUDE)
             else:
-                # For combined attitude, use bank message for now
-                # TODO: Support combined attitude messages
-                return SpeechMessages.bank(bank_int)
+                result.append(SpeechMessages.pitch(pitch_int))
+
+            result.append(SpeechMessages.MSG_WORD_BANK)
+            if abs(bank_int) < 3:
+                result.append(SpeechMessages.MSG_LEVEL_ATTITUDE)
+            else:
+                result.append(SpeechMessages.bank(bank_int))
+
+            return result
 
         # Engine instrument readouts
         elif action == "read_rpm":
@@ -723,6 +746,21 @@ class AudioPlugin(IPlugin):
             return SpeechMessages.fuel_quantity(self._fuel_quantity)
         elif action == "read_fuel_remaining":
             return SpeechMessages.fuel_remaining(self._fuel_remaining_minutes)
+
+        # Comprehensive status readouts - return first message, queue rest
+        elif action == "read_engine":
+            # Comprehensive engine status (RPM)
+            return SpeechMessages.engine_status(int(self._engine_rpm), self._engine_running)
+
+        elif action == "read_electrical":
+            # Comprehensive electrical status (voltage, percent, charging/discharging)
+            return SpeechMessages.electrical_status(
+                self._battery_voltage, int(self._battery_percent), self._battery_current
+            )
+
+        elif action == "read_fuel":
+            # Comprehensive fuel status (quantity, remaining time)
+            return SpeechMessages.fuel_status(self._fuel_quantity, self._fuel_remaining_minutes)
 
         # Map action messages to constants
         action_to_key = {

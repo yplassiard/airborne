@@ -641,3 +641,167 @@ messages:
     text: start
     voice: cockpit
     filename: start
+
+  # Individual digits (for composable number readouts)
+  MSG_DIGIT_0:
+    text: zero
+    voice: cockpit
+    filename: number_0
+  MSG_DIGIT_1:
+    text: one
+    voice: cockpit
+    filename: number_1
+  MSG_DIGIT_2:
+    text: two
+    voice: cockpit
+    filename: number_2
+  MSG_DIGIT_3:
+    text: three
+    voice: cockpit
+    filename: number_3
+  MSG_DIGIT_4:
+    text: four
+    voice: cockpit
+    filename: number_4
+  MSG_DIGIT_5:
+    text: five
+    voice: cockpit
+    filename: number_5
+  MSG_DIGIT_6:
+    text: six
+    voice: cockpit
+    filename: number_6
+  MSG_DIGIT_7:
+    text: seven
+    voice: cockpit
+    filename: number_7
+  MSG_DIGIT_8:
+    text: eight
+    voice: cockpit
+    filename: number_8
+  MSG_DIGIT_9:
+    text: niner
+    voice: cockpit
+    filename: number_9
+
+  # Flight instrument words (for composable readouts)
+  MSG_WORD_AIRSPEED:
+    text: airspeed
+    voice: cockpit
+    filename: airspeed
+  MSG_WORD_ALTITUDE:
+    text: altitude
+    voice: cockpit
+    filename: altitude
+  MSG_WORD_HEADING:
+    text: heading
+    voice: cockpit
+    filename: heading
+  MSG_WORD_VERTICAL_SPEED:
+    text: vertical speed
+    voice: cockpit
+    filename: vertical_speed
+  MSG_WORD_CLIMBING:
+    text: climbing
+    voice: cockpit
+    filename: climbing
+  MSG_WORD_DESCENDING:
+    text: descending
+    voice: cockpit
+    filename: descending
+  MSG_WORD_FLIGHT_LEVEL:
+    text: flight level
+    voice: cockpit
+    filename: flight_level
+  MSG_WORD_KNOTS:
+    text: knots
+    voice: cockpit
+    filename: knots
+  MSG_WORD_FEET:
+    text: feet
+    voice: cockpit
+    filename: feet
+  MSG_WORD_FEET_PER_MINUTE:
+    text: feet per minute
+    voice: cockpit
+    filename: feet_per_minute
+  MSG_LEVEL_FLIGHT:
+    text: level flight
+    voice: cockpit
+    filename: level_flight
+  MSG_LEVEL_ATTITUDE:
+    text: level
+    voice: cockpit
+    filename: level
+  MSG_WORD_ENGINE:
+    text: engine
+    voice: cockpit
+    filename: engine
+  MSG_WORD_RPM:
+    text: R P M
+    voice: cockpit
+    filename: rpm
+  MSG_WORD_ENGINE_STOPPED:
+    text: stopped
+    voice: cockpit
+    filename: engine_stopped
+  MSG_WORD_ELECTRICAL:
+    text: electrical
+    voice: cockpit
+    filename: electrical
+  MSG_WORD_BATTERY:
+    text: battery
+    voice: cockpit
+    filename: battery
+  MSG_WORD_VOLTS:
+    text: volts
+    voice: cockpit
+    filename: volts
+  MSG_WORD_PERCENT:
+    text: percent
+    voice: cockpit
+    filename: percent
+  MSG_WORD_CHARGING:
+    text: charging
+    voice: cockpit
+    filename: charging
+  MSG_WORD_DISCHARGING:
+    text: discharging
+    voice: cockpit
+    filename: discharging
+  MSG_WORD_AMPS:
+    text: amps
+    voice: cockpit
+    filename: amps
+  MSG_WORD_FUEL:
+    text: fuel
+    voice: cockpit
+    filename: fuel
+  MSG_WORD_GALLONS:
+    text: gallons
+    voice: cockpit
+    filename: gallons
+  MSG_WORD_REMAINING:
+    text: remaining
+    voice: cockpit
+    filename: remaining
+  MSG_WORD_HOURS:
+    text: hours
+    voice: cockpit
+    filename: hours
+  MSG_WORD_MINUTES:
+    text: minutes
+    voice: cockpit
+    filename: minutes
+  MSG_WORD_POINT:
+    text: point
+    voice: cockpit
+    filename: point
+  MSG_WORD_PITCH:
+    text: pitch
+    voice: cockpit
+    filename: pitch
+  MSG_WORD_BANK:
+    text: bank
+    voice: cockpit
+    filename: bank

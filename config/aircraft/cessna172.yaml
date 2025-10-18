@@ -48,6 +48,79 @@ aircraft:
         unusable_fuel: 2.0          # Unusable fuel per tank
         fuel_selector: "both"       # Initial selector position
 
+  # Electrical system detailed configuration
+  electrical:
+    implementation: "simple_12v"
+    battery:
+      voltage_nominal: 12.6        # Fully charged resting voltage (lead-acid)
+      capacity_ah: 35.0             # Total battery capacity in amp-hours
+      internal_resistance: 0.05     # Internal resistance in ohms
+    alternator:
+      max_amps: 60.0                # Maximum alternator output current
+      voltage_regulated: 14.0       # Regulated charging voltage
+      rpm_threshold: 800            # Minimum engine RPM to produce power
+    loads:
+      master_relay:
+        amps: 0.1
+        essential: true
+        min_voltage: 10.0
+      starter_motor:
+        amps: 150.0
+        essential: true
+        min_voltage: 11.0
+      fuel_pump:
+        amps: 5.0
+        essential: false
+        min_voltage: 10.0
+      avionics:
+        amps: 10.0
+        essential: false
+        min_voltage: 11.5
+      nav_lights:
+        amps: 1.5
+        essential: false
+        min_voltage: 10.0
+      beacon:
+        amps: 2.0
+        essential: false
+        min_voltage: 10.0
+      strobe:
+        amps: 3.0
+        essential: false
+        min_voltage: 10.0
+      taxi_light:
+        amps: 4.0
+        essential: false
+        min_voltage: 10.0
+      landing_light:
+        amps: 8.0
+        essential: false
+        min_voltage: 10.0
+      pitot_heat:
+        amps: 7.0
+        essential: false
+        min_voltage: 10.0
+
+  # Fuel system detailed configuration
+  fuel:
+    implementation: "simple_gravity"
+    fuel_type: "avgas_100ll"
+    lbs_per_gallon: 6.0
+    tanks:
+      left:
+        capacity_total: 28.0        # Total tank capacity (including unusable)
+        capacity_usable: 26.0       # Usable fuel capacity
+        initial_quantity: 26.0      # Start with full usable fuel
+        fuel_type: "avgas_100ll"
+        position: [-5.0, 0.0, -8.0] # Relative to CG (x, y, z in feet)
+      right:
+        capacity_total: 28.0
+        capacity_usable: 26.0
+        initial_quantity: 26.0
+        fuel_type: "avgas_100ll"
+        position: [-5.0, 0.0, 8.0]
+    selector_positions: [OFF, LEFT, RIGHT, BOTH]
+
   # Audio configuration
   audio:
     engine_sounds:
