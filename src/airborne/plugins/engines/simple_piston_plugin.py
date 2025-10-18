@@ -76,6 +76,17 @@ class SimplePistonEngine(IPlugin):
         self.throttle: float = 0.0  # 0.0 = idle, 1.0 = full
         self.starter_engaged: bool = False
 
+        # Configurable starter requirements (set during initialize)
+        self.starter_min_voltage: float = 11.0  # Minimum voltage to engage starter
+        self.starter_current_draw: float = 150.0  # Current draw in amps
+        self.requires_fuel: bool = True  # Whether fuel is required to start
+        self.requires_magnetos: bool = True  # Whether magnetos are required to start
+
+        # Electrical state (from electrical system messages)
+        self._electrical_voltage: float = 0.0
+        self._electrical_available: bool = False
+        self._fuel_available: bool = False
+
         # Internal state
         self._time_since_start: float = 0.0
         self._starter_time: float = 0.0
@@ -108,12 +119,26 @@ class SimplePistonEngine(IPlugin):
         """
         self.context = context
 
-        # Subscribe to input events for engine controls
-        # (In a real implementation, we'd subscribe to key bindings for
-        # magnetos, mixture, etc. For now, we'll respond to messages only)
+        # Read starter requirements configuration from aircraft config if available
+        if hasattr(context, "config") and context.config:
+            cfg = context.config
+            if "starter_min_voltage" in cfg:
+                self.starter_min_voltage = float(cfg["starter_min_voltage"])
+            if "starter_current_draw" in cfg:
+                self.starter_current_draw = float(cfg["starter_current_draw"])
+            if "requires_fuel" in cfg:
+                self.requires_fuel = bool(cfg["requires_fuel"])
+            if "requires_magnetos" in cfg:
+                self.requires_magnetos = bool(cfg["requires_magnetos"])
 
         # Subscribe to control messages
         context.message_queue.subscribe(MessageTopic.ENGINE_STATE, self.handle_message)
+
+        # Subscribe to electrical state messages (to check if starter can engage)
+        context.message_queue.subscribe(MessageTopic.ELECTRICAL_STATE, self.handle_message)
+
+        # Subscribe to fuel state messages (to check if fuel is available)
+        context.message_queue.subscribe(MessageTopic.FUEL_STATE, self.handle_message)
 
     def update(self, dt: float) -> None:
         """Update engine state.
@@ -174,6 +199,10 @@ class SimplePistonEngine(IPlugin):
         if self.context:
             # Unsubscribe from messages
             self.context.message_queue.unsubscribe(MessageTopic.ENGINE_STATE, self.handle_message)
+            self.context.message_queue.unsubscribe(
+                MessageTopic.ELECTRICAL_STATE, self.handle_message
+            )
+            self.context.message_queue.unsubscribe(MessageTopic.FUEL_STATE, self.handle_message)
 
         # Engine shutdown
         self.running = False
@@ -204,18 +233,50 @@ class SimplePistonEngine(IPlugin):
             if "throttle" in data:
                 self.throttle = max(0.0, min(1.0, float(data["throttle"])))
 
+        elif message.topic == MessageTopic.ELECTRICAL_STATE:
+            # Update electrical state from electrical system
+            data = message.data
+            if "bus_voltage" in data:
+                self._electrical_voltage = float(data["bus_voltage"])
+                # Check if we have enough voltage for starter
+                self._electrical_available = self._electrical_voltage >= self.starter_min_voltage
+
+        elif message.topic == MessageTopic.FUEL_STATE:
+            # Update fuel availability from fuel system
+            data = message.data
+            if "fuel_available" in data:
+                self._fuel_available = bool(data["fuel_available"])
+
     def _update_combustion(self, dt: float) -> None:
         """Update combustion process.
 
         Args:
             dt: Delta time in seconds.
         """
-        # Check if engine can run
-        has_ignition = self.magneto_left or self.magneto_right
-        has_fuel = self.mixture > 0.1
-        has_starter_or_rpm = self.starter_engaged or self.rpm > 300
+        # Check if engine can run - using configurable requirements
 
-        if has_ignition and has_fuel and has_starter_or_rpm:
+        # Ignition check (configurable via requires_magnetos)
+        if self.requires_magnetos:
+            has_ignition = self.magneto_left or self.magneto_right
+        else:
+            has_ignition = True  # Some engines don't require magnetos
+
+        # Fuel check (configurable via requires_fuel)
+        if self.requires_fuel:
+            has_fuel = self.mixture > 0.1 and self._fuel_available
+        else:
+            has_fuel = True  # Some engines don't require fuel (e.g., electric motors)
+
+        # Starter check with electrical power requirement
+        # Starter can only engage if electrical power is available
+        can_start = self.rpm > 300  # Already running, doesn't need starter
+        if self.starter_engaged and not can_start:
+            # Starter is engaged - check if we have electrical power
+            if self._electrical_available:
+                can_start = True  # Starter can crank with sufficient voltage
+            # else: Starter engaged but no power - engine won't crank
+
+        if has_ignition and has_fuel and can_start:
             # Engine is running or starting
             if not self.running and self.rpm > 400:
                 self.running = True

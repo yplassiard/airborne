@@ -28,6 +28,11 @@ aircraft:
         displacement_liters: 5.9    # Engine displacement
         cylinders: 4                # Number of cylinders
         aspiration: "naturally_aspirated"
+        # Starter motor requirements (configurable for different aircraft)
+        starter_min_voltage: 11.0   # Minimum battery voltage to engage starter
+        starter_current_draw: 150.0 # Starter motor current draw in amps
+        requires_fuel: true         # Whether fuel must be available to start
+        requires_magnetos: true     # Whether magnetos must be on to start
 
     # Electrical system - 28V system
     - plugin: "simple_electrical_system"
