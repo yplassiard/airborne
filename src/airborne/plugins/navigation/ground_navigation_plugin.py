@@ -17,6 +17,8 @@ from pathlib import Path
 from typing import Any
 
 from airborne.airports.database import AirportDatabase
+from airborne.airports.parking import ParkingDatabase
+from airborne.airports.parking_generator import ParkingGenerator
 from airborne.airports.spatial_index import SpatialIndex
 from airborne.airports.taxiway_generator import TaxiwayGenerator
 from airborne.audio.beeper import BeepStyle, ProximityBeeper
@@ -60,12 +62,14 @@ class GroundNavigationPlugin(IPlugin):
         self.airport_db: AirportDatabase | None = None
         self.spatial_index: SpatialIndex | None = None
         self.taxiway_gen: TaxiwayGenerator | None = None
+        self.parking_gen: ParkingGenerator | None = None
         self.ground_physics: GroundPhysics | None = None
         self.proximity_manager: ProximityCueManager | None = None
         self.beeper: ProximityBeeper | None = None
 
         # State
         self.current_airport_icao: str | None = None
+        self.current_parking_db: ParkingDatabase | None = None
         self.nearest_taxiway_node: str | None = None
         self.last_position: Vector3 | None = None
 
@@ -146,6 +150,7 @@ class GroundNavigationPlugin(IPlugin):
         self.airport_db = AirportDatabase()
         self.spatial_index = SpatialIndex()
         self.taxiway_gen = TaxiwayGenerator()
+        self.parking_gen = ParkingGenerator()
         self.ground_physics = GroundPhysics()
         self.proximity_manager = ProximityCueManager()
         self.beeper = ProximityBeeper(sample_rate=44100)
@@ -309,6 +314,59 @@ class GroundNavigationPlugin(IPlugin):
             graph.get_edge_count(),
         )
 
+        # Generate parking positions for this airport
+        if self.parking_gen:
+            parking_db = self.parking_gen.generate(airport, runways, category)
+            self.current_parking_db = parking_db
+
+            logger.info(
+                "Generated %d parking positions for %s",
+                parking_db.get_parking_count(),
+                icao,
+            )
+
+            # Add parking positions as nodes to taxiway graph
+            for parking in parking_db.get_all_parking():
+                # Add parking node with type=parking
+                node_type = f"parking_{parking.parking_type.value}"
+                try:
+                    graph.add_node(
+                        node_id=parking.position_id,
+                        position=parking.position,
+                        node_type=node_type,
+                        name=f"{parking.parking_type.value.upper()} {parking.position_id}",
+                    )
+                except ValueError:
+                    # Node already exists (shouldn't happen, but handle gracefully)
+                    logger.warning("Parking node %s already exists", parking.position_id)
+                    continue
+
+                # Find nearest taxiway node to connect this parking
+                nearest_node = self._find_nearest_taxiway_node(graph, parking.position)
+
+                if nearest_node:
+                    # Add bidirectional edge between parking and nearest taxiway
+                    try:
+                        graph.add_edge(
+                            from_node=parking.position_id,
+                            to_node=nearest_node,
+                            edge_type="apron",
+                            name=f"To {nearest_node}",
+                            bidirectional=True,
+                        )
+                    except (ValueError, KeyError) as e:
+                        logger.warning(
+                            "Failed to connect parking %s to taxiway %s: %s",
+                            parking.position_id,
+                            nearest_node,
+                            e,
+                        )
+
+            logger.info(
+                "Integrated %d parking positions into taxiway graph",
+                parking_db.get_parking_count(),
+            )
+
         # Add proximity targets for taxiway nodes
         for node_id, node in graph.nodes.items():
             self.proximity_manager.add_target(
@@ -322,6 +380,43 @@ class GroundNavigationPlugin(IPlugin):
             )
 
         logger.info("Added %d proximity targets", len(graph.nodes))
+
+    def _find_nearest_taxiway_node(self, graph: Any, position: Vector3) -> str | None:
+        """Find nearest taxiway node to a position.
+
+        Searches for the closest taxiway node (excluding parking nodes) to connect
+        a parking position to the taxiway network.
+
+        Args:
+            graph: TaxiwayGraph containing nodes
+            position: Position to search from
+
+        Returns:
+            Node ID of nearest taxiway node, or None if no nodes found
+
+        Examples:
+            >>> nearest = self._find_nearest_taxiway_node(graph, parking.position)
+            >>> print(nearest)  # "A1" or similar taxiway node ID
+        """
+        nearest_node = None
+        min_distance = float("inf")
+
+        for node_id, node in graph.nodes.items():
+            # Skip parking nodes (we only want to connect to taxiway/runway nodes)
+            if node.node_type.startswith("parking_"):
+                continue
+
+            # Calculate distance (simple lat/lon to meters approximation)
+            dx = (node.position.x - position.x) * 111000.0  # degrees to meters (longitude)
+            dz = (node.position.z - position.z) * 111000.0  # degrees to meters (latitude)
+            distance = (dx**2 + dz**2) ** 0.5
+
+            if distance < min_distance:
+                min_distance = distance
+                nearest_node = node_id
+
+        logger.debug("Found nearest taxiway node: %s (%.1fm away)", nearest_node, min_distance)
+        return nearest_node
 
     def get_status(self) -> dict[str, Any]:
         """Get plugin status.

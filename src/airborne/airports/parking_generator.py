@@ -408,11 +408,7 @@ class ParkingGenerator:
                 gate_heading = (main_runway.le_heading_deg + 180.0) % 360.0
 
                 # Mix of large and xlarge gates (every 3rd gate can handle widebody)
-                size_cat = (
-                    AircraftSizeCategory.XLARGE
-                    if i % 3 == 0
-                    else AircraftSizeCategory.LARGE
-                )
+                size_cat = AircraftSizeCategory.XLARGE if i % 3 == 0 else AircraftSizeCategory.LARGE
 
                 amenities = ParkingAmenities(
                     jetway_available=True,
@@ -455,11 +451,7 @@ class ParkingGenerator:
             stand_heading = (main_runway.le_heading_deg + 180.0) % 360.0
 
             # Mix of sizes for stands
-            size_cat = (
-                AircraftSizeCategory.XLARGE
-                if i % 4 == 0
-                else AircraftSizeCategory.LARGE
-            )
+            size_cat = AircraftSizeCategory.XLARGE if i % 4 == 0 else AircraftSizeCategory.LARGE
 
             amenities = ParkingAmenities(gpu_available=True, pushback_required=False)
 
