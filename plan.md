@@ -2841,7 +2841,18 @@ Blind pilots need constant awareness of their position. This phase implements au
 
 **Test**: Taxi from parking to runway, verify all announcements trigger.
 
-#### 16.3: Implement Runway Incursion Detection (2 hours)
+#### 16.3: Implement Runway Incursion Detection (2 hours) ✅
+**Status**: COMPLETED - 2025-10-19
+**Tests**: 24 tests passing
+**Notes**:
+- Implemented RunwayIncursionDetector with graduated warning system
+- IncursionLevel enum (NONE, CAUTION, WARNING, ALERT)
+- Distance-based warnings: 50m (caution), 20m (warning), 0m (alert)
+- ATC clearance integration (subscribe to atc.clearance.* messages)
+- Perpendicular distance calculation to runway centerline
+- Warning cooldown mechanism (3s) to prevent spam
+- Supports multiple simultaneous runway tracking
+
 **File**: `src/airborne/plugins/navigation/runway_incursion.py`
 
 **Requirements**:
