@@ -438,7 +438,11 @@ class AirBorne:
                 menu.verify_item()
                 return True
             # Ctrl+Enter fails/cancels the checklist
-            elif key in (pygame.K_RETURN, pygame.K_KP_ENTER) and (mods & pygame.KMOD_CTRL) or key == pygame.K_ESCAPE:
+            elif (
+                key in (pygame.K_RETURN, pygame.K_KP_ENTER)
+                and (mods & pygame.KMOD_CTRL)
+                or key == pygame.K_ESCAPE
+            ):
                 menu.cancel_checklist()
                 return True
 
