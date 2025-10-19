@@ -2615,6 +2615,621 @@ Improve audio design, performance, accessibility.
 
 ---
 
+## Phase 15: Parking & Gate Infrastructure (6-8 hours)
+
+**Status**: STARTING - 2025-10-19
+
+### Objective
+Create comprehensive parking, gate, and stand infrastructure with assignment system for realistic ground operations at all airport sizes.
+
+### Background
+The existing airport database has runways and generated taxiways, but lacks parking infrastructure. This phase adds parking positions, gates, stands, and apron areas with intelligent assignment based on aircraft type and airport size.
+
+### Speech System Notes
+**IMPORTANT**: All spoken text in AirBorne uses pre-recorded speech files generated with `scripts/generate_speech.py`. Available voices:
+- `pilot` - Pilot callouts and responses (Oliver 200WPM)
+- `cockpit` - Cockpit instruments and warnings (Samantha 200WPM)
+- `tower` - Tower ATC controller
+- `ground` - Ground ATC controller (TO BE ADDED for airport services)
+- `approach` - Approach controller
+- `atis` - ATIS recordings
+- `steward` - Cabin crew announcements
+
+For ground services (refueling, pushback, boarding), we'll need to add a `ground` voice configuration and generate appropriate speech files.
+
+### Tasks
+
+#### 15.1: Create Parking Position Database (2 hours) ✅
+**Status**: COMPLETED - 2025-10-19
+**File**: `src/airborne/airports/parking.py`
+**Tests**: `tests/airports/test_parking.py` (27 tests, all passing)
+
+**Requirements**:
+- Parking position data structures (Gate, Stand, Parking Spot, Apron)
+- Position types: Gate (with jetway), Stand (remote), Ramp (GA), Tie-down
+- Aircraft size categories: Small (GA), Medium (regional), Large (widebody), Extra Large
+- Parking status: Available, Occupied, Reserved, Out of Service
+- Parking amenities: Fuel available, GPU available, Jetway, Pushback required
+
+**Key Classes**:
+- `ParkingType` (enum: GATE, STAND, RAMP, TIE_DOWN)
+- `AircraftSizeCategory` (enum: SMALL, MEDIUM, LARGE, XLARGE)
+- `ParkingPosition` (dataclass: id, type, position, size_category, heading, amenities)
+- `ParkingDatabase` (manages all parking positions at airport)
+
+**Test**: Add parking positions to KPAO, verify query by size and availability.
+
+#### 15.2: Implement Parking Generator (2-3 hours) ✅
+**Status**: COMPLETED - 2025-10-19
+**File**: `src/airborne/airports/parking_generator.py`
+**Tests**: `tests/airports/test_parking_generator.py` (15 tests, all passing)
+
+**Requirements**:
+- Generate parking positions procedurally based on airport classification
+- Small airports: 2-10 tie-down spots near single runway
+- Medium airports: 5-20 ramp positions in organized rows
+- Large airports: 10-50 gates/stands in terminal layout
+- Position parking logically relative to runways and taxiways
+- Ensure parking connects to taxiway network
+
+**Key Classes**:
+- `ParkingGenerator` (generates parking layouts)
+- Integration with `TaxiwayGenerator` to connect parking to taxiways
+
+**Algorithm**:
+```
+For small airports:
+  - Place tie-downs parallel to main taxiway
+  - 30-50m spacing, 90° or angled parking
+
+For medium airports:
+  - Create apron area near terminal point
+  - Rows of parking positions
+  - Connect to taxiway via apron taxilanes
+
+For large airports:
+  - Multiple terminal areas
+  - Gates along terminal buildings
+  - Remote stands for overflow
+  - Complex apron network
+```
+
+**Test**: Generate parking for S/M/L airports, verify connectivity.
+
+#### 15.3: Implement Parking Assignment System (2 hours) ✅
+**Status**: COMPLETED - 2025-10-19
+**File**: `src/airborne/airports/parking_assignment.py`
+
+**Requirements**:
+- Assign parking based on aircraft size, flight type (GA, commercial)
+- Prefer gates for larger aircraft, ramp for GA
+- Track parking occupancy (update when aircraft park/depart)
+- Return parking clearance (position ID, taxi route)
+- Handle "no parking available" scenarios
+
+**Key Classes**:
+- `ParkingAssignmentManager`
+- `ParkingAssignment` (dataclass: aircraft_callsign, position_id, assigned_time)
+- `FlightType` (enum: GENERAL_AVIATION, COMMERCIAL, CARGO, CHARTER)
+
+**Methods**:
+- `request_parking(aircraft_size, flight_type, callsign) -> ParkingAssignment | None`
+- `release_parking(callsign) -> None`
+- `get_parking_status(position_id) -> ParkingStatus`
+- `get_assignment(callsign) -> ParkingAssignment | None`
+- `get_all_assignments() -> list[ParkingAssignment]`
+
+**Test**: Request parking for C172, verify appropriate assignment. ✅ 24 tests passing
+
+**Notes**: Implemented intelligent parking assignment with flight type preferences. GA small aircraft prefer tie-downs, GA medium prefer ramps, commercial/charter prefer gates, cargo prefers stands. System falls back to any available parking when preferred type is full. All tests passing.
+
+#### 15.4: Integrate Parking with Ground Navigation (1 hour)
+**File**: `src/airborne/plugins/navigation/ground_navigation_plugin.py` (update)
+
+**Requirements**:
+- Load parking database when loading airport
+- Add parking positions as taxiway graph nodes
+- Enable pathfinding from parking to runway
+- Add proximity beeps for parking positions
+
+**Integration**:
+- Parking positions become `TaxiwayNode` with type="parking"
+- `TaxiwayGenerator` creates edges from parking to nearest taxiway
+- `GroundNavigationPlugin.update()` tracks when aircraft is at parking
+
+**Test**: Load airport with parking, verify pathfinding from gate to runway.
+
+### Success Criteria
+- ✅ Parking database supports all position types (gate, stand, ramp, tie-down)
+- ✅ Parking generator creates realistic layouts for S/M/L airports
+- ✅ Assignment system correctly assigns parking by aircraft size
+- ✅ Parking integrates with taxiway graph for routing
+- ✅ Can find path from any parking position to any runway
+
+---
+
+## Phase 16: Position Awareness & Orientation (6-8 hours)
+
+### Objective
+Implement comprehensive position awareness system with audio cues for orientation on taxiways, runways, and parking areas without visual feedback.
+
+### Background
+Blind pilots need constant awareness of their position. This phase implements audio feedback for current location, nearby features, and orientation cues.
+
+### Tasks
+
+#### 16.1: Create Position Tracking System (2 hours)
+**File**: `src/airborne/plugins/navigation/position_tracker.py`
+
+**Requirements**:
+- Track aircraft's current location type (parking, taxiway, runway, apron)
+- Detect when aircraft enters/exits different areas
+- Maintain history of recent positions
+- Calculate distance to next waypoint/intersection
+
+**Key Classes**:
+- `LocationType` (enum: PARKING, TAXIWAY, RUNWAY, APRON, GRASS, UNKNOWN)
+- `PositionTracker` (monitors aircraft position)
+- `LocationEvent` (triggers when entering/exiting areas)
+
+**Methods**:
+- `update(position: Vector3, heading: float) -> None`
+- `get_current_location() -> tuple[LocationType, str]`  # type and ID/name
+- `get_nearest_taxiway() -> str | None`
+- `get_distance_to_next_intersection() -> float`
+- `is_on_taxiway(taxiway_name: str) -> bool`
+
+**Events Published**:
+- `ENTERED_TAXIWAY` (data: taxiway_name)
+- `ENTERED_RUNWAY` (data: runway_id)
+- `ENTERED_PARKING` (data: parking_id)
+- `APPROACHING_INTERSECTION` (data: intersection_id, distance)
+
+**Test**: Simulate aircraft movement, verify location detection.
+
+#### 16.2: Implement Audio Orientation Cues (2-3 hours)
+**File**: `src/airborne/audio/orientation.py`
+
+**Requirements**:
+- Audio announcements when entering taxiways ("Now on taxiway Alpha")
+- Approaching runway announcements ("Approaching runway 31, 50 meters")
+- Intersection announcements ("Approaching taxiway Bravo intersection")
+- Periodic position reminders (every 30 seconds or on key press)
+- Directional audio cues (left/right taxiway exits)
+
+**Key Classes**:
+- `OrientationAudioManager` (manages position audio cues)
+
+**Audio Messages** (add to `config/speech.yaml`):
+- "On taxiway {taxiway_name}"
+- "Approaching runway {runway_id}"
+- "Approaching {taxiway_name} intersection"
+- "At parking position {parking_id}"
+- "On apron"
+- "Hold short of runway {runway_id}"
+- "Taxiway {taxiway_name} on your {left/right}"
+
+**Behavior**:
+- Announce immediately when entering new taxiway/runway
+- Announce at 100m, 50m, 20m when approaching runway/intersection
+- Suppress duplicate announcements (cooldown period)
+- Manual position check via key press (e.g., 'P' key)
+
+**Test**: Taxi from parking to runway, verify all announcements trigger.
+
+#### 16.3: Implement Runway Incursion Detection (2 hours)
+**File**: `src/airborne/plugins/navigation/runway_incursion.py`
+
+**Requirements**:
+- Detect when aircraft approaches runway without clearance
+- Audio warning when entering runway hold-short area (no clearance)
+- Critical alert when crossing runway hold-short line
+- Integration with ATC clearance system
+- Visual/audio warning levels (caution, warning, alert)
+
+**Key Classes**:
+- `RunwayIncursionDetector`
+- `RunwayHoldShortZone` (area before runway, typically 30-50m)
+- `IncursionLevel` (enum: CAUTION, WARNING, ALERT)
+
+**Warning Logic**:
+```
+If aircraft within 50m of runway AND NOT cleared for takeoff/landing/crossing:
+  - CAUTION: "Caution, approaching runway {id}"
+
+If aircraft within 20m of runway AND NOT cleared:
+  - WARNING: "Warning, hold short runway {id}"
+
+If aircraft crosses hold-short line AND NOT cleared:
+  - ALERT: "Alert! Runway incursion, runway {id}"
+```
+
+**Integration**:
+- Subscribe to ATC clearance messages
+- Track which runways aircraft is cleared for
+- Clear clearance after takeoff/crossing complete
+
+**Test**: Approach runway without clearance, verify warnings.
+
+#### 16.4: Create Position Awareness Plugin (1-2 hours)
+**File**: `src/airborne/plugins/navigation/position_awareness_plugin.py`
+
+**Requirements**:
+- Integrate PositionTracker, OrientationAudioManager, RunwayIncursionDetector
+- Publish position events to message queue
+- Respond to user position query requests
+- Update UI/audio with current position
+
+**Plugin Metadata**:
+- Type: NAVIGATION
+- Provides: ["position_awareness", "orientation"]
+- Dependencies: ["ground_navigation"]
+
+**Key Bindings** (add to input config):
+- `P` - Announce current position
+- `Shift+P` - Announce detailed position (taxiway, heading, distance to next)
+- `Ctrl+P` - Announce nearby features (taxiways, runways within 100m)
+
+**Test**: Load plugin, press P key, verify position announcement.
+
+### Success Criteria
+- ✅ System correctly detects when on taxiway/runway/parking
+- ✅ Audio announcements trigger when entering new areas
+- ✅ Runway incursion warnings work without ATC clearance
+- ✅ Position query key provides instant feedback
+- ✅ Can navigate entire airport using audio cues only
+
+---
+
+## Phase 17: Ground Services & Operations (8-10 hours)
+
+### Objective
+Implement realistic ground services including refueling, pushback, boarding, cargo, and ramp operations for complete airport ground handling.
+
+### Background
+Complete ground operations require interaction with airport services. This phase adds refueling, pushback, boarding, and other ramp services that vary by airport size.
+
+### Tasks
+
+#### 17.1: Create Ground Services Framework (2 hours)
+**File**: `src/airborne/plugins/ground/ground_services.py`
+
+**Requirements**:
+- Service request/response system
+- Service availability by airport type and parking position
+- Service duration and costs (optional)
+- Service state machine (requested, in-progress, complete, cancelled)
+
+**Key Classes**:
+- `ServiceType` (enum: REFUEL, PUSHBACK, BOARDING, DEBOARDING, CARGO_LOAD, CARGO_UNLOAD, GPU, CATERING, LAVATORY, WATER)
+- `ServiceRequest` (dataclass: service_type, aircraft_id, parking_id, timestamp)
+- `ServiceStatus` (enum: IDLE, REQUESTED, IN_PROGRESS, COMPLETE, CANCELLED, FAILED)
+- `GroundService` (base class for all services)
+- `GroundServiceManager` (manages all services at airport)
+
+**Service Availability**:
+```
+Small airports: REFUEL (self-service), limited hours
+Medium airports: REFUEL, GPU, limited BOARDING
+Large airports: All services, 24/7 availability
+```
+
+**Test**: Request refueling at different airport types, verify availability.
+
+#### 17.2: Implement Refueling Service (2 hours)
+**File**: `src/airborne/plugins/ground/services/refueling.py`
+
+**Requirements**:
+- Request refueling (specify quantity or "full tanks")
+- Simulated refueling duration (10 gallons/minute for GA, 100 gal/min for jets)
+- Audio feedback (truck arrives, pumping sound, completion)
+- Integration with fuel system plugin
+- Fuel pricing (optional)
+
+**Key Classes**:
+- `RefuelingService(GroundService)`
+
+**Workflow**:
+1. Pilot requests refueling via menu
+2. System checks: At parking? Engine off? Battery on?
+3. Audio: "Fuel truck dispatched"
+4. Delay 30-60s (truck travel time)
+5. Audio: "Fuel truck connected, starting refueling"
+6. Refueling over time (publish fuel updates)
+7. Audio: "Refueling complete, {gallons} gallons added"
+8. Update fuel system
+
+**Audio Messages**:
+- "Fuel truck dispatched to your position"
+- "Fuel truck connected, refueling {quantity} gallons"
+- "Refueling in progress, {percent}% complete"
+- "Refueling complete, {gallons} gallons added, fuel is full"
+
+**Test**: Request refueling, verify fuel increases over time.
+
+#### 17.3: Implement Pushback Service (2-3 hours)
+**File**: `src/airborne/plugins/ground/services/pushback.py`
+
+**Requirements**:
+- Available only at gates requiring pushback (medium/large airports)
+- Request pushback direction (specify heading or "to taxiway")
+- Animated pushback simulation (aircraft moves backward)
+- Audio coordination ("Pushback approved, heading 270")
+- Integration with ground physics
+- Cannot start pushback if engines running (jets only)
+
+**Key Classes**:
+- `PushbackService(GroundService)`
+- `PushbackDirection` (enum: NORTH, SOUTH, EAST, WEST, TO_TAXIWAY)
+
+**Workflow**:
+1. Pilot requests pushback + direction via menu
+2. Check: At gate? Parking brake on? Tug available?
+3. Audio: "Pushback crew ready, release parking brake"
+4. Wait for brake release
+5. Audio: "Pushback started"
+6. Simulate backward movement (30 seconds, ~50m)
+7. Audio: "Pushback complete, parking brake set, cleared to start engines"
+8. Set position to pushback end point
+
+**Integration**:
+- Modify aircraft position during pushback
+- Update PositionTracker
+- Publish PUSHBACK_COMPLETE event
+
+**Test**: Request pushback from gate, verify aircraft moves backward.
+
+#### 17.4: Implement Boarding/Deboarding (1-2 hours)
+**File**: `src/airborne/plugins/ground/services/boarding.py`
+
+**Requirements**:
+- Boarding duration based on aircraft size (5 min for GA, 30 min for jets)
+- Passenger count (optional)
+- Weight/balance updates (optional)
+- Audio announcements
+- Cannot close doors if boarding in progress
+
+**Key Classes**:
+- `BoardingService(GroundService)`
+- `DeboardingService(GroundService)`
+
+**Workflow (Boarding)**:
+1. Request boarding via menu
+2. Audio: "Boarding started, {pax_count} passengers"
+3. Simulated duration (1 passenger per 3 seconds for jets)
+4. Audio progress updates every 25%
+5. Audio: "Boarding complete, doors closed"
+6. Set aircraft state: doors_closed=True
+
+**Audio Messages**:
+- "Boarding started, {pax} passengers"
+- "Boarding {percent}% complete"
+- "Boarding complete, all passengers aboard"
+- "Doors closed and armed"
+
+**Test**: Request boarding, verify duration and completion.
+
+#### 17.5: Create Ground Services Plugin (1-2 hours)
+**File**: `src/airborne/plugins/ground/ground_services_plugin.py`
+
+**Requirements**:
+- Load GroundServiceManager
+- Expose services via message/menu interface
+- Update service states
+- Publish service events
+- Integration with parking system (only at parking)
+
+**Plugin Metadata**:
+- Type: GROUND_SERVICES
+- Provides: ["ground_services", "refueling", "pushback", "boarding"]
+- Dependencies: ["fuel", "position_awareness"]
+
+**Menu Integration**:
+- Add "Ground Services" to main menu (only when at parking)
+- Submenu: Request Refueling, Request Pushback, Request Boarding, etc.
+
+**Test**: Load plugin, park at gate, verify services menu appears.
+
+### Success Criteria
+- ✅ Refueling service works at all airport types
+- ✅ Pushback service available only at appropriate gates
+- ✅ Boarding simulates realistic passenger loading times
+- ✅ All services integrate with aircraft systems (fuel, weight)
+- ✅ Audio feedback provides clear status updates
+- ✅ Services only available when aircraft at parking position
+
+---
+
+## Phase 18: Integrated Ground-to-Takeoff Workflow (6-8 hours)
+
+### Objective
+Create complete, realistic workflow from cold-and-dark at parking through taxi to takeoff, integrating all ground systems with ATC, checklists, and navigation.
+
+### Background
+This phase ties together all ground infrastructure into a seamless workflow that works at any airport type, with proper ATC coordination, progressive taxi, and traffic management.
+
+### Tasks
+
+#### 18.1: Implement Progressive Taxi System (2-3 hours)
+**File**: `src/airborne/plugins/radio/progressive_taxi.py`
+
+**Requirements**:
+- ATC issues taxi clearance in segments (not entire route at once)
+- Initial clearance: parking → first hold-short point
+- Progressive: "Continue taxi, hold short runway 31 at Alpha"
+- Integration with position tracker to know when to issue next instruction
+- Works with single-runway and complex airports
+
+**Key Classes**:
+- `ProgressiveTaxiManager`
+- `TaxiSegment` (dataclass: from_node, to_node, instructions)
+- `TaxiClearance` (list of segments, current segment index)
+
+**Workflow**:
+1. Pilot: "Ground, Cessna 123AB, parking 3, taxi with information Alpha"
+2. ATC: "Cessna 123AB, taxi to runway 31 via Alpha, hold short of runway"
+3. System breaks route into segments
+4. As aircraft progresses, issue next instruction
+5. ATC: "Cessna 123AB, continue taxi, cross runway 13, hold short 31"
+6. Final: "Cessna 123AB, hold short runway 31 at Alpha, contact tower 118.5"
+
+**Integration**:
+- Subscribe to position updates
+- Detect when aircraft reaches segment waypoints
+- Publish next taxi instruction
+- Update runway incursion clearances
+
+**Test**: Taxi complex route, verify progressive instructions.
+
+#### 18.2: Implement Ground Traffic Management (2 hours)
+**File**: `src/airborne/plugins/traffic/ground_traffic.py`
+
+**Requirements**:
+- Spawn AI aircraft at parking positions
+- AI aircraft request taxi, follow routes
+- Detect conflicts (two aircraft approaching same intersection)
+- ATC issues hold-short instructions to resolve conflicts
+- AI aircraft respect hold-short clearances
+
+**Key Classes**:
+- `GroundTrafficManager` (manages AI aircraft on ground)
+- `GroundTrafficAircraft` (AI aircraft with taxi route)
+
+**Conflict Detection**:
+```
+For each pair of aircraft:
+  If routes intersect within next 60 seconds:
+    Issue hold-short to lower-priority aircraft
+    "Cessna 456CD, hold short of taxiway Bravo, traffic crossing left to right"
+```
+
+**AI Behavior**:
+- Taxi at realistic speeds (10-15 kts on taxiways)
+- Stop at hold-short lines
+- Announce position when reaching waypoints
+- Request takeoff when reaching runway
+
+**Test**: Spawn 3 AI aircraft, verify conflict resolution.
+
+#### 18.3: Create Complete Ground Operations Workflow (2 hours)
+**File**: `scripts/demo_ground_ops.py`
+
+**Requirements**:
+- Demonstration script showing complete workflow
+- Works at small, medium, and large airports
+- Integrates all ground systems
+
+**Workflow Steps**:
+1. **Cold and Dark at Parking**
+   - Aircraft spawned at assigned parking
+   - Audio: "Parked at gate A3, Palo Alto airport"
+
+2. **Pre-Flight**
+   - Optional: Request refueling
+   - Optional: Request boarding
+   - Complete pre-start checklist
+
+3. **Engine Start**
+   - Complete engine start checklist
+   - Battery on → Fuel on → Magnetos → Starter
+
+4. **ATC Clearance**
+   - Get ATIS: "Information Alpha, wind 310 at 8, runway 31 in use"
+   - Pilot: "Ground, Cessna 123AB, parking A3, taxi with Alpha"
+   - ATC: "Cessna 123AB, taxi runway 31 via Alpha, hold short"
+
+5. **Taxi**
+   - Release parking brake
+   - Follow proximity beeps to taxiway Alpha
+   - Audio announcements: "On taxiway Alpha"
+   - Progressive taxi instructions from ATC
+   - Hold short of runway as instructed
+
+6. **Runway Entry**
+   - Pilot: "Tower, Cessna 123AB, holding short runway 31"
+   - Tower: "Cessna 123AB, runway 31, cleared for takeoff"
+   - Complete before-takeoff checklist
+   - Taxi onto runway
+
+7. **Takeoff**
+   - Apply full throttle
+   - Rotate at Vr
+   - Climb out
+
+**Test**: Run demo script at KPAO, KSFO, verify all steps.
+
+#### 18.4: Add ATIS Parking/Gate Assignment (1 hour)
+**File**: `src/airborne/plugins/radio/atis_manager.py` (update)
+
+**Requirements**:
+- ATIS includes parking/gate assignment for inbound aircraft
+- "Inbound aircraft contact ground on 121.7 for gate assignment"
+- Ground assigns parking based on aircraft type
+- Arrivals given parking in ATIS or on first ground contact
+
+**ATIS Format Update**:
+```
+"Palo Alto Airport information Alpha,
+Time 1850 Zulu,
+Wind 310 at 8,
+Runway 31 in use,
+Altimeter 29.92,
+VFR aircraft say direction of flight,
+Inbound aircraft contact ground 121.7 for parking assignment,
+Advise on initial contact you have Alpha"
+```
+
+**Test**: Get ATIS as inbound aircraft, contact ground, receive parking.
+
+### Success Criteria
+- ✅ Complete cold-dark to takeoff workflow functional
+- ✅ Works seamlessly at small, medium, and large airports
+- ✅ Progressive taxi provides appropriate instructions
+- ✅ AI ground traffic creates realistic environment
+- ✅ All ground services integrate properly
+- ✅ ATC coordination is realistic and context-aware
+- ✅ Position awareness provides continuous orientation
+- ✅ Can complete entire workflow using audio only (no visuals)
+
+---
+
+## Phase 19: Enhanced Airport Facilities (Optional, 4-6 hours)
+
+### Objective
+Add advanced airport facilities for realism at larger airports: multiple runways, FBO services, customs, de-icing, hangar operations.
+
+### Tasks
+
+#### 19.1: Multi-Runway Operations (2 hours)
+- Active runway selection based on wind
+- Runway crossing clearances
+- Land-and-hold-short (LAHSO) operations
+- Intersection departures
+
+#### 19.2: FBO and Services (1-2 hours)
+- FBO locations and services
+- Hangar rental/storage
+- Maintenance services
+- Pilot lounge
+
+#### 19.3: International Operations (1-2 hours)
+- Customs/immigration at international airports
+- Clearance delivery for IFR flights
+- CPDLC (text-based clearances)
+
+#### 19.4: Winter Operations (1 hour)
+- De-icing service
+- Snow removal status
+- Contaminated runway handling
+
+### Success Criteria
+- ✅ Multi-runway airports handled correctly
+- ✅ FBO services available at appropriate airports
+- ✅ International procedures implemented
+- ✅ Seasonal operations supported
+
+---
+
 ## Testing Strategy
 
 ### Unit Tests
@@ -2654,6 +3269,18 @@ Improve audio design, performance, accessibility.
 
 ### M6: Multiplayer (End of Phase 11)
 - Network mode working, see other players
+
+### M7: Complete Ground Infrastructure (End of Phase 15)
+- Parking/gate system, assignment, routing from any parking to any runway
+
+### M8: Full Position Awareness (End of Phase 16)
+- Audio orientation, runway incursion detection, position announcements
+
+### M9: Realistic Ground Services (End of Phase 17)
+- Refueling, pushback, boarding, complete ramp operations
+
+### M10: Parking-to-Takeoff Workflow (End of Phase 18)
+- Complete cold-dark to takeoff workflow, progressive taxi, ground traffic, works at all airport sizes
 
 ---
 
@@ -2701,6 +3328,8 @@ Improve audio design, performance, accessibility.
 
 This plan provides a clear, phased approach to building AirBorne. Each phase builds on the previous, with clear success criteria. The plugin architecture ensures flexibility and maintainability.
 
-**Estimated Total Development Time**: 80-120 hours
+**Estimated Total Development Time**: 110-160 hours
+- Core Framework & Basic Flight: 80-120 hours (Phases 0-14)
+- Complete Ground Operations: 30-40 hours (Phases 15-19)
 
 **Next Step**: Begin Phase 0 - Project Setup
