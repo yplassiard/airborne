@@ -226,22 +226,33 @@ class AudioSpeechProvider(ITTSProvider):
         sound_objects = []
         for key in message_keys:
             message_config = self._message_map.get(key)
+
+            # If not in config, try to find file directly in voice directories
             if not message_config:
-                logger.warning(f"Message key not found: {key}")
-                continue
+                # Try common voice directories: pilot, cockpit
+                found = False
+                for voice_name, voice_dir in self._voice_dirs.items():
+                    filepath = voice_dir / f"{key}.{self._file_extension}"
+                    if filepath.exists():
+                        found = True
+                        break
 
-            # Get voice type and resolve directory
-            voice = message_config.get("voice", "cockpit")
-            voice_dir = self._voice_dirs.get(voice, self._speech_dir)
+                if not found:
+                    logger.warning(f"Message key not found: {key}")
+                    continue
+            else:
+                # Get voice type and resolve directory from config
+                voice = message_config.get("voice", "cockpit")
+                voice_dir = self._voice_dirs.get(voice, self._speech_dir)
 
-            # Build filename (use filename field from config, fallback to key name)
-            filename_base = message_config.get("filename", key)
-            filename = f"{filename_base}.{self._file_extension}"
-            filepath = voice_dir / filename
+                # Build filename (use filename field from config, fallback to key name)
+                filename_base = message_config.get("filename", key)
+                filename = f"{filename_base}.{self._file_extension}"
+                filepath = voice_dir / filename
 
-            if not filepath.exists():
-                logger.warning(f"Speech file not found: {filepath}")
-                continue
+                if not filepath.exists():
+                    logger.warning(f"Speech file not found: {filepath}")
+                    continue
 
             # Preload sound to avoid delays during playback
             if self._audio_engine:

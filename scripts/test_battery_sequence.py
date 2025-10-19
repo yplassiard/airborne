@@ -19,9 +19,11 @@ try:
 
     # Load both sounds
     batteryon = engine.load_sound("assets/sounds/aircraft/batteryon1.mp3", preload=True)
-    batteryloop = engine.load_sound("assets/sounds/aircraft/batteryloop1.mp3", preload=True, loop_mode=True)
+    batteryloop = engine.load_sound(
+        "assets/sounds/aircraft/batteryloop1.mp3", preload=True, loop_mode=True
+    )
     print(f"✓ Loaded batteryon1.mp3 (duration ~{batteryon.duration:.2f}s)")
-    print(f"✓ Loaded batteryloop1.mp3 (loop mode)\n")
+    print("✓ Loaded batteryloop1.mp3 (loop mode)\n")
 
     # Play batteryon (one-shot)
     print("Playing batteryon1.mp3...")
@@ -58,7 +60,7 @@ try:
         time.sleep(0.1)
         if i % 10 == 0:
             state = engine.get_source_state(source_loop)
-            print(f"  Loop state at {i*0.1:.1f}s: {state}")
+            print(f"  Loop state at {i * 0.1:.1f}s: {state}")
 
     # Stop loop
     print("\nStopping battery loop...")
@@ -71,5 +73,6 @@ try:
 except Exception as e:
     print(f"\n✗ Error: {e}")
     import traceback
+
     traceback.print_exc()
     sys.exit(1)

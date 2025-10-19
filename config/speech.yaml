@@ -149,6 +149,22 @@ messages:
     text: skipped
     voice: pilot
     filename: word_skipped
+  MSG_WORD_FAILED:
+    text: failed
+    voice: pilot
+    filename: word_failed
+  MSG_RESPONSE_ON:
+    text: 'On'
+    voice: pilot
+    filename: response_on
+  MSG_RESPONSE_OFF:
+    text: 'Off'
+    voice: pilot
+    filename: response_off
+  MSG_RESPONSE_RICH_BELOW_3000_FT:
+    text: 'Rich, below 3000 feet'
+    voice: pilot
+    filename: MSG_RESPONSE_RICH_BELOW_3000_FT
   MSG_WORD_COLON:
     text: ':'
     voice: cockpit
@@ -505,6 +521,14 @@ messages:
     text: pressed
     voice: cockpit
     filename: pressed
+  MSG_PRIMER_PUMP:
+    text: primer
+    voice: cockpit
+    filename: primer
+  MSG_PRIMER_PUMP_PRESSED:
+    text: primed
+    voice: cockpit
+    filename: primed
   MSG_PITOT_HEAT:
     text: pitot_heat
     voice: cockpit

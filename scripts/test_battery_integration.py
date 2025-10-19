@@ -49,7 +49,7 @@ if battery_ready:
     print("   - batteryloop1.mp3 started looping")
     print("   - Callback invoked successfully")
 else:
-    print(f"\n   ✗ Sequence did not complete within 5 seconds")
+    print("\n   ✗ Sequence did not complete within 5 seconds")
 
 # Let the loop play for a bit
 print("\n2. Battery loop should be playing now...")

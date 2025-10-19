@@ -304,13 +304,11 @@ class ChecklistPlugin(IPlugin):
         current_item.state = ChecklistItemState.COMPLETED
         current_item.completed_by = "manual" if manual else "auto"
 
-        # Announce completion with pilot readback
+        # Announce completion with pilot readback (just the response)
         if self.context:
-            # Pilot reads back: challenge + response + "check"
-            challenge_key = self._get_challenge_message_key(current_item.challenge)
+            # Pilot confirms by stating the response/action taken
             response_key = self._get_response_message_key(current_item.response)
-            message_keys = [challenge_key, response_key, "MSG_WORD_CHECK"]
-            self._speak(message_keys)
+            self._speak(response_key)
 
         # Move to next item
         return self._advance_to_next_item()
@@ -339,6 +337,29 @@ class ChecklistPlugin(IPlugin):
 
         # Move to next item
         return self._advance_to_next_item()
+
+    def cancel_checklist(self) -> bool:
+        """Cancel the active checklist (failed).
+
+        Returns:
+            True if checklist was cancelled successfully.
+        """
+        if not self.active_checklist:
+            return False
+
+        # Announce failure
+        if self.context:
+            message_keys = [
+                "MSG_CHECKLIST_TEXT",
+                self._get_checklist_message_key(self.active_checklist.name),
+                "MSG_WORD_FAILED",
+            ]
+            self._speak(message_keys)
+
+        # Clear active checklist
+        self.active_checklist = None
+        logger.info("Checklist cancelled (failed)")
+        return True
 
     def _advance_to_next_item(self) -> bool:
         """Advance to the next checklist item.
@@ -440,7 +461,8 @@ class ChecklistPlugin(IPlugin):
 
         current_item = self.active_checklist.get_current_item()
         if current_item:
-            # Generate MSG key for challenge
+            # Only announce the challenge (the question)
+            # User will perform the action, then confirm with Shift+Enter
             challenge_key = self._get_challenge_message_key(current_item.challenge)
             self._speak(challenge_key)
 
@@ -464,9 +486,11 @@ class ChecklistPlugin(IPlugin):
             "Engine Start": "MSG_CHECKLIST_ENGINE_START",
             "Before Takeoff": "MSG_CHECKLIST_BEFORE_TAKEOFF",
             "Takeoff": "MSG_CHECKLIST_TAKEOFF",
+            "Normal Takeoff": "MSG_CHECKLIST_TAKEOFF",
             "Before Landing": "MSG_CHECKLIST_BEFORE_LANDING",
             "After Landing": "MSG_CHECKLIST_AFTER_LANDING",
             "Shutdown": "MSG_CHECKLIST_SHUTDOWN",
+            "Engine Shutdown": "MSG_CHECKLIST_SHUTDOWN",
         }
         return name_to_key.get(checklist_name, "MSG_CHECKLIST_UNKNOWN")
 
@@ -474,14 +498,22 @@ class ChecklistPlugin(IPlugin):
         """Get MSG key for checklist challenge item."""
         # Map challenges to MSG keys
         # We'll generate these as needed
-        challenge_normalized = challenge.upper().replace(" ", "_")
+        challenge_str = str(challenge)
+        challenge_normalized = challenge_str.upper().replace(" ", "_").replace("/", "_")
         return f"MSG_CHALLENGE_{challenge_normalized}"
 
     def _get_response_message_key(self, response: str) -> str:
         """Get MSG key for checklist response item."""
         # Map responses to MSG keys
         # We'll generate these as needed
-        response_normalized = response.upper().replace(" ", "_")
+        response_str = str(response)
+        response_normalized = (
+            response_str.upper()
+            .replace(" ", "_")
+            .replace("/", "_")
+            .replace("(", "")
+            .replace(")", "")
+        )
         return f"MSG_RESPONSE_{response_normalized}"
 
     def _speak(self, text: str | list[str]) -> None:

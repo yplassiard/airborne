@@ -211,6 +211,9 @@ class AudioPlugin(IPlugin):
         # Subscribe to electrical panel control messages for battery sounds
         context.message_queue.subscribe("electrical.master_switch", self.handle_message)
 
+        # Subscribe to click sound messages from panel controls
+        context.message_queue.subscribe("audio.play_click", self.handle_message)
+
         # Subscribe to input action events from event bus for TTS feedback
         if context.event_bus:
             from airborne.core.input import InputActionEvent
@@ -283,6 +286,7 @@ class AudioPlugin(IPlugin):
             self.context.message_queue.unsubscribe(MessageTopic.ENGINE_STATE, self.handle_message)
             self.context.message_queue.unsubscribe(MessageTopic.SYSTEM_STATE, self.handle_message)
             self.context.message_queue.unsubscribe("electrical.master_switch", self.handle_message)
+            self.context.message_queue.unsubscribe("audio.play_click", self.handle_message)
 
             # Unregister components (only if they were registered)
             if self.context.plugin_registry:
@@ -519,7 +523,9 @@ class AudioPlugin(IPlugin):
             else:
                 master_on = False
 
-            logger.info(f"Received electrical.master_switch message: state={state} (type={type(state).__name__}), master_on={master_on}, last={self._last_master_switch}, initialized={self._master_switch_initialized}")
+            logger.info(
+                f"Received electrical.master_switch message: state={state} (type={type(state).__name__}), master_on={master_on}, last={self._last_master_switch}, initialized={self._master_switch_initialized}"
+            )
 
             # Play battery sound when master switch changes
             # Skip ONLY if this is the very first message AND the state is already correct
@@ -564,6 +570,19 @@ class AudioPlugin(IPlugin):
             # Always update the last state (even on first time)
             self._last_master_switch = master_on
 
+        elif message.topic == "audio.play_click":
+            # Handle click sound request from panel controls
+            if self.sound_manager:
+                control_type = message.data.get("control_type", "knob")
+
+                # Use different click sounds for different control types
+                if control_type == "switch":
+                    sound_file = "assets/sounds/aircraft/click_switch.mp3"
+                else:  # knob or slider - both use knob click
+                    sound_file = "assets/sounds/aircraft/click_knob.mp3"
+
+                self.sound_manager.play_sound_2d(sound_file, volume=0.8)
+
     def on_config_changed(self, config: dict[str, Any]) -> None:
         """Handle configuration changes.
 
@@ -598,20 +617,6 @@ class AudioPlugin(IPlugin):
         if not self.tts_provider:
             logger.warning("No TTS provider available for input action feedback")
             return
-
-        # Interrupt any ongoing cockpit speech before speaking instrument readouts
-        if self.context:
-            from airborne.core.messaging import MessagePriority
-
-            self.context.message_queue.publish(
-                Message(
-                    sender="audio_plugin",
-                    recipients=["tts_provider"],
-                    topic=MessageTopic.TTS_INTERRUPT,
-                    data={},
-                    priority=MessagePriority.HIGH,
-                )
-            )
 
         message: str | None = None
 

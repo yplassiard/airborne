@@ -223,12 +223,13 @@ class ChecklistMenu:
         # Complete current item
         success = self._checklist_plugin.complete_current_item(manual=True)
 
-        # If checklist is complete, return to menu
+        # If checklist is complete, close menu silently
         if not success:
-            # Checklist completed
-            self._state = "CHECKLIST_SELECTION"
-            # Re-open menu to show checklists again
-            self.open()
+            # Checklist completed - close menu without announcement
+            self._state = "CLOSED"
+            self._current_options = []
+            self._selected_index = 0
+            logger.debug("Checklist completed - menu closed automatically")
 
         return success
 
@@ -247,6 +248,26 @@ class ChecklistMenu:
         # If checklist is complete, return to menu
         if not success:
             # Checklist completed
+            self._state = "CHECKLIST_SELECTION"
+            # Re-open menu to show checklists again
+            self.open()
+
+        return success
+
+    def cancel_checklist(self) -> bool:
+        """Cancel the current checklist (mark as failed).
+
+        Returns:
+            True if checklist was cancelled successfully.
+        """
+        if self._state != "CHECKLIST_EXECUTION":
+            return False
+
+        # Cancel the active checklist
+        success = self._checklist_plugin.cancel_checklist()
+
+        if success:
+            # Return to checklist selection
             self._state = "CHECKLIST_SELECTION"
             # Re-open menu to show checklists again
             self.open()
@@ -309,9 +330,11 @@ class ChecklistMenu:
             "Engine Start": "MSG_CHECKLIST_ENGINE_START",
             "Before Takeoff": "MSG_CHECKLIST_BEFORE_TAKEOFF",
             "Takeoff": "MSG_CHECKLIST_TAKEOFF",
+            "Normal Takeoff": "MSG_CHECKLIST_TAKEOFF",
             "Before Landing": "MSG_CHECKLIST_BEFORE_LANDING",
             "After Landing": "MSG_CHECKLIST_AFTER_LANDING",
             "Shutdown": "MSG_CHECKLIST_SHUTDOWN",
+            "Engine Shutdown": "MSG_CHECKLIST_SHUTDOWN",
         }
 
         return name_to_key.get(checklist_name, "MSG_CHECKLIST_UNKNOWN")

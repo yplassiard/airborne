@@ -362,8 +362,8 @@ def sanitize_filename(text):
         text.upper()
         .replace(" ", "_")
         .replace("/", "_")
-        .replace("(", "_")
-        .replace(")", "_")
+        .replace("(", "")
+        .replace(")", "")
         .replace("<", "_")
         .replace(">", "_")
         .replace(":", "_")
@@ -477,6 +477,18 @@ def generate_voice_messages(voice_name, voice_config, messages, base_dir, force=
                 else:
                     items_to_generate.append((state, output_path))
                     generated += 1
+
+    # Generate numbers 0-1000 for cockpit and pilot voices
+    if voice_name in ["cockpit", "pilot"]:
+        print(f"\n  Generating numbers 0-1000 for {voice_name} voice...")
+        for num in range(0, 1001):
+            output_path = output_dir / f"number_{num}_autogen.wav"
+            if output_path.exists() and not force:
+                skipped += 1
+            else:
+                items_to_generate.append((str(num), output_path))
+                generated += 1
+        print("  Added 1001 number files to generation queue")
 
     # Batch generate all collected items
     if items_to_generate:

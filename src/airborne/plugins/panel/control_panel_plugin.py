@@ -516,6 +516,17 @@ class ControlPanelPlugin(IPlugin):
         if not self.context:
             return
 
+        # Play click sound for button press
+        self.context.message_queue.publish(
+            Message(
+                sender="control_panel_plugin",
+                recipients=["audio_plugin"],
+                topic="audio.play_click",
+                data={"control_type": "button"},
+                priority=MessagePriority.HIGH,
+            )
+        )
+
         # Announce button press using MSG_* format
         # Build message keys like MSG_PRIMER_PUMP, MSG_PRIMER_PUMP_PRESSED
         control_key_base = control.id.upper().replace("_SWITCH", "").replace("_LEVER", "")

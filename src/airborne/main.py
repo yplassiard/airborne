@@ -407,13 +407,12 @@ class AirBorne:
         if not menu:
             return False
 
-        # ESC closes menu
-        if key == pygame.K_ESCAPE:
-            menu.close()
-            return True
-
         # Number keys select checklist (in selection mode)
         if menu.get_state() == "CHECKLIST_SELECTION":
+            # ESC closes menu
+            if key == pygame.K_ESCAPE:
+                menu.close()
+                return True
             if pygame.K_1 <= key <= pygame.K_9:
                 number = key - pygame.K_0
                 menu.select_option(str(number))
@@ -430,14 +429,17 @@ class AirBorne:
                 menu.select_current()
                 return True
 
-        # Space or Enter verifies checklist item (in execution mode)
+        # Checklist execution mode
         elif menu.get_state() == "CHECKLIST_EXECUTION":
-            if key in (pygame.K_SPACE, pygame.K_RETURN, pygame.K_KP_ENTER):
+            mods = pygame.key.get_mods()
+
+            # Shift+Enter verifies/checks the current item
+            if key in (pygame.K_RETURN, pygame.K_KP_ENTER) and (mods & pygame.KMOD_SHIFT):
                 menu.verify_item()
                 return True
-            # S skips item
-            elif key == pygame.K_s:
-                menu.skip_item()
+            # Ctrl+Enter fails/cancels the checklist
+            elif key in (pygame.K_RETURN, pygame.K_KP_ENTER) and (mods & pygame.KMOD_CTRL) or key == pygame.K_ESCAPE:
+                menu.cancel_checklist()
                 return True
 
         return False

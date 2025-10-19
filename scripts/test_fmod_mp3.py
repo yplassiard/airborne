@@ -43,7 +43,7 @@ try:
         # Check if still playing
         state = engine.get_source_state(source_id)
         if i % 5 == 0:
-            print(f"  State at {i*0.1:.1f}s: {state}")
+            print(f"  State at {i * 0.1:.1f}s: {state}")
 
     # Cleanup
     print("\nCleaning up...")
@@ -53,5 +53,6 @@ try:
 except Exception as e:
     print(f"\n✗ Error: {e}")
     import traceback
+
     traceback.print_exc()
     sys.exit(1)
