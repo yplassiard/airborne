@@ -548,21 +548,33 @@ class TestSimpleFuelSystemEventPublishing:
 
     def test_publishes_fuel_state_message(self, fuel: SimpleFuelSystem) -> None:
         """Test fuel system publishes state messages."""
+        # Clear the mock calls from initialization
+        fuel.context.message_queue.publish.reset_mock()
+
         fuel.update(0.016)
 
-        # Should publish message
-        fuel.context.message_queue.publish.assert_called()
+        # Should publish two messages (FUEL_STATE and SYSTEM_STATE)
+        assert fuel.context.message_queue.publish.call_count == 2
 
-        # Check message content
-        call_args = fuel.context.message_queue.publish.call_args
-        message = call_args[0][0]
+        # Check both messages
+        calls = fuel.context.message_queue.publish.call_args_list
 
-        assert isinstance(message, Message)
-        assert message.sender == "simple_fuel_system"
-        assert message.topic == MessageTopic.FUEL_STATE
-        assert "total_fuel" in message.data
-        assert "fuel_flow" in message.data
-        assert "fuel_available" in message.data
+        # First message should be FUEL_STATE
+        fuel_msg = calls[0][0][0]
+        assert isinstance(fuel_msg, Message)
+        assert fuel_msg.sender == "simple_fuel_system"
+        assert fuel_msg.topic == MessageTopic.FUEL_STATE
+        assert "total_fuel" in fuel_msg.data
+        assert "fuel_flow" in fuel_msg.data
+        assert "fuel_available" in fuel_msg.data
+
+        # Second message should be SYSTEM_STATE
+        system_msg = calls[1][0][0]
+        assert isinstance(system_msg, Message)
+        assert system_msg.sender == "simple_fuel_system"
+        assert system_msg.topic == MessageTopic.SYSTEM_STATE
+        assert "system" in system_msg.data
+        assert system_msg.data["system"] == "fuel"
 
 
 class TestSimpleFuelSystemTotalFuel:

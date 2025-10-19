@@ -6,15 +6,31 @@ AirBorne is a blind-accessible flight simulator with self-voicing capabilities, 
 
 ---
 
-## Current Status (2025-10-15)
+## Current Status (2025-10-19)
 
 **Phase 4 Complete** ✅ - Automatic flight demo fully operational!
 **Instrument Readouts Complete** ✅ - All engine/electrical/fuel instruments with pre-recorded TTS!
 
-### Test Results
-- **920/920 tests passing (100%)** ✅
-- All quality checks passing (Ruff, pytest)
-- No regressions
+### Test Results (Updated 2025-10-19)
+- **895/920 tests passing (97.3%)** 🔧
+- 25 failing tests in:
+  - Input manager (18 failures) - keyboard/mouse event handling
+  - Audio plugin (2 failures) - initialization issues
+  - Checklist plugin (1 failure) - menu system
+  - System plugins (4 failures) - integration tests
+- All quality checks passing (Ruff, pytest for passing tests)
+
+### Recent Test Fixes (2025-10-19)
+- ✅ Fixed SimplePistonEngine tests - added electrical/fuel simulation
+- ✅ Fixed SimpleElectricalSystem tests - updated subscription counts
+- ✅ Fixed SimpleFuelSystem tests - handled dual message publishing
+- ✅ Fixed engine/electrical/fuel plugin initialization tests
+
+#### Key Test Infrastructure Improvements:
+1. **Engine Tests**: Now properly simulate electrical power (`_electrical_available=True`) and fuel availability (`_fuel_available=True`) for realistic engine starting
+2. **System Plugin Tests**: Fixed message subscription expectations - systems now subscribe to 3 topics instead of 2
+3. **Message Publishing Tests**: Updated to handle dual message publishing (specific state + SYSTEM_STATE for compatibility)
+4. **Integration Tests**: Added proper system state simulation for cross-plugin communication
 
 ### Application Status
 - ✅ App launches and runs main loop at 60 FPS
@@ -107,6 +123,7 @@ The `scripts/demo_autopilot.py` script now successfully demonstrates:
 1. **Audio**: pybass3 hardcodes library name, causing BASS to run in stub mode (non-blocking)
 2. **Plugin Wiring**: Position updates, proximity audio, terrain alerts need message subscriptions
 3. **Type Checking**: 23 pre-existing mypy warnings in 7 files (tests pass, non-critical)
+4. **Test Failures**: 25 tests failing (97.3% pass rate) - mostly input manager and audio plugin initialization
 
 ### Recent Commits (2025-10-15)
 - `feat(audio): add pre-recorded TTS for all instrument readouts with Samantha 200WPM` ✅
@@ -116,7 +133,22 @@ The `scripts/demo_autopilot.py` script now successfully demonstrates:
 - `feat(panel): add keyboard nav with 92 cockpit control TTS messages`
 
 ### Recommended Next Steps
-**Priority: Complete Near-Complete Phases (Est: 6-10 hours)**
+
+#### Immediate: Fix Remaining Test Failures (Est: 2-3 hours)
+1. **Input Manager Tests** (18 failures)
+   - Fix keyboard event processing and state management
+   - Update throttle increment/decrement logic
+   - Fix action press detection methods
+
+2. **Audio Plugin Tests** (2 failures)
+   - Fix initialization with proper audio engine mocking
+   - Handle shutdown cleanup properly
+
+3. **System Integration Tests** (5 failures)
+   - Fix engine start sequence with proper electrical/fuel state communication
+   - Update checklist plugin menu system initialization
+
+#### Then: Complete Near-Complete Phases (Est: 6-10 hours)
 
 1. **Phase 5: Ground Navigation** (2-3 hours)
    - Wire position updates to plugin

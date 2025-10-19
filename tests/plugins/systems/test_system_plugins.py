@@ -38,9 +38,8 @@ class TestElectricalPlugin:
         """Test electrical plugin initializes correctly."""
         plugin = ElectricalPlugin()
         context = create_test_context(
-            queue=queue,
             config={"electrical": {"implementation": "simple_12v"}},
-            message_queue=MessageQueue(),
+            queue=MessageQueue(),
         )
 
         plugin.initialize(context)
@@ -84,9 +83,18 @@ class TestElectricalPlugin:
         """Test light control via messages."""
         plugin = ElectricalPlugin()
         queue = MessageQueue()
+
+        # Configure electrical system with nav_lights load
+        config = {
+            "electrical": {
+                "implementation": "simple_12v",
+                "loads": {"nav_lights": {"amps": 1.5, "essential": False}},
+            }
+        }
+
         context = create_test_context(
             queue=queue,
-            config={"electrical": {"implementation": "simple_12v"}},
+            config=config,
         )
 
         plugin.initialize(context)
@@ -104,7 +112,8 @@ class TestElectricalPlugin:
 
         queue.process()
 
-        # Verify load was enabled
+        # Verify load was created and enabled
+        assert "nav_lights" in plugin.electrical_system.loads
         assert plugin.electrical_system.loads["nav_lights"].enabled
 
     def test_engine_rpm_updates_alternator(self):
@@ -183,10 +192,10 @@ class TestFuelPlugin:
     def test_initialization(self):
         """Test fuel plugin initializes correctly."""
         plugin = FuelPlugin()
+        queue = MessageQueue()
         context = create_test_context(
             queue=queue,
             config={"fuel": {"implementation": "simple_gravity"}},
-            message_queue=MessageQueue(),
         )
 
         plugin.initialize(context)
@@ -355,10 +364,10 @@ class TestEnginePlugin:
     def test_initialization(self):
         """Test engine plugin initializes correctly."""
         plugin = EnginePlugin()
+        queue = MessageQueue()
         context = create_test_context(
             queue=queue,
             config={"engine": {"implementation": "piston_simple"}},
-            message_queue=MessageQueue(),
         )
 
         plugin.initialize(context)
@@ -611,12 +620,30 @@ class TestPluginIntegration:
 
         queue = MessageQueue()
 
-        # Initialize all plugins
+        # Initialize all plugins with fuel tanks configured
         context = create_test_context(
             queue=queue,
             config={
                 "electrical": {"implementation": "simple_12v"},
-                "fuel": {"implementation": "simple_gravity"},
+                "fuel": {
+                    "implementation": "simple_gravity",
+                    "tanks": {
+                        "left": {
+                            "capacity_total": 28.0,
+                            "capacity_usable": 26.0,
+                            "initial_quantity": 20.0,  # Start with fuel
+                            "fuel_type": "avgas_100ll",
+                            "position": [-5.0, 0.0, -8.0],
+                        },
+                        "right": {
+                            "capacity_total": 28.0,
+                            "capacity_usable": 26.0,
+                            "initial_quantity": 20.0,  # Start with fuel
+                            "fuel_type": "avgas_100ll",
+                            "position": [-5.0, 0.0, 8.0],
+                        },
+                    },
+                },
                 "engine": {"implementation": "piston_simple"},
             },
         )
@@ -673,12 +700,28 @@ class TestPluginIntegration:
         )
         queue.process()
 
+        # Step 5: Set throttle slightly open for cold start
+        queue.publish(
+            Message(
+                sender="control_panel",
+                recipients=["engine"],
+                topic="engine.throttle",
+                data={"value": 10.0},  # 10% throttle for starting
+                priority=MessagePriority.HIGH,
+            )
+        )
+        queue.process()
+
         # Update systems to publish states
         electrical.update(0.1)
         fuel.update(0.1)
         queue.process()
 
-        # Step 5: Engage starter
+        # Engine needs to receive the electrical state message
+        engine.update(0.1)
+        queue.process()
+
+        # Step 6: Engage starter
         queue.publish(
             Message(
                 sender="control_panel",
@@ -690,12 +733,23 @@ class TestPluginIntegration:
         )
         queue.process()
 
-        # Simulate engine cranking
-        for _ in range(30):
+        # Simulate engine cranking (need longer for starter to reach 200 RPM)
+        for _ in range(50):
             electrical.update(0.1)
             fuel.update(0.1)
             engine.update(0.1)
             queue.process()
 
         # Engine should have started
-        assert engine.engine.running
+        assert engine.engine.running, (
+            f"Engine failed to start. "
+            f"electrical_available={engine.electrical_available}, "
+            f"fuel_available={engine.fuel_available_gph}, "
+            f"rpm={engine.engine.rpm}, "
+            f"starting={engine.engine.starting}, "
+            f"magneto_left={engine.controls.magneto_left}, "
+            f"magneto_right={engine.controls.magneto_right}, "
+            f"mixture={engine.controls.mixture}, "
+            f"throttle={engine.controls.throttle}, "
+            f"starter={engine.controls.starter}"
+        )

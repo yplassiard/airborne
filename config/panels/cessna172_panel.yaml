@@ -12,7 +12,7 @@ panels:
         type: switch
         states: [OFF, ON]
         default_index: 0
-        target_plugin: electrical
+        target_plugin: simple_electrical_system
         message_topic: electrical.master_switch
         description: Aircraft master electrical switch
 

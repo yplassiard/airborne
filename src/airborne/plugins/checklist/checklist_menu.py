@@ -15,6 +15,7 @@ from typing import Any
 
 from airborne.core.logging_system import get_logger
 from airborne.core.messaging import Message, MessagePriority, MessageTopic
+from airborne.plugins.checklist.checklist_plugin import ChecklistPlugin
 
 logger = get_logger(__name__)
 
@@ -53,7 +54,7 @@ class ChecklistMenu:
 
     def __init__(
         self,
-        checklist_plugin: Any,
+        checklist_plugin: ChecklistPlugin,
         tts_provider: Any | None = None,
         message_queue: Any | None = None,
     ):

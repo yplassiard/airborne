@@ -119,6 +119,7 @@ class ElectricalPlugin(IPlugin):
                 topic=MessageTopic.SYSTEM_STATE,
                 data={
                     "system": "electrical",
+                    "master_switch": self.electrical_system.master_switch_on,
                     "battery_voltage": state.battery_voltage,
                     "battery_soc_percent": state.battery_soc_percent,
                     "battery_current_amps": state.battery_current_amps,
@@ -197,8 +198,12 @@ class ElectricalPlugin(IPlugin):
             # Master switch control
             state = message.data.get("state", "OFF")
             enabled = state == "ON"
+            logger.info(f"Received electrical.master_switch: state={state}, enabled={enabled}")
             if hasattr(self.electrical_system, "set_master_switch"):
                 self.electrical_system.set_master_switch(enabled)
+                logger.info(
+                    f"Called set_master_switch({enabled}), master_switch_on={self.electrical_system.master_switch_on}"
+                )
 
         elif message.topic in [
             "electrical.avionics_master",

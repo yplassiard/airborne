@@ -17,34 +17,23 @@ from airborne.audio.engine.base import IAudioEngine, Vector3
 from airborne.audio.sound_manager import SoundManager
 from airborne.audio.tts.base import ITTSProvider
 from airborne.core.logging_system import get_logger
-from airborne.core.messaging import Message, MessageTopic
+from airborne.core.messaging import Message, MessagePriority, MessageTopic
 from airborne.core.plugin import IPlugin, PluginContext, PluginMetadata, PluginType
 
 logger = get_logger(__name__)
 
 # Try to import audio engines, prioritizing FMOD
 AUDIO_ENGINE_AVAILABLE = False
-PyBASSEngine: type | None = None
 FMODEngine: type | None = None
 
-# Try FMOD first (preferred, cross-platform)
+# Loads FMOD
 try:
     from airborne.audio.engine.fmod_engine import FMODEngine
 
     AUDIO_ENGINE_AVAILABLE = True
     logger.info("FMODEngine available")
 except (ImportError, OSError) as e:
-    logger.info(f"FMODEngine not available: {e}. Trying PyBASSEngine...")
-
-# Fall back to PyBASS if FMOD not available
-if not AUDIO_ENGINE_AVAILABLE:
-    try:
-        from airborne.audio.engine.pybass_engine import PyBASSEngine
-
-        AUDIO_ENGINE_AVAILABLE = True
-        logger.info("PyBASSEngine available")
-    except (ImportError, OSError) as e:
-        logger.warning(f"PyBASSEngine not available: {e}. Audio plugin will run in stub mode.")
+    logger.info(f"FMODEngine not available: {e}.")
 
 
 class AudioPlugin(IPlugin):
@@ -78,6 +67,12 @@ class AudioPlugin(IPlugin):
         self._last_flaps_state = 0.0
         self._last_brakes_state = 0.0
         self._engine_started = False
+        self._last_master_switch: bool | None = None  # Track battery state changes
+        self._master_switch_initialized = False  # Track if we've received first message
+
+        # High-frequency audio update timer
+        self._audio_update_accumulator = 0.0
+        self._audio_update_interval = 0.005  # Update audio every 5ms (200Hz) for smooth transitions
 
         # Flight state for instrument readouts
         self._airspeed = 0.0  # knots
@@ -140,20 +135,17 @@ class AudioPlugin(IPlugin):
         # Create audio engine and TTS provider
         if AUDIO_ENGINE_AVAILABLE:
             try:
-                # Try FMOD first, fall back to PyBASS
+                # Initialize FMOD
                 if FMODEngine is not None:
                     self.audio_engine = FMODEngine()
                     logger.info("FMODEngine created successfully")
-                elif PyBASSEngine is not None:
-                    self.audio_engine = PyBASSEngine()
-                    logger.info("PyBASSEngine created successfully")
                 else:
                     self.audio_engine = None
             except Exception as e:
                 logger.error(f"Failed to create audio engine: {e}")
                 self.audio_engine = None
         else:
-            logger.warning("Audio engine not available, running without audio")
+            logger.error("Audio engine not available, running without audio")
             self.audio_engine = None
 
         # Create audio speech provider only if audio engine is available
@@ -165,7 +157,7 @@ class AudioPlugin(IPlugin):
             tts_config["audio_engine"] = self.audio_engine
             self.tts_provider.initialize(tts_config)
         else:
-            logger.warning("TTS provider disabled due to missing audio engine")
+            logger.error("TTS provider disabled due to missing audio engine")
             self.tts_provider = None
 
         # Create sound manager only if audio engine is available
@@ -179,7 +171,7 @@ class AudioPlugin(IPlugin):
                 tts_config=None,  # Already initialized above
             )
         else:
-            logger.warning("Sound manager disabled due to missing audio engine or TTS")
+            logger.error("Sound manager disabled due to missing audio engine or TTS")
             self.sound_manager = None
 
         # Create ATC audio manager for radio communications
@@ -216,6 +208,9 @@ class AudioPlugin(IPlugin):
         context.message_queue.subscribe(MessageTopic.ENGINE_STATE, self.handle_message)
         context.message_queue.subscribe(MessageTopic.SYSTEM_STATE, self.handle_message)
 
+        # Subscribe to electrical panel control messages for battery sounds
+        context.message_queue.subscribe("electrical.master_switch", self.handle_message)
+
         # Subscribe to input action events from event bus for TTS feedback
         if context.event_bus:
             from airborne.core.input import InputActionEvent
@@ -251,18 +246,22 @@ class AudioPlugin(IPlugin):
         Args:
             dt: Delta time in seconds since last update.
         """
-        # Update FMOD system if using FMODEngine
-        if self.audio_engine and hasattr(self.audio_engine, "update"):
-            self.audio_engine.update()
-
-        # Update TTS sequential playback
-        if self.tts_provider and hasattr(self.tts_provider, "update"):
-            self.tts_provider.update()
-
         if not self.sound_manager:
             return
 
-        # Update listener position
+        # Accumulate time for high-frequency audio updates
+        self._audio_update_accumulator += dt
+
+        # Update audio at high frequency (every 5ms / 200Hz) for smooth sound transitions
+        while self._audio_update_accumulator >= self._audio_update_interval:
+            self.sound_manager.update()
+            self._audio_update_accumulator -= self._audio_update_interval
+
+        # Update TTS sequential playback (once per frame is fine)
+        if self.tts_provider and hasattr(self.tts_provider, "update"):
+            self.tts_provider.update()
+
+        # Update listener position (once per frame is fine)
         self.sound_manager.update_listener(
             position=self._listener_position,
             forward=self._listener_forward,
@@ -283,6 +282,7 @@ class AudioPlugin(IPlugin):
             self.context.message_queue.unsubscribe(MessageTopic.CONTROL_INPUT, self.handle_message)
             self.context.message_queue.unsubscribe(MessageTopic.ENGINE_STATE, self.handle_message)
             self.context.message_queue.unsubscribe(MessageTopic.SYSTEM_STATE, self.handle_message)
+            self.context.message_queue.unsubscribe("electrical.master_switch", self.handle_message)
 
             # Unregister components (only if they were registered)
             if self.context.plugin_registry:
@@ -370,7 +370,7 @@ class AudioPlugin(IPlugin):
 
                 data = message.data
                 samples = np.array(data.get("samples", []), dtype=np.float32)
-                sample_rate = data.get("sample_rate", 44100)
+                _ = data.get("sample_rate", 44100)  # For future use
 
                 if len(samples) > 0:
                     # Play raw audio samples through audio engine
@@ -495,13 +495,8 @@ class AudioPlugin(IPlugin):
             system = data.get("system")
 
             if system == "electrical":
-                # Play switch sound if master switch state changed
-                if "master_switch" in data and self.sound_manager:
-                    master_switch = data.get("master_switch", False)
-                    if master_switch != getattr(self, "_last_master_switch", None):
-                        self.sound_manager.play_switch_sound(master_switch)
-                        self._last_master_switch = master_switch
-
+                # Battery sounds are handled by electrical.master_switch messages from control panel
+                # This handler only tracks electrical state for instrument readouts
                 self._battery_voltage = data.get("battery_voltage", 0.0)
                 self._battery_percent = data.get("battery_soc_percent", 0.0)
                 self._battery_current = data.get("battery_current_amps", 0.0)
@@ -510,6 +505,64 @@ class AudioPlugin(IPlugin):
             elif system == "fuel":
                 self._fuel_quantity = data.get("total_quantity_gallons", 0.0)
                 self._fuel_remaining_minutes = data.get("time_remaining_minutes", 0.0)
+
+        elif message.topic == "electrical.master_switch":
+            # Handle master switch from control panel
+            data = message.data
+            state = data.get("state", "")
+
+            # Handle both string ("ON"/"OFF") and boolean (True/False) formats
+            if isinstance(state, bool):
+                master_on = state
+            elif isinstance(state, str):
+                master_on = state == "ON"
+            else:
+                master_on = False
+
+            logger.info(f"Received electrical.master_switch message: state={state} (type={type(state).__name__}), master_on={master_on}, last={self._last_master_switch}, initialized={self._master_switch_initialized}")
+
+            # Play battery sound when master switch changes
+            # Skip ONLY if this is the very first message AND the state is already correct
+            should_play = False
+            if self.sound_manager:
+                if not self._master_switch_initialized:
+                    # First message - only skip if this is startup state (False/OFF)
+                    # If it's ON, it means user pressed it, so play the sound
+                    should_play = master_on  # Play only if turning ON
+                    self._master_switch_initialized = True
+                elif master_on != self._last_master_switch:
+                    # Subsequent messages - play if state changed
+                    should_play = True
+
+            if should_play:
+                if master_on:
+                    # Turning ON - play sequence with callback
+                    def on_battery_ready():
+                        """Called when battery loop starts (battery is truly ON)."""
+                        logger.info("Battery ready - activating electrical system")
+                        # Send message to electrical system to actually turn on
+                        if self.context:
+                            self.context.message_queue.publish(
+                                Message(
+                                    sender="audio_plugin",
+                                    recipients=["simple_electrical_system"],
+                                    topic=MessageTopic.ELECTRICAL_STATE,
+                                    data={"battery_master": True},
+                                    priority=MessagePriority.HIGH,
+                                )
+                            )
+
+                    self.sound_manager.play_battery_sound(
+                        True, on_complete_callback=on_battery_ready
+                    )
+                    logger.info("Battery startup sequence initiated")
+                else:
+                    # Turning OFF - immediate
+                    self.sound_manager.play_battery_sound(False)
+                    logger.info("Battery shutdown (panel control)")
+
+            # Always update the last state (even on first time)
+            self._last_master_switch = master_on
 
     def on_config_changed(self, config: dict[str, Any]) -> None:
         """Handle configuration changes.

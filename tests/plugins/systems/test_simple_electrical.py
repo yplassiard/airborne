@@ -63,8 +63,8 @@ class TestSimpleElectricalSystemInitialization:
         electrical.initialize(context)
 
         assert electrical.context == context
-        # Should subscribe to engine and electrical messages
-        assert context.message_queue.subscribe.call_count == 2
+        # Should subscribe to three topics: ENGINE_STATE, ELECTRICAL_STATE, and electrical.master_switch
+        assert context.message_queue.subscribe.call_count == 3
 
     def test_initial_state(self) -> None:
         """Test initial electrical system state."""
@@ -456,8 +456,8 @@ class TestSimpleElectricalSystemShutdown:
         """Test shutdown cleans up subscriptions."""
         electrical.shutdown()
 
-        # Should unsubscribe from both topics
-        assert electrical.context.message_queue.unsubscribe.call_count == 2
+        # Should unsubscribe from three topics
+        assert electrical.context.message_queue.unsubscribe.call_count == 3
 
 
 class TestSimpleElectricalSystemEventPublishing:
@@ -513,21 +513,33 @@ class TestSimpleElectricalSystemEventPublishing:
 
     def test_publishes_electrical_state_message(self, electrical: SimpleElectricalSystem) -> None:
         """Test electrical system publishes state messages."""
+        # Clear the mock calls from initialization
+        electrical.context.message_queue.publish.reset_mock()
+
         electrical.update(0.016)
 
-        # Should publish message
-        electrical.context.message_queue.publish.assert_called()
+        # Should publish two messages (ELECTRICAL_STATE and SYSTEM_STATE)
+        assert electrical.context.message_queue.publish.call_count == 2
 
-        # Check message content
-        call_args = electrical.context.message_queue.publish.call_args
-        message = call_args[0][0]
+        # Check both messages
+        calls = electrical.context.message_queue.publish.call_args_list
 
-        assert isinstance(message, Message)
-        assert message.sender == "simple_electrical_system"
-        assert message.topic == MessageTopic.ELECTRICAL_STATE
-        assert "battery_voltage" in message.data
-        assert "bus_voltage" in message.data
-        assert "power_available" in message.data
+        # First message should be ELECTRICAL_STATE
+        electrical_msg = calls[0][0][0]
+        assert isinstance(electrical_msg, Message)
+        assert electrical_msg.sender == "simple_electrical_system"
+        assert electrical_msg.topic == MessageTopic.ELECTRICAL_STATE
+        assert "battery_voltage" in electrical_msg.data
+        assert "bus_voltage" in electrical_msg.data
+        assert "power_available" in electrical_msg.data
+
+        # Second message should be SYSTEM_STATE
+        system_msg = calls[1][0][0]
+        assert isinstance(system_msg, Message)
+        assert system_msg.sender == "simple_electrical_system"
+        assert system_msg.topic == MessageTopic.SYSTEM_STATE
+        assert "system" in system_msg.data
+        assert system_msg.data["system"] == "electrical"
 
 
 class TestSimpleElectricalSystemBatteryPercentage:

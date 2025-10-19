@@ -60,10 +60,16 @@ class TestSimplePistonEngineInitialization:
         engine.initialize(context)
 
         assert engine.context == context
-        # Should subscribe to engine state messages
-        context.message_queue.subscribe.assert_called_once_with(
-            MessageTopic.ENGINE_STATE, engine.handle_message
-        )
+        # Should subscribe to three message topics
+        assert context.message_queue.subscribe.call_count == 3
+
+        # Verify each expected subscribe call
+        subscribe_calls = context.message_queue.subscribe.call_args_list
+        topics_subscribed = [call[0][0] for call in subscribe_calls]
+
+        assert MessageTopic.ENGINE_STATE in topics_subscribed
+        assert MessageTopic.ELECTRICAL_STATE in topics_subscribed
+        assert MessageTopic.FUEL_STATE in topics_subscribed
 
     def test_initial_state(self) -> None:
         """Test initial engine state."""
@@ -218,6 +224,13 @@ class TestSimplePistonEngineStartup:
 
     def test_engine_starts_with_proper_conditions(self, engine: SimplePistonEngine) -> None:
         """Test engine starts with starter, ignition, and fuel."""
+        # Simulate electrical system providing power for starter
+        engine._electrical_voltage = 12.6
+        engine._electrical_available = True
+
+        # Simulate fuel system providing fuel
+        engine._fuel_available = True
+
         engine.starter_engaged = True
         engine.magneto_left = True
         engine.magneto_right = True
@@ -235,6 +248,13 @@ class TestSimplePistonEngineStartup:
 
     def test_rpm_increases_during_startup(self, engine: SimplePistonEngine) -> None:
         """Test RPM increases when starter is engaged."""
+        # Simulate electrical system providing power for starter
+        engine._electrical_voltage = 12.6
+        engine._electrical_available = True
+
+        # Simulate fuel system providing fuel
+        engine._fuel_available = True
+
         engine.starter_engaged = True
         engine.magneto_left = True
         engine.mixture = 1.0
@@ -279,6 +299,13 @@ class TestSimplePistonEngineRunning:
         """Create a running engine."""
         engine = SimplePistonEngine()
         engine.initialize(context)
+
+        # Simulate electrical system providing power for starter
+        engine._electrical_voltage = 12.6
+        engine._electrical_available = True
+
+        # Simulate fuel system providing fuel
+        engine._fuel_available = True
 
         # Start the engine
         engine.starter_engaged = True
@@ -399,6 +426,13 @@ class TestSimplePistonEngineShutdown:
         engine = SimplePistonEngine()
         engine.initialize(context)
 
+        # Simulate electrical system providing power for starter
+        engine._electrical_voltage = 12.6
+        engine._electrical_available = True
+
+        # Simulate fuel system providing fuel
+        engine._fuel_available = True
+
         # Start the engine
         engine.starter_engaged = True
         engine.magneto_left = True
@@ -451,10 +485,16 @@ class TestSimplePistonEngineShutdown:
         """Test shutdown cleans up subscriptions."""
         running_engine.shutdown()
 
-        # Should unsubscribe from messages
-        running_engine.context.message_queue.unsubscribe.assert_called_once_with(
-            MessageTopic.ENGINE_STATE, running_engine.handle_message
-        )
+        # Should unsubscribe from all three message topics
+        assert running_engine.context.message_queue.unsubscribe.call_count == 3
+
+        # Verify each expected unsubscribe call
+        unsubscribe_calls = running_engine.context.message_queue.unsubscribe.call_args_list
+        topics_unsubscribed = [call[0][0] for call in unsubscribe_calls]
+
+        assert MessageTopic.ENGINE_STATE in topics_unsubscribed
+        assert MessageTopic.ELECTRICAL_STATE in topics_unsubscribed
+        assert MessageTopic.FUEL_STATE in topics_unsubscribed
 
         assert running_engine.running is False
         assert running_engine.rpm == 0.0

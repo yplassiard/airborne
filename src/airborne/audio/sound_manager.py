@@ -48,10 +48,16 @@ class SoundManager:
         # Active sound sources (for continuous sounds like engine)
         self._engine_source_id: int | None = None
         self._wind_source_id: int | None = None
+        self._battery_loop_source_id: int | None = None
+        self._battery_on_source_id: int | None = None  # For batteryon1.mp3 one-shot
 
         # Engine sound pitch configuration (can be overridden per aircraft)
         self._engine_pitch_idle = 0.7  # Pitch at 0% throttle
         self._engine_pitch_full = 1.3  # Pitch at 100% throttle
+
+        # Battery sound sequence state
+        self._battery_sequence_active = False
+        self._battery_sequence_callback: Any = None  # Callback when battery is truly ON
 
     def initialize(
         self,
@@ -422,6 +428,71 @@ class SoundManager:
         except FileNotFoundError:
             logger.warning(f"Knob sound not found: {path}")
 
+    def play_battery_sound(self, battery_on: bool, on_complete_callback: Any = None) -> None:
+        """Play battery activation/deactivation sound sequence.
+
+        For battery ON:
+        1. Plays batteryon1.mp3 (one-shot startup sound)
+        2. When it finishes, starts batteryloop1.mp3 (looping hum)
+        3. Calls on_complete_callback when loop starts (battery truly ON)
+
+        For battery OFF:
+        1. Stops battery loop if playing
+        2. Plays batteryoff1.mp3 (shutdown sound)
+
+        Args:
+            battery_on: True for battery on, False for battery off.
+            on_complete_callback: Optional callback when battery is fully on (loop starts).
+        """
+        if not self._audio_engine:
+            return
+
+        if battery_on:
+            # Stop any existing battery sounds
+            if self._battery_loop_source_id is not None:
+                self._audio_engine.stop_source(self._battery_loop_source_id)
+                self._battery_loop_source_id = None
+
+            if self._battery_on_source_id is not None:
+                self._audio_engine.stop_source(self._battery_on_source_id)
+                self._battery_on_source_id = None
+
+            # Play batteryon1.mp3 (one-shot)
+            try:
+                path = "assets/sounds/aircraft/batteryon1.mp3"
+                self._battery_on_source_id = self.play_sound_2d(path, volume=0.6)
+                self._battery_sequence_active = True
+                self._battery_sequence_callback = on_complete_callback
+                logger.info("Battery startup sound started (batteryon1.mp3)")
+            except FileNotFoundError:
+                logger.warning("Battery startup sound not found: batteryon1.mp3")
+                # Call callback immediately if sound not found
+                if on_complete_callback:
+                    on_complete_callback()
+        else:
+            # Battery turning OFF
+            # Stop battery loop
+            if self._battery_loop_source_id is not None:
+                self._audio_engine.stop_source(self._battery_loop_source_id)
+                self._battery_loop_source_id = None
+                logger.info("Battery loop stopped")
+
+            # Stop any startup sound
+            if self._battery_on_source_id is not None:
+                self._audio_engine.stop_source(self._battery_on_source_id)
+                self._battery_on_source_id = None
+
+            self._battery_sequence_active = False
+            self._battery_sequence_callback = None
+
+            # Play batteryoff1.mp3
+            try:
+                path = "assets/sounds/aircraft/batteryoff1.mp3"
+                self.play_sound_2d(path, volume=0.6)
+                logger.info("Battery shutdown sound played (batteryoff1.mp3)")
+            except FileNotFoundError:
+                logger.warning("Battery shutdown sound not found: batteryoff1.mp3")
+
     def start_rolling_sound(self, path: str = "assets/sounds/aircraft/rolling.wav") -> None:
         """Start looping rolling/tire sound.
 
@@ -474,3 +545,54 @@ class SoundManager:
 
             self._audio_engine.update_source_volume(self._rolling_source_id, volume)
             self._audio_engine.update_source_pitch(self._rolling_source_id, pitch)
+
+    def update(self) -> None:
+        """Update sound manager state.
+
+        Should be called each frame to:
+        - Update audio engine
+        - Monitor battery sound sequence
+        - Clean up finished sounds
+        """
+        if not self._audio_engine:
+            return
+
+        # Update audio engine
+        self._audio_engine.update()
+
+        # Check battery sound sequence
+        if self._battery_sequence_active and self._battery_on_source_id is not None:
+            # Check if batteryon1.mp3 has finished
+            from airborne.audio.engine.base import SourceState
+
+            state = self._audio_engine.get_source_state(self._battery_on_source_id)
+            if state == SourceState.STOPPED:
+                # batteryon1.mp3 finished, start the loop
+                logger.info("Battery startup sound finished, starting loop")
+                self._battery_on_source_id = None
+
+                # Start batteryloop1.mp3
+                try:
+                    # Load with loop mode enabled
+                    loop_sound = self._audio_engine.load_sound(
+                        "assets/sounds/aircraft/batteryloop1.mp3", preload=True, loop_mode=True
+                    )
+                    self._battery_loop_source_id = self._audio_engine.play_2d(
+                        loop_sound, volume=0.5, pitch=1.0, loop=True
+                    )
+                    logger.info("Battery loop started (batteryloop1.mp3)")
+
+                    # Battery is now truly ON - call callback
+                    if self._battery_sequence_callback:
+                        logger.info("Battery sequence complete - calling callback")
+                        self._battery_sequence_callback()
+                        self._battery_sequence_callback = None
+
+                except FileNotFoundError:
+                    logger.warning("Battery loop sound not found: batteryloop1.mp3")
+                    # Still call callback even if sound not found
+                    if self._battery_sequence_callback:
+                        self._battery_sequence_callback()
+                        self._battery_sequence_callback = None
+
+                self._battery_sequence_active = False

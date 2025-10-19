@@ -324,7 +324,7 @@ class AirBorne:
 
         while self.running:
             # Calculate delta time
-            dt = self.clock.tick(60) / 1000.0  # Convert ms to seconds
+            dt = self.clock.tick(240) / 1000.0  # 240 FPS - Convert ms to seconds
             self._track_frametime(dt)
 
             # Process events

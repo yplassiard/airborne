@@ -138,6 +138,7 @@ class SimpleElectricalSystem(IPlugin):
 
         # Subscribe to electrical control messages
         context.message_queue.subscribe(MessageTopic.ELECTRICAL_STATE, self.handle_message)
+        context.message_queue.subscribe("electrical.master_switch", self.handle_message)
 
         # Publish initial state immediately after initialization
         self._publish_state()
@@ -230,6 +231,7 @@ class SimpleElectricalSystem(IPlugin):
             self.context.message_queue.unsubscribe(
                 MessageTopic.ELECTRICAL_STATE, self.handle_message
             )
+            self.context.message_queue.unsubscribe("electrical.master_switch", self.handle_message)
 
         # System shutdown
         self.battery_master = False
@@ -249,6 +251,18 @@ class SimpleElectricalSystem(IPlugin):
                 self._engine_running = bool(data["running"])
             if "rpm" in data:
                 self._engine_rpm = float(data["rpm"])
+
+        elif message.topic == "electrical.master_switch":
+            # Handle master switch from control panel
+            # NOTE: This is intercepted by audio plugin first to play battery sounds
+            # The audio plugin will send ELECTRICAL_STATE message when battery is ready
+            data = message.data
+            state = data.get("state", "OFF")
+
+            # For battery OFF, turn off immediately
+            if state == "OFF":
+                self.battery_master = False
+            # For battery ON, wait for audio callback (via ELECTRICAL_STATE message)
 
         elif message.topic == MessageTopic.ELECTRICAL_STATE:
             # Handle electrical control commands

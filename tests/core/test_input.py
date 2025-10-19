@@ -193,7 +193,7 @@ class TestInputManagerKeyboard:
 
         keydown = Mock()
         keydown.type = pygame.KEYDOWN
-        keydown.key = pygame.K_HOME  # Throttle increase
+        keydown.key = pygame.K_PAGEUP  # Throttle increase
         manager.process_events([keydown])
 
         # Call update to apply continuous throttle change
@@ -424,11 +424,18 @@ class TestInputManagerThrottle:
         return InputManager(event_bus)
 
     def test_throttle_full(self, manager: InputManager) -> None:
-        """Test throttle full action."""
+        """Test throttle increase moves towards full."""
+        # Start at partial throttle
+        manager._target_throttle = 0.5
+
         keydown = Mock()
         keydown.type = pygame.KEYDOWN
-        keydown.key = pygame.K_PAGEUP  # Changed from K_f to K_PAGEUP
+        keydown.key = pygame.K_PAGEUP  # Throttle increase
         manager.process_events([keydown])
+
+        # Multiple updates to reach full throttle
+        for _ in range(50):  # 50 * 0.01 = 0.5, should reach 1.0
+            manager.update(0.016)
 
         assert manager._target_throttle == 1.0
 
@@ -447,7 +454,7 @@ class TestInputManagerThrottle:
         """Test incrementing throttle multiple times with update loop."""
         keydown = Mock()
         keydown.type = pygame.KEYDOWN
-        keydown.key = pygame.K_HOME  # Changed from K_EQUALS to K_HOME
+        keydown.key = pygame.K_PAGEUP  # Throttle increase
         manager.process_events([keydown])
 
         # Call update 5 times to increment throttle continuously
@@ -463,7 +470,7 @@ class TestInputManagerThrottle:
 
         keydown = Mock()
         keydown.type = pygame.KEYDOWN
-        keydown.key = pygame.K_HOME  # Changed from K_EQUALS to K_HOME
+        keydown.key = pygame.K_PAGEUP  # Throttle increase
         manager.process_events([keydown])
 
         # Call update multiple times to exceed 1.0
