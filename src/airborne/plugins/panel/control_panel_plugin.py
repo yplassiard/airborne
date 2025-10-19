@@ -87,20 +87,52 @@ class PanelControl:
             return self.states[self.current_state_index]
         return "UNKNOWN"
 
+    def can_increase(self) -> bool:
+        """Check if control can be increased.
+
+        Returns:
+            True if control is not at maximum value.
+        """
+        if self.is_continuous():
+            return self.continuous_value < self.max_value
+        if self.states:
+            return self.current_state_index < len(self.states) - 1
+        return False
+
+    def can_decrease(self) -> bool:
+        """Check if control can be decreased.
+
+        Returns:
+            True if control is not at minimum value.
+        """
+        if self.is_continuous():
+            return self.continuous_value > self.min_value
+        if self.states:
+            return self.current_state_index > 0
+        return False
+
     def next_state(self) -> str:
-        """Advance to next state (wraps around for discrete, increments for continuous)."""
+        """Advance to next state (does NOT wrap around).
+
+        Returns:
+            Current state after change (or unchanged if at max).
+        """
         if self.is_continuous():
             self.continuous_value = min(self.max_value, self.continuous_value + self.step_size)
-        elif self.states:
-            self.current_state_index = (self.current_state_index + 1) % len(self.states)
+        elif self.states and self.can_increase():
+            self.current_state_index += 1
         return self.get_current_state()
 
     def previous_state(self) -> str:
-        """Go to previous state (wraps around for discrete, decrements for continuous)."""
+        """Go to previous state (does NOT wrap around).
+
+        Returns:
+            Current state after change (or unchanged if at min).
+        """
         if self.is_continuous():
             self.continuous_value = max(self.min_value, self.continuous_value - self.step_size)
-        elif self.states:
-            self.current_state_index = (self.current_state_index - 1) % len(self.states)
+        elif self.states and self.can_decrease():
+            self.current_state_index -= 1
         return self.get_current_state()
 
     def set_state(self, state: str) -> bool:
@@ -431,6 +463,18 @@ class ControlPanelPlugin(IPlugin):
         # Update internal state tracking
         self._update_control_state(control.id, control.target_plugin, current_state)
 
+        # Play click sound for switches, knobs, and sliders
+        if control.control_type in (ControlType.SWITCH, ControlType.KNOB, ControlType.SLIDER):
+            self.context.message_queue.publish(
+                Message(
+                    sender="control_panel_plugin",
+                    recipients=["audio_plugin"],
+                    topic="audio.play_click",
+                    data={"control_type": control.control_type.value},
+                    priority=MessagePriority.HIGH,
+                )
+            )
+
         # Announce state change using pre-recorded messages if available
         self._announce_control_state(control, current_state)
 
@@ -585,10 +629,7 @@ class ControlPanelPlugin(IPlugin):
 
         # Convert state to message key (e.g., "ON" -> "MSG_MASTER_SWITCH_ON")
         # Handle boolean values (True/False -> ON/OFF)
-        if isinstance(state, bool):
-            state_str = "ON" if state else "OFF"
-        else:
-            state_str = str(state)
+        state_str = ("ON" if state else "OFF") if isinstance(state, bool) else str(state)
         state_normalized = state_str.upper().replace(" ", "_").replace("%", "")
         control_state_msg_key = f"{control_msg_key}_{state_normalized}"
 
@@ -685,6 +726,49 @@ class ControlPanelPlugin(IPlugin):
                 return panel
         return None
 
+    def _handle_control_key(self, control: PanelControl, mod: int) -> bool:
+        """Handle key press for a control with new behavior.
+
+        Args:
+            control: The control to operate
+            mod: Pygame keyboard modifier flags
+
+        Returns:
+            True if key was handled
+
+        Behavior:
+            - No modifiers: Announce current state (no change)
+            - Shift: Increase/turn on (only if not at max)
+            - Ctrl: Decrease/turn off (only if not at min)
+        """
+        import pygame
+
+        # Check modifiers
+        has_shift = bool(mod & pygame.KMOD_SHIFT)
+        has_ctrl = bool(mod & pygame.KMOD_CTRL)
+
+        # No modifiers: Just announce current state
+        if not has_shift and not has_ctrl:
+            state = control.get_current_state()
+            self._announce_control_state(control, state)
+            return True
+
+        # Shift: Increase/turn on (only if can increase)
+        if has_shift and not has_ctrl:
+            if control.can_increase():
+                control.next_state()
+                self._on_control_state_changed(control)
+            return True
+
+        # Ctrl: Decrease/turn off (only if can decrease)
+        if has_ctrl and not has_shift:
+            if control.can_decrease():
+                control.previous_state()
+                self._on_control_state_changed(control)
+            return True
+
+        return False
+
     def handle_key_press(self, key: int, mod: int) -> bool:
         """Handle keyboard input for panel navigation and control.
 
@@ -726,110 +810,39 @@ class ControlPanelPlugin(IPlugin):
 
         # INSTRUMENT PANEL (Panel 0)
         if self.current_panel_index == 0:
-            if key == pygame.K_m:
-                control = self.get_control_by_id("master_switch")
+            control_key_map = {
+                pygame.K_m: "master_switch",
+                pygame.K_a: "avionics_master_switch",
+                pygame.K_b: "beacon_switch",
+                pygame.K_n: "nav_lights_switch",
+                pygame.K_s: "strobe_switch",
+                pygame.K_t: "taxi_light_switch",
+                pygame.K_l: "landing_light_switch",
+            }
+
+            if key in control_key_map:
+                control = self.get_control_by_id(control_key_map[key])
                 if control:
-                    control.next_state()
-                    self._on_control_state_changed(control)
-                    return True
-            elif key == pygame.K_a:
-                control = self.get_control_by_id("avionics_master_switch")
-                if control:
-                    control.next_state()
-                    self._on_control_state_changed(control)
-                    return True
-            elif key == pygame.K_b:
-                control = self.get_control_by_id("beacon_switch")
-                if control:
-                    control.next_state()
-                    self._on_control_state_changed(control)
-                    return True
-            elif key == pygame.K_n:
-                control = self.get_control_by_id("nav_lights_switch")
-                if control:
-                    control.next_state()
-                    self._on_control_state_changed(control)
-                    return True
-            elif key == pygame.K_s:
-                control = self.get_control_by_id("strobe_switch")
-                if control:
-                    control.next_state()
-                    self._on_control_state_changed(control)
-                    return True
-            elif key == pygame.K_t:
-                control = self.get_control_by_id("taxi_light_switch")
-                if control:
-                    control.next_state()
-                    self._on_control_state_changed(control)
-                    return True
-            elif key == pygame.K_l:
-                control = self.get_control_by_id("landing_light_switch")
-                if control:
-                    control.next_state()
-                    self._on_control_state_changed(control)
-                    return True
+                    return self._handle_control_key(control, mod)
 
         # PEDESTAL (Panel 1)
         elif self.current_panel_index == 1:
-            # Mixture lever (Shift+M next, Ctrl+M previous)
-            if key == pygame.K_m:
-                control = self.get_control_by_id("mixture_lever")
-                if control:
-                    if mod & pygame.KMOD_SHIFT:
-                        control.next_state()
-                    elif mod & pygame.KMOD_CTRL:
-                        control.previous_state()
-                    self._on_control_state_changed(control)
-                    return True
+            control_key_map = {
+                pygame.K_m: "mixture_lever",
+                pygame.K_c: "carburetor_heat_lever",
+                pygame.K_t: "throttle_lever",
+                pygame.K_f: "fuel_selector_valve",
+                pygame.K_v: "fuel_shutoff_valve",
+                pygame.K_p: "fuel_pump_switch",
+            }
 
-            # Carburetor heat (C toggles)
-            elif key == pygame.K_c:
-                control = self.get_control_by_id("carburetor_heat_lever")
+            if key in control_key_map:
+                control = self.get_control_by_id(control_key_map[key])
                 if control:
-                    control.next_state()
-                    self._on_control_state_changed(control)
-                    return True
+                    return self._handle_control_key(control, mod)
 
-            # Throttle (Shift+T increase, Ctrl+T decrease)
-            elif key == pygame.K_t:
-                control = self.get_control_by_id("throttle_lever")
-                if control:
-                    if mod & pygame.KMOD_SHIFT:
-                        control.next_state()  # Increase
-                    elif mod & pygame.KMOD_CTRL:
-                        control.previous_state()  # Decrease
-                    self._on_control_state_changed(control)
-                    return True
-
-            # Fuel selector (Shift+F next, Ctrl+F previous)
-            elif key == pygame.K_f:
-                control = self.get_control_by_id("fuel_selector_valve")
-                if control:
-                    if mod & pygame.KMOD_SHIFT:
-                        control.next_state()
-                    elif mod & pygame.KMOD_CTRL:
-                        control.previous_state()
-                    self._on_control_state_changed(control)
-                    return True
-
-            # Fuel shutoff valve (V toggles)
-            elif key == pygame.K_v:
-                control = self.get_control_by_id("fuel_shutoff_valve")
-                if control:
-                    control.next_state()
-                    self._on_control_state_changed(control)
-                    return True
-
-            # Fuel pump (P toggles)
-            elif key == pygame.K_p:
-                control = self.get_control_by_id("fuel_pump_switch")
-                if control:
-                    control.next_state()
-                    self._on_control_state_changed(control)
-                    return True
-
-            # Primer pump (R presses)
-            elif key == pygame.K_r:
+            # Primer pump button (any modifier triggers press)
+            if key == pygame.K_r:
                 control = self.get_control_by_id("primer_pump")
                 if control:
                     self._trigger_button(control)
@@ -837,19 +850,17 @@ class ControlPanelPlugin(IPlugin):
 
         # ENGINE CONTROLS (Panel 2)
         elif self.current_panel_index == 2:
-            # Magnetos (Shift+G next, Ctrl+G previous)
-            if key == pygame.K_g:
-                control = self.get_control_by_id("magneto_switch")
-                if control:
-                    if mod & pygame.KMOD_SHIFT:
-                        control.next_state()
-                    elif mod & pygame.KMOD_CTRL:
-                        control.previous_state()
-                    self._on_control_state_changed(control)
-                    return True
+            control_key_map = {
+                pygame.K_g: "magneto_switch",
+            }
 
-            # Starter button (S presses)
-            elif key == pygame.K_s:
+            if key in control_key_map:
+                control = self.get_control_by_id(control_key_map[key])
+                if control:
+                    return self._handle_control_key(control, mod)
+
+            # Starter button (any modifier triggers press)
+            if key == pygame.K_s:
                 control = self.get_control_by_id("starter_button")
                 if control:
                     self._trigger_button(control)
@@ -857,45 +868,27 @@ class ControlPanelPlugin(IPlugin):
 
         # OVERHEAD PANEL (Panel 3)
         elif self.current_panel_index == 3:
-            # Pitot heat (H toggles)
-            if key == pygame.K_h:
-                control = self.get_control_by_id("pitot_heat_switch")
+            control_key_map = {
+                pygame.K_h: "pitot_heat_switch",
+            }
+
+            if key in control_key_map:
+                control = self.get_control_by_id(control_key_map[key])
                 if control:
-                    control.next_state()
-                    self._on_control_state_changed(control)
-                    return True
+                    return self._handle_control_key(control, mod)
 
         # FLIGHT CONTROLS (Panel 4)
         elif self.current_panel_index == 4:
-            # Flaps (Shift+F next, Ctrl+F previous)
-            if key == pygame.K_f:
-                control = self.get_control_by_id("flaps_lever")
-                if control:
-                    if mod & pygame.KMOD_SHIFT:
-                        control.next_state()
-                    elif mod & pygame.KMOD_CTRL:
-                        control.previous_state()
-                    self._on_control_state_changed(control)
-                    return True
+            control_key_map = {
+                pygame.K_f: "flaps_lever",
+                pygame.K_e: "elevator_trim_wheel",
+                pygame.K_b: "parking_brake_lever",
+            }
 
-            # Elevator trim (Shift+E next, Ctrl+E previous)
-            elif key == pygame.K_e:
-                control = self.get_control_by_id("elevator_trim_wheel")
+            if key in control_key_map:
+                control = self.get_control_by_id(control_key_map[key])
                 if control:
-                    if mod & pygame.KMOD_SHIFT:
-                        control.next_state()
-                    elif mod & pygame.KMOD_CTRL:
-                        control.previous_state()
-                    self._on_control_state_changed(control)
-                    return True
-
-            # Parking brake (B toggles)
-            elif key == pygame.K_b:
-                control = self.get_control_by_id("parking_brake_lever")
-                if control:
-                    control.next_state()
-                    self._on_control_state_changed(control)
-                    return True
+                    return self._handle_control_key(control, mod)
 
         # Allow certain keys to fall through to InputManager (flight controls, menus, etc.)
         passthrough_keys = {
