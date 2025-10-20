@@ -97,7 +97,9 @@ class BoardingService(GroundService):
         if self.passengers_boarded >= self.passenger_count:
             self.status = ServiceStatus.COMPLETE
             self._publish_status_update()
-            self._publish_audio_message("Boarding complete, all passengers aboard, doors closed and armed")
+            self._publish_audio_message(
+                "Boarding complete, all passengers aboard, doors closed and armed"
+            )
             logger.info("Boarding complete: %d passengers", self.passengers_boarded)
 
     def get_progress(self) -> float:

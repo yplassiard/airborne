@@ -16,7 +16,6 @@ from airborne.core.plugin import IPlugin, PluginContext, PluginMetadata, PluginT
 from airborne.plugins.ground.ground_services import (
     AirportCategory,
     GroundServiceManager,
-    ServiceRequest,
     ServiceStatus,
     ServiceType,
 )

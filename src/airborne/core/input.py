@@ -183,10 +183,8 @@ class InputConfig:
             pygame.K_RIGHT: InputAction.ROLL_RIGHT,
             pygame.K_COMMA: InputAction.YAW_LEFT,  # Changed from Q (now Ctrl+Q for quit)
             pygame.K_e: InputAction.YAW_RIGHT,
-            pygame.K_PAGEUP: InputAction.THROTTLE_INCREASE,
-            pygame.K_PAGEDOWN: InputAction.THROTTLE_DECREASE,
-            pygame.K_HOME: InputAction.PITCH_DOWN,
-            pygame.K_END: InputAction.PITCH_UP,
+            pygame.K_HOME: InputAction.THROTTLE_INCREASE,
+            pygame.K_END: InputAction.THROTTLE_DECREASE,
             # Brakes and gear
             pygame.K_b: InputAction.BRAKES,
             pygame.K_p: InputAction.PARKING_BRAKE,
@@ -202,7 +200,6 @@ class InputConfig:
             pygame.K_l: InputAction.READ_ALTITUDE,  # L for aLtitude
             pygame.K_h: InputAction.READ_HEADING,  # H for Heading
             pygame.K_w: InputAction.READ_VSPEED,  # W for Vertical speed (up/down)
-            pygame.K_t: InputAction.READ_ATTITUDE,  # T for aTtitude (bank/pitch)
             # TTS
             pygame.K_n: InputAction.TTS_NEXT,  # N for Next
             pygame.K_r: InputAction.TTS_REPEAT,  # R for Repeat
@@ -319,6 +316,10 @@ class InputManager:  # pylint: disable=too-many-instance-attributes
 
         # Throttle smoothing
         self._target_throttle = 0.0
+
+        # Throttle rate limiting (10 clicks per second = 0.1s between clicks)
+        self._throttle_click_interval = 0.1  # seconds between throttle adjustments
+        self._time_since_last_throttle_click = 0.0
 
         logger.info(
             "Input manager initialized with %d key bindings", len(self.config.keyboard_bindings)
@@ -520,6 +521,13 @@ class InputManager:  # pylint: disable=too-many-instance-attributes
         if action == InputAction.BRAKES:
             self.state.brakes = 0.0
 
+        # Announce throttle percent when throttle keys are released
+        elif action in (InputAction.THROTTLE_INCREASE, InputAction.THROTTLE_DECREASE):
+            throttle_percent = int(self._target_throttle * 100)
+            self.event_bus.publish(
+                InputActionEvent(action="throttle_released", value=throttle_percent)
+            )
+
     def _handle_joy_button_down(self, button: int) -> None:
         """Handle joystick button press.
 
@@ -546,6 +554,9 @@ class InputManager:  # pylint: disable=too-many-instance-attributes
         Args:
             dt: Delta time in seconds.
         """
+        # Update throttle rate limiting timer
+        self._time_since_last_throttle_click += dt
+
         # Update continuous keyboard controls
         self._update_keyboard_controls()
 
@@ -605,15 +616,33 @@ class InputManager:  # pylint: disable=too-many-instance-attributes
             elif action == InputAction.YAW_RIGHT:
                 yaw += 1.0
             elif action == InputAction.THROTTLE_INCREASE:
-                # Continuously increase throttle while key is held
-                self._target_throttle = min(
-                    1.0, self._target_throttle + self.config.throttle_increment
-                )
+                # Rate-limited throttle increase (10 clicks/second max)
+                if self._time_since_last_throttle_click >= self._throttle_click_interval:
+                    # Shift modifier = 10% increment, otherwise 1%
+                    mods = pygame.key.get_mods()
+                    increment = 0.10 if (mods & pygame.KMOD_SHIFT) else 0.01
+                    old_throttle = self._target_throttle
+                    self._target_throttle = min(1.0, self._target_throttle + increment)
+                    # Play click sound if throttle actually changed
+                    if abs(self._target_throttle - old_throttle) > 0.001:
+                        self.event_bus.publish(
+                            InputActionEvent(action="throttle_click", value=self._target_throttle)
+                        )
+                        self._time_since_last_throttle_click = 0.0
             elif action == InputAction.THROTTLE_DECREASE:
-                # Continuously decrease throttle while key is held
-                self._target_throttle = max(
-                    0.0, self._target_throttle - self.config.throttle_increment
-                )
+                # Rate-limited throttle decrease (10 clicks/second max)
+                if self._time_since_last_throttle_click >= self._throttle_click_interval:
+                    # Shift modifier = 10% decrement, otherwise 1%
+                    mods = pygame.key.get_mods()
+                    decrement = 0.10 if (mods & pygame.KMOD_SHIFT) else 0.01
+                    old_throttle = self._target_throttle
+                    self._target_throttle = max(0.0, self._target_throttle - decrement)
+                    # Play click sound if throttle actually changed
+                    if abs(self._target_throttle - old_throttle) > 0.001:
+                        self.event_bus.publish(
+                            InputActionEvent(action="throttle_click", value=self._target_throttle)
+                        )
+                        self._time_since_last_throttle_click = 0.0
             elif action == InputAction.BRAKES:
                 brakes = 1.0
 

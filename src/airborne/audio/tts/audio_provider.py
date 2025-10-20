@@ -229,17 +229,35 @@ class AudioSpeechProvider(ITTSProvider):
 
             # If not in config, try to find file directly in voice directories
             if not message_config:
-                # Try common voice directories: pilot, cockpit
                 found = False
-                for voice_name, voice_dir in self._voice_dirs.items():
-                    filepath = voice_dir / f"{key}.{self._file_extension}"
-                    if filepath.exists():
-                        found = True
-                        break
+                # Check if key specifies voice directory (e.g., "cockpit/number_42_autogen")
+                if "/" in key:
+                    voice_name, filename_base = key.split("/", 1)
+                    voice_dir = self._voice_dirs.get(voice_name)
+                    if voice_dir:
+                        filepath = voice_dir / f"{filename_base}.{self._file_extension}"
+                        if filepath.exists():
+                            found = True
+                        else:
+                            logger.warning(f"Speech file not found: {filepath}")
+                            continue
+                    else:
+                        logger.warning(f"Unknown voice: {voice_name}")
+                        continue
+                else:
+                    # Try common voice directories: pilot, cockpit
+                    # Prefer cockpit for instrument readouts
+                    for voice_name in ["cockpit", "pilot"]:
+                        voice_dir = self._voice_dirs.get(voice_name)
+                        if voice_dir:
+                            filepath = voice_dir / f"{key}.{self._file_extension}"
+                            if filepath.exists():
+                                found = True
+                                break
 
-                if not found:
-                    logger.warning(f"Message key not found: {key}")
-                    continue
+                    if not found:
+                        logger.warning(f"Message key not found: {key}")
+                        continue
             else:
                 # Get voice type and resolve directory from config
                 voice = message_config.get("voice", "cockpit")

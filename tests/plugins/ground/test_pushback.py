@@ -1,6 +1,5 @@
 """Unit tests for pushback service."""
 
-import math
 import time
 
 import pytest

@@ -100,9 +100,7 @@ class TestBoardingService:
         boarding_service.passengers_boarded = 100
         assert boarding_service.get_progress() == 1.0
 
-    def test_boarding_completes_when_all_boarded(
-        self, boarding_service: BoardingService
-    ) -> None:
+    def test_boarding_completes_when_all_boarded(self, boarding_service: BoardingService) -> None:
         """Test boarding completes when all passengers board."""
         request = ServiceRequest(
             service_type=ServiceType.BOARDING,
@@ -195,9 +193,7 @@ class TestDeboardingService:
         assert len(audio_messages) == 1
         assert "Deboarding started" in audio_messages[0].data["text"]
 
-    def test_deboarding_faster_than_boarding(
-        self, deboarding_service: DeboardingService
-    ) -> None:
+    def test_deboarding_faster_than_boarding(self, deboarding_service: DeboardingService) -> None:
         """Test deboarding is faster than boarding."""
         request = ServiceRequest(
             service_type=ServiceType.DEBOARDING,

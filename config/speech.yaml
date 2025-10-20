@@ -785,6 +785,10 @@ messages:
     text: percent
     voice: cockpit
     filename: percent
+  MSG_WORD_THROTTLE:
+    text: throttle
+    voice: cockpit
+    filename: throttle
   MSG_WORD_CHARGING:
     text: charging
     voice: cockpit

@@ -16,6 +16,7 @@ if TYPE_CHECKING:
 from airborne.audio.engine.base import IAudioEngine, Vector3
 from airborne.audio.sound_manager import SoundManager
 from airborne.audio.tts.base import ITTSProvider
+from airborne.audio.tts.speech_messages import SpeechMessages
 from airborne.core.logging_system import get_logger
 from airborne.core.messaging import Message, MessagePriority, MessageTopic
 from airborne.core.plugin import IPlugin, PluginContext, PluginMetadata, PluginType
@@ -66,7 +67,8 @@ class AudioPlugin(IPlugin):
         self._last_gear_state = 1.0  # Start with gear down
         self._last_flaps_state = 0.0
         self._last_brakes_state = 0.0
-        self._engine_started = False
+        self._engine_sound_active = False  # Whether engine sound is currently playing
+        self._last_engine_rpm = 0.0  # Track RPM for wind-down
         self._last_master_switch: bool | None = None  # Track battery state changes
         self._master_switch_initialized = False  # Track if we've received first message
 
@@ -239,7 +241,8 @@ class AudioPlugin(IPlugin):
                 self._engine_sound_path = "assets/sounds/aircraft/engine.wav"
 
             self.sound_manager.start_wind_sound()
-            self._engine_started = False  # Engine starts off
+            self._engine_sound_active = False  # Engine sound starts off
+            self._last_engine_rpm = 0.0
 
         logger.info("Audio plugin initialized")
 
@@ -334,10 +337,7 @@ class AudioPlugin(IPlugin):
                     self.sound_manager.play_brakes_sound(brakes > 0.0)
                     self._last_brakes_state = brakes
 
-            # Update engine sound based on throttle
-            if "throttle" in data and self.sound_manager:
-                throttle = data["throttle"]
-                self.sound_manager.update_engine_sound(throttle)
+            # Note: Engine sound is now updated by RPM in ENGINE_STATE handler, not throttle
 
         elif message.topic == MessageTopic.TTS_SPEAK:
             # Handle TTS speak requests
@@ -464,30 +464,40 @@ class AudioPlugin(IPlugin):
             # Update engine state for instrument readouts
             data = message.data
             engine_running = data.get("running", False)
+            engine_rpm = data.get("rpm", 0.0)
 
-            # Start/stop engine sound based on engine state
-            if self.sound_manager and hasattr(self, "_engine_started"):
-                if engine_running and not self._engine_started:
-                    # Engine just started - start engine sound
+            # Start/stop engine sound based on RPM (not just running state)
+            # This allows sound during cranking and gradual wind-down
+            if self.sound_manager and hasattr(self, "_engine_sound_active"):
+                if engine_rpm > 0 and not self._engine_sound_active:
+                    # RPM > 0: Start engine sound (starter engaged or running)
                     engine_sound_path = getattr(
                         self, "_engine_sound_path", "assets/sounds/aircraft/engine.wav"
                     )
                     self.sound_manager.start_engine_sound(engine_sound_path)
-                    self._engine_started = True
-                    logger.info("Engine sound started")
-                elif not engine_running and self._engine_started:
-                    # Engine just stopped - stop engine sound
+                    self._engine_sound_active = True
+                    logger.info(f"Engine sound started at {engine_rpm:.0f} RPM")
+                elif engine_rpm <= 0 and self._engine_sound_active:
+                    # RPM = 0: Stop engine sound (fully stopped)
                     if (
                         hasattr(self.sound_manager, "_engine_source_id")
                         and self.sound_manager._engine_source_id is not None
                     ):
                         self.sound_manager.stop_sound(self.sound_manager._engine_source_id)
                         self.sound_manager._engine_source_id = None
-                        self._engine_started = False
-                        logger.info("Engine sound stopped")
+                        self._engine_sound_active = False
+                        logger.info("Engine sound stopped (RPM = 0)")
+
+                # Update engine sound pitch based on RPM
+                if self._engine_sound_active and engine_rpm > 0:
+                    # Get engine RPM limits from config or use defaults
+                    idle_rpm = 600.0  # Cessna 172 idle RPM
+                    max_rpm = 2700.0  # Cessna 172 max RPM
+                    self.sound_manager.update_engine_sound_rpm(engine_rpm, idle_rpm, max_rpm)
 
             self._engine_running = engine_running
-            self._engine_rpm = data.get("rpm", 0.0)
+            self._engine_rpm = engine_rpm
+            self._last_engine_rpm = engine_rpm  # Track for potential future use
             self._manifold_pressure = data.get("manifold_pressure", 0.0)
             self._oil_pressure = data.get("oil_pressure", 0.0)
             self._oil_temp = data.get("oil_temp", 0.0)
@@ -614,6 +624,23 @@ class AudioPlugin(IPlugin):
         """
         logger.debug(f"Input action received: {event.action}")
 
+        # Handle throttle click sound (no TTS needed)
+        if event.action == "throttle_click":
+            if self.sound_manager:
+                self.sound_manager.play_sound_2d(
+                    "assets/sounds/aircraft/click_knob.mp3", volume=0.3
+                )
+            return
+
+        # Handle throttle released (announce percent)
+        if event.action == "throttle_released" and event.value is not None:
+            if self.tts_provider:
+                throttle_percent = int(event.value)
+                keys = SpeechMessages.throttle_percent(throttle_percent)
+                # Interrupt any current speech to announce throttle immediately
+                self.tts_provider.speak(keys, interrupt=True)  # type: ignore[arg-type]
+            return
+
         if not self.tts_provider:
             logger.warning("No TTS provider available for input action feedback")
             return
@@ -687,8 +714,9 @@ class AudioPlugin(IPlugin):
         elif event.action == "read_fuel_quantity":
             message = f"Fuel quantity {self._fuel_quantity:.1f} gallons"
         elif event.action == "read_fuel_remaining":
-            hours = int(self._fuel_remaining_minutes / 60)
-            minutes = int(self._fuel_remaining_minutes % 60)
+            fuel_minutes = self._fuel_remaining_minutes or 0.0
+            hours = int(fuel_minutes / 60)
+            minutes = int(fuel_minutes % 60)
             if hours > 0:
                 message = f"Fuel remaining {hours} hours {minutes} minutes"
             else:
@@ -705,8 +733,9 @@ class AudioPlugin(IPlugin):
                 f"Battery {self._battery_voltage:.1f} volts {int(self._battery_percent)} percent"
             )
         elif event.action == "read_fuel":
-            hours = int(self._fuel_remaining_minutes / 60)
-            minutes = int(self._fuel_remaining_minutes % 60)
+            fuel_minutes = self._fuel_remaining_minutes or 0.0
+            hours = int(fuel_minutes / 60)
+            minutes = int(fuel_minutes % 60)
             if hours > 0:
                 message = f"Fuel {self._fuel_quantity:.1f} gallons remaining {hours} hours {minutes} minutes"
             else:
@@ -743,7 +772,7 @@ class AudioPlugin(IPlugin):
             # Log the list of keys for debugging
             logger.info(f"Speaking: {' '.join(message_key)} ({message})")
             # Pass the list directly to TTS provider for composable playback
-            self.tts_provider.speak(message_key, priority=TTSPriority.NORMAL)
+            self.tts_provider.speak(message_key, priority=TTSPriority.NORMAL)  # type: ignore[arg-type]
         else:
             logger.info(f"Speaking: {message_key} ({message})")
             self.tts_provider.speak(message_key, priority=TTSPriority.NORMAL)
@@ -817,7 +846,7 @@ class AudioPlugin(IPlugin):
         elif action == "read_fuel_quantity":
             return SpeechMessages.fuel_quantity(self._fuel_quantity)
         elif action == "read_fuel_remaining":
-            return SpeechMessages.fuel_remaining(self._fuel_remaining_minutes)
+            return SpeechMessages.fuel_remaining(self._fuel_remaining_minutes or 0.0)
 
         # Comprehensive status readouts - return first message, queue rest
         elif action == "read_engine":
@@ -832,7 +861,9 @@ class AudioPlugin(IPlugin):
 
         elif action == "read_fuel":
             # Comprehensive fuel status (quantity, remaining time)
-            return SpeechMessages.fuel_status(self._fuel_quantity, self._fuel_remaining_minutes)
+            return SpeechMessages.fuel_status(
+                self._fuel_quantity, self._fuel_remaining_minutes or 0.0
+            )
 
         # Map action messages to constants
         action_to_key = {

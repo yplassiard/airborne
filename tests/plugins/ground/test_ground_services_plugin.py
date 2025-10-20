@@ -1,6 +1,5 @@
 """Unit tests for ground services plugin."""
 
-import time
 
 import pytest
 

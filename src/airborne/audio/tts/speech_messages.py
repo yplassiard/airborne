@@ -111,6 +111,7 @@ class SpeechMessages:
     MSG_WORD_BATTERY = "MSG_WORD_BATTERY"
     MSG_WORD_VOLTS = "MSG_WORD_VOLTS"
     MSG_WORD_PERCENT = "MSG_WORD_PERCENT"
+    MSG_WORD_THROTTLE = "MSG_WORD_THROTTLE"
     MSG_WORD_CHARGING = "MSG_WORD_CHARGING"
     MSG_WORD_DISCHARGING = "MSG_WORD_DISCHARGING"
     MSG_WORD_AMPS = "MSG_WORD_AMPS"
@@ -137,6 +138,18 @@ class SpeechMessages:
 
         # Map digit 9 to use DIGIT_9 (which will be "niner")
         return [f"MSG_DIGIT_{d}" for d in num_str]
+
+    @staticmethod
+    def _number_to_key(number: int) -> str:
+        """Convert whole number to number file key.
+
+        Args:
+            number: Whole number (0-999).
+
+        Returns:
+            Key for number audio file (e.g., "cockpit/number_42_autogen").
+        """
+        return f"cockpit/number_{number}_autogen"
 
     @staticmethod
     def airspeed(knots: int) -> list[str]:
@@ -512,6 +525,24 @@ class SpeechMessages:
             return SpeechMessages.MSG_BATTERY_STABLE
 
     @staticmethod
+    def throttle_percent(percent: int) -> list[str]:
+        """Get message keys for throttle percentage readout.
+
+        Args:
+            percent: Throttle percentage (0-100).
+
+        Returns:
+            List of message keys.
+        """
+        value = max(0, min(100, percent))
+
+        # Just announce the number and percent, without "throttle"
+        return [
+            f"number_{value}_autogen",
+            SpeechMessages.MSG_WORD_PERCENT,
+        ]
+
+    @staticmethod
     def alternator_output(amps: float) -> list[str]:
         """Get message keys for alternator output readout.
 
@@ -636,11 +667,11 @@ class SpeechMessages:
         # Round RPM to nearest 100
         rpm_rounded = round(rpm / 100) * 100
 
-        return (
-            [SpeechMessages.MSG_WORD_ENGINE]
-            + SpeechMessages._digits_to_keys(rpm_rounded)
-            + [SpeechMessages.MSG_WORD_RPM]
-        )
+        return [
+            SpeechMessages.MSG_WORD_ENGINE,
+            SpeechMessages._number_to_key(rpm_rounded),
+            SpeechMessages.MSG_WORD_RPM,
+        ]
 
     @staticmethod
     def electrical_status(voltage: float, percent: int, current: float) -> list[str]:
@@ -661,7 +692,7 @@ class SpeechMessages:
         result.append(SpeechMessages.MSG_WORD_VOLTS)
 
         # State of charge (e.g., "85 percent")
-        result.extend(SpeechMessages._digits_to_keys(percent))
+        result.append(SpeechMessages._number_to_key(percent))
         result.append(SpeechMessages.MSG_WORD_PERCENT)
 
         # Charging/discharging status
@@ -700,13 +731,13 @@ class SpeechMessages:
         result.append(SpeechMessages.MSG_WORD_REMAINING)
 
         if hours > 0:
-            result.extend(SpeechMessages._digits_to_keys(hours))
+            result.append(SpeechMessages._number_to_key(hours))
             result.append(SpeechMessages.MSG_WORD_HOURS)
             if mins > 0:
-                result.extend(SpeechMessages._digits_to_keys(mins))
+                result.append(SpeechMessages._number_to_key(mins))
                 result.append(SpeechMessages.MSG_WORD_MINUTES)
         else:
-            result.extend(SpeechMessages._digits_to_keys(mins))
+            result.append(SpeechMessages._number_to_key(mins))
             result.append(SpeechMessages.MSG_WORD_MINUTES)
 
         return result
