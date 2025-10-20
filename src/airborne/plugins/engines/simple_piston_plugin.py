@@ -140,6 +140,12 @@ class SimplePistonEngine(IPlugin):
         # Subscribe to fuel state messages (to check if fuel is available)
         context.message_queue.subscribe(MessageTopic.FUEL_STATE, self.handle_message)
 
+        # Subscribe to control panel messages (custom topics)
+        context.message_queue.subscribe("engine.magnetos", self.handle_message)
+        context.message_queue.subscribe("engine.starter", self.handle_message)
+        context.message_queue.subscribe("engine.mixture", self.handle_message)
+        context.message_queue.subscribe("engine.throttle", self.handle_message)
+
     def update(self, dt: float) -> None:
         """Update engine state.
 
@@ -203,6 +209,12 @@ class SimplePistonEngine(IPlugin):
                 MessageTopic.ELECTRICAL_STATE, self.handle_message
             )
             self.context.message_queue.unsubscribe(MessageTopic.FUEL_STATE, self.handle_message)
+
+            # Unsubscribe from control panel messages
+            self.context.message_queue.unsubscribe("engine.magnetos", self.handle_message)
+            self.context.message_queue.unsubscribe("engine.starter", self.handle_message)
+            self.context.message_queue.unsubscribe("engine.mixture", self.handle_message)
+            self.context.message_queue.unsubscribe("engine.throttle", self.handle_message)
 
         # Engine shutdown
         self.running = False
@@ -291,6 +303,22 @@ class SimplePistonEngine(IPlugin):
                 elif state_index == 2:  # RICH
                     self.mixture = 1.0
 
+        elif message.topic == "engine.starter":
+            # Handle starter button from panel control
+            # Panel sends: {"action": "pressed"}
+            data = message.data
+            if "action" in data and data["action"] == "pressed":
+                self.starter_engaged = True
+
+        elif message.topic == "engine.throttle":
+            # Handle throttle lever from panel control
+            # Panel sends: {"value": 50.0, "min_value": 0.0, "max_value": 100.0}
+            data = message.data
+            if "value" in data:
+                # Normalize from 0-100 to 0.0-1.0
+                throttle_pct = float(data["value"])
+                self.throttle = max(0.0, min(1.0, throttle_pct / 100.0))
+
     def _update_combustion(self, dt: float) -> None:
         """Update combustion process.
 
@@ -312,9 +340,11 @@ class SimplePistonEngine(IPlugin):
             has_fuel = True  # Some engines don't require fuel (e.g., electric motors)
 
         # Starter check with electrical power requirement
-        # Starter can only engage if electrical power is available
-        can_start = self.rpm > 300  # Already running, doesn't need starter
-        if self.starter_engaged and not can_start:
+        # Engine can run if:
+        # 1. RPM is high enough that engine is spinning (from inertia or combustion)
+        # 2. OR starter is actively engaged with electrical power
+        can_start = self.rpm > 100  # Engine is spinning, can continue combusting
+        if not can_start and self.starter_engaged:
             # Starter is engaged - check if we have electrical power
             if self._electrical_available:
                 can_start = True  # Starter can crank with sufficient voltage

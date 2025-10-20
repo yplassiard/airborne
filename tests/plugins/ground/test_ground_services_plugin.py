@@ -1,6 +1,5 @@
 """Unit tests for ground services plugin."""
 
-
 import pytest
 
 from airborne.core.messaging import Message, MessageQueue, MessageTopic

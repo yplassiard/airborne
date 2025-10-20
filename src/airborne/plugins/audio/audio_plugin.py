@@ -491,9 +491,12 @@ class AudioPlugin(IPlugin):
                 # Update engine sound pitch based on RPM
                 if self._engine_sound_active and engine_rpm > 0:
                     # Get engine RPM limits from config or use defaults
-                    idle_rpm = 600.0  # Cessna 172 idle RPM
                     max_rpm = 2700.0  # Cessna 172 max RPM
-                    self.sound_manager.update_engine_sound_rpm(engine_rpm, idle_rpm, max_rpm)
+                    # Map RPM directly to throttle (0 RPM = 0.0, max RPM = 1.0)
+                    # This works correctly for both cranking (low RPM) and running
+                    throttle = max(0.0, min(1.0, engine_rpm / max_rpm))
+                    self.sound_manager.update_engine_sound(throttle)
+                    logger.debug(f"Engine sound updated: {engine_rpm:.0f} RPM → throttle {throttle:.2f}")
 
             self._engine_running = engine_running
             self._engine_rpm = engine_rpm
