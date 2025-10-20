@@ -210,6 +210,7 @@ class SimpleFuelSystem(IPlugin):
                     "system": "fuel",
                     "total_quantity_gallons": self._get_total_fuel(),
                     "time_remaining_minutes": time_remaining_minutes,
+                    "available_fuel_flow_gph": self._get_max_available_fuel_flow(),
                 },
                 priority=MessagePriority.NORMAL,
             )
@@ -346,3 +347,19 @@ class SimpleFuelSystem(IPlugin):
             Total fuel in both tanks (gallons).
         """
         return self.left_tank_quantity + self.right_tank_quantity
+
+    def _get_max_available_fuel_flow(self) -> float:
+        """Get maximum available fuel flow rate.
+
+        Returns:
+            Maximum fuel flow rate in GPH that can be supplied.
+            Returns 0.0 if no fuel available or selector is off.
+        """
+        if not self._is_fuel_available():
+            return 0.0
+
+        # Cessna 172 fuel system can supply much more than engine needs
+        # Engine max consumption is ~12 GPH, so 20 GPH is safe margin
+        max_system_flow = 20.0
+
+        return max_system_flow
