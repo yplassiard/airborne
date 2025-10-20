@@ -545,5 +545,35 @@ class ChecklistPlugin(IPlugin):
         return self.checklists.get(checklist_id)
 
     def list_checklists(self) -> list[str]:
-        """List all available checklist IDs."""
-        return list(self.checklists.keys())
+        """List all available checklist IDs in logical flight sequence order.
+
+        Returns checklists in order from pre-flight through shutdown.
+        """
+        # Define logical flight sequence order
+        preferred_order = [
+            "cessna172_before_start",
+            "cessna172_engine_start",
+            "cessna172_before_takeoff",
+            "cessna172_takeoff",
+            "cessna172_climb",
+            "cessna172_cruise",
+            "cessna172_descent",
+            "cessna172_approach",
+            "cessna172_before_landing",
+            "cessna172_landing",
+            "cessna172_after_landing",
+            "cessna172_shutdown",
+        ]
+
+        # Build ordered list based on what's actually loaded
+        ordered_ids = []
+        for checklist_id in preferred_order:
+            if checklist_id in self.checklists:
+                ordered_ids.append(checklist_id)
+
+        # Add any checklists not in the preferred order (shouldn't happen, but just in case)
+        for checklist_id in self.checklists:
+            if checklist_id not in ordered_ids:
+                ordered_ids.append(checklist_id)
+
+        return ordered_ids

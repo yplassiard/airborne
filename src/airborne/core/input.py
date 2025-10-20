@@ -126,6 +126,8 @@ class InputAction(Enum):
 
     # ATC/Radio controls
     ATC_MENU = "atc_menu"  # F1 - Open/close ATC menu
+    # F2 - Checklist menu (defined below)
+    # F4 - Ground services menu (defined below)
     ATC_ACKNOWLEDGE = "atc_acknowledge"  # Shift+F1 - Acknowledge/readback
     ATC_REPEAT = "atc_repeat"  # Ctrl+F1 - Request repeat ("say again")
     ATC_SELECT_1 = "atc_select_1"  # Number keys for menu selection
@@ -140,6 +142,9 @@ class InputAction(Enum):
 
     # Checklist controls
     CHECKLIST_MENU = "checklist_menu"  # F2 - Open/close checklist menu
+
+    # Ground services controls
+    GROUND_SERVICES_MENU = "ground_services_menu"  # F4 - Open/close ground services menu
 
     # System controls
     PAUSE = "pause"
@@ -396,6 +401,17 @@ class InputManager:  # pylint: disable=too-many-instance-attributes
             action = InputAction.CHECKLIST_MENU
             if not is_repeat:
                 self._handle_action_pressed(action)
+            return
+
+        # Special handling for F4 (Ground services menu)
+        if key == pygame.K_F4:
+            logger.info("F4 key detected in InputManager")
+            action = InputAction.GROUND_SERVICES_MENU
+            if not is_repeat:
+                logger.info("F4 action: %s (not repeat)", action.value)
+                self._handle_action_pressed(action)
+            else:
+                logger.info("F4 pressed but is_repeat=True, ignoring")
             return
 
         # Special handling for Ctrl+Q to quit (ESC now closes ATC menu)

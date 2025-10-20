@@ -233,9 +233,7 @@ class PushbackService(GroundService):
         self._publish_status_update()
 
         # Publish audio message
-        self._publish_audio_message(
-            f"Pushback crew ready, release parking brake for pushback heading {int(self.target_heading)}"
-        )
+        self._publish_audio_message_key("MSG_PUSHBACK_ACKNOWLEDGED", voice="tug")
 
         logger.info(
             "Pushback started: %s, direction=%s, heading=%.0f°, distance=%.0fm",
@@ -300,7 +298,7 @@ class PushbackService(GroundService):
         self.phase_start_time = time.time()
 
         # Publish audio message
-        self._publish_audio_message("Pushback started, standby")
+        self._publish_audio_message_key("MSG_PUSHBACK_STARTING", voice="tug")
 
         logger.info("Pushback: started pushing back")
 
@@ -332,9 +330,7 @@ class PushbackService(GroundService):
             )
 
         # Publish audio message
-        self._publish_audio_message(
-            "Pushback complete, parking brake set, cleared to start engines"
-        )
+        self._publish_audio_message_key("MSG_PUSHBACK_COMPLETE", voice="tug")
 
         logger.info("Pushback: complete")
 
@@ -389,7 +385,7 @@ class PushbackService(GroundService):
         )
 
     def _publish_audio_message(self, text: str) -> None:
-        """Publish audio message for TTS.
+        """Publish audio message for TTS (legacy method).
 
         Args:
             text: Message text to speak
@@ -407,6 +403,32 @@ class PushbackService(GroundService):
                     "voice": "ground",  # Ground crew voice
                     "priority": "normal",
                 },
+            )
+        )
+
+    def _publish_audio_message_key(self, message_key: str, voice: str = "tug") -> None:
+        """Publish pre-recorded audio message.
+
+        Args:
+            message_key: Message key (e.g., "MSG_PUSHBACK_ACKNOWLEDGED")
+            voice: Voice type (tug, refuel, boarding, ops)
+        """
+        if not self.message_queue or not self.request:
+            return
+
+        from airborne.core.messaging import MessagePriority, MessageTopic
+
+        self.message_queue.publish(
+            Message(
+                sender="pushback_service",
+                recipients=["audio"],
+                topic=MessageTopic.TTS_SPEAK,
+                data={
+                    "message_key": message_key,
+                    "voice": voice,
+                    "interrupt": True,
+                },
+                priority=MessagePriority.HIGH,
             )
         )
 

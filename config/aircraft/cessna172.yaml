@@ -143,6 +143,43 @@ aircraft:
       battery_loop: "assets/sounds/aircraft/batteryloop1.mp3"
       fuel_pump: "assets/sounds/aircraft/fuelpump1.mp3"
 
+  # Weight and balance configuration
+  weight_balance:
+    empty_weight: 1600.0            # Empty aircraft weight (lbs)
+    empty_moment: 136000.0          # Empty aircraft moment (lb-in, CG ~85 inches)
+    max_gross_weight: 2550.0        # Maximum gross weight (lbs)
+    cg_limits:
+      forward: 82.9                 # Forward CG limit (inches from datum)
+      aft: 95.5                     # Aft CG limit (inches from datum)
+    stations:
+      fuel_tanks:
+        - name: "main_tank"         # Combined fuel tanks for simplicity
+          arm: 95.0                 # Arm position (inches from datum)
+          max_weight: 312.0         # Max fuel weight (52 gal × 6 lb/gal)
+          initial_weight: 312.0     # Start with full tanks
+      seats:
+        - name: "seat_pilot"
+          arm: 85.0                 # Front seat arm
+          max_weight: 200.0         # Max pilot + baggage
+          initial_weight: 200.0     # Start with pilot
+        - name: "seat_copilot"
+          arm: 85.0                 # Front seat arm
+          max_weight: 200.0         # Max copilot + baggage
+          initial_weight: 0.0       # Start empty
+        - name: "seat_rear_left"
+          arm: 118.0                # Rear seat arm
+          max_weight: 200.0         # Max passenger + baggage
+          initial_weight: 0.0       # Start empty
+        - name: "seat_rear_right"
+          arm: 118.0                # Rear seat arm
+          max_weight: 200.0         # Max passenger + baggage
+          initial_weight: 0.0       # Start empty
+      cargo:
+        - name: "cargo_bay"
+          arm: 142.0                # Baggage area arm
+          max_weight: 120.0         # Max baggage weight
+          initial_weight: 0.0       # Start empty
+
   # Initial state
   initial_state:
     position:

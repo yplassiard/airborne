@@ -268,14 +268,16 @@ class ATCMenu:
             "Report Position": "MSG_ATC_OPTION_REPORT_POSITION",
         }
 
-        # Build list of message keys to speak
+        # Build list of message keys to speak - only announce first (focused) option
         message_keys = ["MSG_ATC_MENU_OPENED"]
+
+        # Add only the first enabled option
         for option in self._current_options:
             if option.enabled:
                 message_key = label_to_key.get(option.label)
                 if message_key:
                     message_keys.append(message_key)
-        message_keys.append("MSG_ATC_PRESS_ESC")
+                    break  # Only announce first option
 
         logger.debug(f"Reading menu with {len(message_keys)} messages")
 

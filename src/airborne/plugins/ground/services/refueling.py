@@ -170,7 +170,7 @@ class RefuelingService(GroundService):
         self._publish_status_update()
 
         # Publish audio message: "Fuel truck dispatched"
-        self._publish_audio_message("Fuel truck dispatched to your position")
+        self._publish_audio_message_key("MSG_REFUEL_ACKNOWLEDGED", voice="refuel")
 
         logger.info(
             "Refueling started: %s, %.1f gallons, rate=%.2f gal/sec, ETA=%.1fs",
@@ -233,9 +233,7 @@ class RefuelingService(GroundService):
         self.phase_start_time = time.time()
 
         # Publish audio message
-        self._publish_audio_message(
-            f"Fuel truck connected, refueling {self.fuel_to_add:.1f} gallons"
-        )
+        self._publish_audio_message_key("MSG_REFUEL_STARTING", voice="refuel")
 
         logger.info("Refueling: truck arrived, connecting hoses")
 
@@ -245,7 +243,7 @@ class RefuelingService(GroundService):
         self.phase_start_time = time.time()
 
         # Publish audio message
-        self._publish_audio_message("Refueling in progress")
+        self._publish_audio_message_key("MSG_REFUEL_IN_PROGRESS", voice="refuel")
 
         logger.info("Refueling: started pumping fuel")
 
@@ -254,17 +252,12 @@ class RefuelingService(GroundService):
         self.refueling_phase = RefuelingPhase.COMPLETE
 
         # Publish audio message
-        is_full = abs(self.fuel_added - self.fuel_to_add) < 0.1
-        completion_msg = f"Refueling complete, {self.fuel_added:.1f} gallons added"
-        if is_full:
-            completion_msg += ", fuel is full"
-
-        self._publish_audio_message(completion_msg)
+        self._publish_audio_message_key("MSG_REFUEL_COMPLETE", voice="refuel")
 
         logger.info("Refueling: complete, %.1f gallons added", self.fuel_added)
 
     def _publish_audio_message(self, text: str) -> None:
-        """Publish audio message for TTS.
+        """Publish audio message for TTS (legacy method).
 
         Args:
             text: Message text to speak
@@ -282,6 +275,32 @@ class RefuelingService(GroundService):
                     "voice": "ground",  # Ground crew voice
                     "priority": "normal",
                 },
+            )
+        )
+
+    def _publish_audio_message_key(self, message_key: str, voice: str = "refuel") -> None:
+        """Publish pre-recorded audio message.
+
+        Args:
+            message_key: Message key (e.g., "MSG_REFUEL_ACKNOWLEDGED")
+            voice: Voice type (refuel, tug, boarding, ops)
+        """
+        if not self.message_queue or not self.request:
+            return
+
+        from airborne.core.messaging import MessagePriority, MessageTopic
+
+        self.message_queue.publish(
+            Message(
+                sender="refueling_service",
+                recipients=["audio"],
+                topic=MessageTopic.TTS_SPEAK,
+                data={
+                    "message_key": message_key,
+                    "voice": voice,
+                    "interrupt": True,
+                },
+                priority=MessagePriority.HIGH,
             )
         )
 

@@ -496,7 +496,9 @@ class AudioPlugin(IPlugin):
                     # This works correctly for both cranking (low RPM) and running
                     throttle = max(0.0, min(1.0, engine_rpm / max_rpm))
                     self.sound_manager.update_engine_sound(throttle)
-                    logger.debug(f"Engine sound updated: {engine_rpm:.0f} RPM → throttle {throttle:.2f}")
+                    logger.debug(
+                        f"Engine sound updated: {engine_rpm:.0f} RPM → throttle {throttle:.2f}"
+                    )
 
             self._engine_running = engine_running
             self._engine_rpm = engine_rpm

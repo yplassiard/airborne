@@ -10,6 +10,7 @@ Typical usage:
 """
 
 import logging
+from typing import Any
 
 from airborne.core.messaging import Message, MessagePriority, MessageTopic
 from airborne.core.plugin import IPlugin, PluginContext, PluginMetadata, PluginType
@@ -19,6 +20,7 @@ from airborne.plugins.ground.ground_services import (
     ServiceStatus,
     ServiceType,
 )
+from airborne.plugins.ground.ground_services_menu import GroundServicesMenu
 from airborne.plugins.ground.services.boarding import BoardingService, DeboardingService
 from airborne.plugins.ground.services.pushback import PushbackService
 from airborne.plugins.ground.services.refueling import RefuelingService
@@ -41,6 +43,7 @@ class GroundServicesPlugin(IPlugin):
         """Initialize ground services plugin."""
         self.context: PluginContext | None = None
         self.service_manager: GroundServiceManager | None = None
+        self.ground_services_menu: Any | None = None  # GroundServicesMenu instance
         self.is_at_parking: bool = False
         self.current_parking_id: str | None = None
         self.current_position: tuple[float, float, float] = (0.0, 0.0, 0.0)
@@ -85,14 +88,28 @@ class GroundServicesPlugin(IPlugin):
         self.service_manager.register_service(BoardingService(context.message_queue))
         self.service_manager.register_service(DeboardingService(context.message_queue))
 
+        # Create ground services menu
+        aircraft_config = context.config.get("aircraft", {})
+        aircraft_id = aircraft_config.get("callsign", "N123AB")
+        self.ground_services_menu = GroundServicesMenu(
+            ground_services_plugin=self,
+            message_queue=context.message_queue,
+            aircraft_id=aircraft_id,
+        )
+
         # Register in component registry
         if context.plugin_registry:
             context.plugin_registry.register("ground_service_manager", self.service_manager)
+            context.plugin_registry.register("ground_services_menu", self.ground_services_menu)
 
         # Subscribe to messages
         context.message_queue.subscribe(MessageTopic.POSITION_UPDATED, self.handle_message)
         context.message_queue.subscribe("ground.service.request", self.handle_message)
         context.message_queue.subscribe("parking.status", self.handle_message)
+        context.message_queue.subscribe("input.ground_services_menu", self.handle_message)
+
+        # Publish initial service availability
+        self._publish_service_availability()
 
         logger.info(
             "Ground services plugin initialized with %d services at %s airport",
@@ -121,6 +138,7 @@ class GroundServicesPlugin(IPlugin):
             # Unregister components
             if self.context.plugin_registry:
                 self.context.plugin_registry.unregister("ground_service_manager")
+                self.context.plugin_registry.unregister("ground_services_menu")
 
         logger.info("Ground services plugin shutdown")
 
@@ -150,6 +168,11 @@ class GroundServicesPlugin(IPlugin):
         elif message.topic == "ground.service.request":
             # Handle service request
             self._handle_service_request(message)
+
+        elif message.topic == "input.ground_services_menu":
+            # Handle ground services menu input
+            logger.info("Received ground services menu input: %s", message.data)
+            self._handle_menu_input(message)
 
     def _handle_service_request(self, message: Message) -> None:
         """Handle a ground service request."""
@@ -288,3 +311,32 @@ class GroundServicesPlugin(IPlugin):
 
         service = self.service_manager.services.get(service_type)
         return service.status if service else None
+
+    def _handle_menu_input(self, message: Message) -> None:
+        """Handle ground services menu input from player.
+
+        Args:
+            message: Message containing menu action and data.
+        """
+        if not self.ground_services_menu:
+            logger.warning("Ground services menu not initialized")
+            return
+
+        action = message.data.get("action", "")
+        logger.info("Ground services menu action: %s, is_open: %s", action, self.ground_services_menu.is_open())
+
+        if action == "toggle":
+            if self.ground_services_menu.is_open():
+                logger.info("Closing ground services menu")
+                self.ground_services_menu.close()
+            else:
+                logger.info("Opening ground services menu")
+                self.ground_services_menu.open()
+
+        elif action == "select":
+            option_key = message.data.get("option", "")
+            if option_key:
+                self.ground_services_menu.select_option(option_key)
+
+        elif action == "close":
+            self.ground_services_menu.close()

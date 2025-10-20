@@ -56,6 +56,38 @@ voices:
     rate: 170
     volume: 1.0
     output_dir: cabin
+  refuel:
+    description: Refueling crew / fuel truck operator
+    engine: say
+    language: en-US
+    voice_name: Evan
+    rate: 180
+    volume: 1.0
+    output_dir: ground/refuel
+  tug:
+    description: Pushback tug operator
+    engine: say
+    language: en-US
+    voice_name: Evan
+    rate: 180
+    volume: 1.0
+    output_dir: ground/tug
+  boarding:
+    description: Boarding/gate agent
+    engine: say
+    language: en-US
+    voice_name: Evan
+    rate: 180
+    volume: 1.0
+    output_dir: ground/boarding
+  ops:
+    description: Ramp/operations coordinator
+    engine: say
+    language: en-US
+    voice_name: Evan
+    rate: 180
+    volume: 1.0
+    output_dir: ground/ops
 messages:
   MSG_STARTUP:
     text: airborne flight simulator
@@ -833,3 +865,259 @@ messages:
     text: bank
     voice: cockpit
     filename: bank
+
+  # Ground Services Menu
+  MSG_GROUND_MENU_OPENED:
+    text: ground services menu
+    voice: cockpit
+    filename: ground_menu_opened
+  MSG_GROUND_MENU_CLOSED:
+    text: menu closed
+    voice: cockpit
+    filename: ground_menu_closed
+  MSG_GROUND_NOT_AT_PARKING:
+    text: not at parking position
+    voice: ops
+    filename: ground_not_at_parking
+  MSG_GROUND_NO_SERVICES:
+    text: no services available at this location
+    voice: ops
+    filename: ground_no_services
+  MSG_GROUND_INVALID_OPTION:
+    text: invalid option
+    voice: cockpit
+    filename: ground_invalid_option
+  MSG_GROUND_PRESS_ESC:
+    text: press escape to close
+    voice: cockpit
+    filename: ground_press_esc
+  MSG_GROUND_SERVICE_CANCELLED:
+    text: service cancelled
+    voice: ops
+    filename: ground_service_cancelled
+
+  # Ground Service Options
+  MSG_GROUND_OPTION_REFUEL:
+    text: request refueling
+    voice: cockpit
+    filename: ground_option_refuel
+  MSG_GROUND_OPTION_PUSHBACK:
+    text: request pushback
+    voice: cockpit
+    filename: ground_option_pushback
+  MSG_GROUND_OPTION_BOARDING:
+    text: request boarding
+    voice: cockpit
+    filename: ground_option_boarding
+  MSG_GROUND_OPTION_DEBOARDING:
+    text: request deboarding
+    voice: cockpit
+    filename: ground_option_deboarding
+  MSG_GROUND_OPTION_GPU:
+    text: request ground power
+    voice: cockpit
+    filename: ground_option_gpu
+  MSG_GROUND_OPTION_CATERING:
+    text: request catering
+    voice: cockpit
+    filename: ground_option_catering
+
+  # Refueling Service Messages
+  MSG_REFUEL_ACKNOWLEDGED:
+    text: fuel truck dispatched
+    voice: refuel
+    filename: refuel_acknowledged
+  MSG_REFUEL_STARTING:
+    text: starting refueling
+    voice: refuel
+    filename: refuel_starting
+  MSG_REFUEL_IN_PROGRESS:
+    text: refueling in progress
+    voice: refuel
+    filename: refuel_in_progress
+  MSG_REFUEL_COMPLETE:
+    text: refueling complete
+    voice: refuel
+    filename: refuel_complete
+
+  # Pushback Service Messages
+  MSG_PUSHBACK_ACKNOWLEDGED:
+    text: tug ready for pushback
+    voice: tug
+    filename: pushback_acknowledged
+  MSG_PUSHBACK_STARTING:
+    text: starting pushback
+    voice: tug
+    filename: pushback_starting
+  MSG_PUSHBACK_IN_PROGRESS:
+    text: pushback in progress
+    voice: tug
+    filename: pushback_in_progress
+  MSG_PUSHBACK_COMPLETE:
+    text: pushback complete, cleared to start engines
+    voice: tug
+    filename: pushback_complete
+
+  # Boarding Service Messages
+  MSG_BOARDING_ACKNOWLEDGED:
+    text: boarding starting
+    voice: boarding
+    filename: boarding_acknowledged
+  MSG_BOARDING_IN_PROGRESS:
+    text: boarding in progress
+    voice: boarding
+    filename: boarding_in_progress
+  MSG_BOARDING_COMPLETE:
+    text: boarding complete, doors closed
+    voice: boarding
+    filename: boarding_complete
+
+  # Deboarding Service Messages
+  MSG_DEBOARDING_ACKNOWLEDGED:
+    text: deboarding starting
+    voice: boarding
+    filename: deboarding_acknowledged
+  MSG_DEBOARDING_IN_PROGRESS:
+    text: deboarding in progress
+    voice: boarding
+    filename: deboarding_in_progress
+  MSG_DEBOARDING_COMPLETE:
+    text: deboarding complete
+    voice: boarding
+    filename: deboarding_complete
+
+  # Progressive Taxi Messages
+  MSG_GROUND_TAXI_VIA:
+    text: continue taxi
+    voice: ground
+    filename: ground_taxi_via
+  MSG_GROUND_TAXI_HOLD_SHORT:
+    text: hold short
+    voice: ground
+    filename: ground_taxi_hold_short
+  MSG_GROUND_CROSS_RUNWAY:
+    text: cross runway
+    voice: ground
+    filename: ground_cross_runway
+  MSG_GROUND_CONTACT_TOWER:
+    text: contact tower one one eight point five
+    voice: ground
+    filename: ground_contact_tower
+  MSG_GROUND_HOLD_SHORT_TRAFFIC:
+    text: hold short, traffic crossing
+    voice: ground
+    filename: ground_hold_short_traffic
+
+# Ground Operations Demo Messages
+  MSG_POSITION_PARKED:
+    text: Parked at parking 3, Palo Alto Airport
+    voice: cockpit
+    filename: demo_position_parked
+  MSG_COCKPIT_COLD_DARK:
+    text: Aircraft is cold and dark, parking brake set
+    voice: cockpit
+    filename: demo_cold_dark
+  MSG_PILOT_REQUEST_FUEL:
+    text: Ground, Cessna one two three alpha bravo, request refueling to full
+    voice: pilot
+    filename: demo_pilot_request_fuel
+  MSG_GROUND_FUEL_TRUCK:
+    text: Cessna three alpha bravo, fuel truck on the way
+    voice: ground
+    filename: demo_ground_fuel_truck
+  MSG_GROUND_REFUELING:
+    text: Cessna three alpha bravo, refueling to fifty two gallons
+    voice: ground
+    filename: demo_ground_refueling
+  MSG_GROUND_REFUEL_COMPLETE:
+    text: Cessna three alpha bravo, refueling complete, you are cleared to start engines
+    voice: ground
+    filename: demo_refuel_complete
+  MSG_COCKPIT_CLEAR_PROP:
+    text: Clear prop
+    voice: cockpit
+    filename: demo_clear_prop
+  MSG_ENGINE_STARTER:
+    text: Starter engaged
+    voice: cockpit
+    filename: demo_starter_engaged
+  MSG_ENGINE_RUNNING:
+    text: Engine running
+    voice: cockpit
+    filename: demo_engine_running
+  MSG_ATIS_BROADCAST:
+    text: Palo Alto Airport information Alpha
+    voice: atis
+    filename: demo_atis_broadcast
+  MSG_PILOT_GROUND_CONTACT:
+    text: Palo Alto Ground, Cessna one two three alpha bravo, parking 3, taxi with information Alpha
+    voice: pilot
+    filename: demo_pilot_ground_contact
+  MSG_GROUND_TAXI_CLEARANCE:
+    text: Cessna one two three alpha bravo, Palo Alto Ground, taxi to runway 31 via Alpha, hold short of runway
+    voice: ground
+    filename: demo_ground_taxi_clearance
+  MSG_PILOT_READBACK:
+    text: Taxi runway 31 via Alpha, hold short, Cessna three alpha bravo
+    voice: pilot
+    filename: demo_pilot_readback
+  MSG_COCKPIT_TAXIING:
+    text: Taxiing
+    voice: cockpit
+    filename: demo_cockpit_taxiing
+  MSG_POSITION_APPROACHING:
+    text: Approaching taxiway Alpha
+    voice: cockpit
+    filename: demo_position_approaching
+  MSG_POSITION_TAXIWAY:
+    text: On taxiway Alpha centerline
+    voice: cockpit
+    filename: demo_position_taxiway
+  MSG_POSITION_HOLD_SHORT:
+    text: Holding short runway 31
+    voice: cockpit
+    filename: demo_position_hold_short
+  MSG_PILOT_TOWER_CONTACT:
+    text: Palo Alto Tower, Cessna one two three alpha bravo, holding short runway 31
+    voice: pilot
+    filename: demo_pilot_tower_contact
+  MSG_TOWER_CLEARED_TAKEOFF:
+    text: Cessna one two three alpha bravo, runway 31, wind three one zero at eight, cleared for takeoff
+    voice: tower
+    filename: demo_tower_cleared_takeoff
+  MSG_POSITION_RUNWAY:
+    text: On runway 31
+    voice: cockpit
+    filename: demo_position_runway
+  MSG_THROTTLE_FULL:
+    text: Full throttle
+    voice: cockpit
+    filename: demo_throttle_full
+  MSG_SPEED_20:
+    text: Twenty knots
+    voice: cockpit
+    filename: demo_speed_20
+  MSG_SPEED_40:
+    text: Forty knots
+    voice: cockpit
+    filename: demo_speed_40
+  MSG_SPEED_VR:
+    text: V R, rotate
+    voice: cockpit
+    filename: demo_speed_vr
+  MSG_POSITIVE_RATE:
+    text: Positive rate, gear up
+    voice: cockpit
+    filename: demo_positive_rate
+  MSG_SPEED_75:
+    text: Seventy five knots, climbing
+    voice: cockpit
+    filename: demo_speed_75
+  MSG_AIRBORNE:
+    text: Aircraft airborne, climbing
+    voice: cockpit
+    filename: demo_airborne
+  MSG_ALTITUDE_500:
+    text: Five hundred feet, climb established
+    voice: cockpit
+    filename: demo_altitude_500

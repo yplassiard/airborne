@@ -40,6 +40,7 @@ class ATISInfo:
         weather: Weather information
         active_runway: Active runway for arrivals/departures
         remarks: Additional remarks (optional)
+        include_parking_instructions: Whether to include parking assignment instructions
     """
 
     airport_name: str
@@ -48,6 +49,7 @@ class ATISInfo:
     weather: WeatherInfo
     active_runway: str
     remarks: str = ""
+    include_parking_instructions: bool = True
 
 
 class ATISGenerator:
@@ -170,7 +172,11 @@ class ATISGenerator:
         if atis_info.remarks:
             parts.append(f"Remarks. {atis_info.remarks}.")
 
-        # 10. Advise on contact
+        # 10. Parking/ground instructions for arrivals
+        if atis_info.include_parking_instructions:
+            parts.append("Inbound aircraft contact ground on 121.7 for parking assignment.")
+
+        # 11. Advise on contact
         parts.append(
             f"Advise on initial contact you have information {atis_info.information_letter}."
         )

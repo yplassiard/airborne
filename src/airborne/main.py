@@ -193,6 +193,22 @@ class AirBorne:
             self.plugin_context.config["checklists"] = {"directory": "config/checklists"}
             self.checklist_plugin.initialize(self.plugin_context)
 
+            # Load ground services plugin
+            logger.info("Loading ground services plugin...")
+            from airborne.plugins.ground.ground_services_plugin import GroundServicesPlugin
+
+            self.ground_services_plugin = GroundServicesPlugin()
+            # Configure airport category
+            self.plugin_context.config["airport"] = {"category": "MEDIUM"}
+            self.ground_services_plugin.initialize(self.plugin_context)
+
+            # Load weight and balance plugin
+            logger.info("Loading weight and balance plugin...")
+            from airborne.plugins.weight.weight_balance_plugin import WeightBalancePlugin
+
+            self.weight_balance_plugin = WeightBalancePlugin()
+            self.weight_balance_plugin.initialize(self.plugin_context)
+
             # Build aircraft with systems
             builder = AircraftBuilder(self.plugin_loader, self.plugin_context)
             self.aircraft = builder.build(aircraft_config_path)
@@ -317,6 +333,19 @@ class AirBorne:
                     priority=MessagePriority.HIGH,
                 )
             )
+        # Ground services menu controls
+        elif event.action == "ground_services_menu":
+            # Send to ground services plugin
+            logger.info("F4 pressed - publishing ground_services_menu message")
+            self.message_queue.publish(
+                Message(
+                    sender="main",
+                    recipients=["ground_services_plugin"],
+                    topic="input.ground_services_menu",
+                    data={"action": "toggle"},
+                    priority=MessagePriority.HIGH,
+                )
+            )
 
     def run(self) -> None:
         """Run the main game loop."""
@@ -378,6 +407,17 @@ class AirBorne:
             ):
                 # ATC menu is open - intercept keys
                 handled = self._handle_atc_menu_key(event.key)
+                if not handled:
+                    remaining_events.append(event)
+            elif (
+                event.type == pygame.KEYDOWN
+                and hasattr(self, "ground_services_plugin")
+                and self.ground_services_plugin
+                and self.ground_services_plugin.ground_services_menu
+                and self.ground_services_plugin.ground_services_menu.is_open()
+            ):
+                # Ground services menu is open - intercept keys
+                handled = self._handle_ground_services_menu_key(event.key)
                 if not handled:
                     remaining_events.append(event)
             elif (
@@ -484,6 +524,32 @@ class AirBorne:
         # Enter selects current
         if key in (pygame.K_RETURN, pygame.K_KP_ENTER):
             menu.select_current()
+            return True
+
+        return False
+
+    def _handle_ground_services_menu_key(self, key: int) -> bool:
+        """Handle key press when ground services menu is open.
+
+        Args:
+            key: pygame key constant
+
+        Returns:
+            True if key was handled, False otherwise
+        """
+        menu = self.ground_services_plugin.ground_services_menu
+        if not menu:
+            return False
+
+        # ESC closes menu
+        if key == pygame.K_ESCAPE:
+            menu.close()
+            return True
+
+        # Number keys select option
+        if pygame.K_1 <= key <= pygame.K_9:
+            number = key - pygame.K_0
+            menu.select_option(str(number))
             return True
 
         return False

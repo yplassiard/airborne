@@ -279,19 +279,18 @@ class ChecklistMenu:
         if self._state != "CHECKLIST_SELECTION" or not self._current_options:
             return
 
-        # Build list of message keys to speak
+        # Build list of message keys to speak - only announce first (focused) option
         message_keys = ["MSG_CHECKLIST_MENU_OPENED"]
 
-        # Add each checklist option
-        for option in self._current_options:
+        # Add only the first checklist option
+        if self._current_options:
+            first_option = self._current_options[0]
             # Speak: "Number 1: Before Engine Start"
-            message_keys.append(f"MSG_NUMBER_{option.key}")
+            message_keys.append(f"MSG_NUMBER_{first_option.key}")
             message_keys.append("MSG_WORD_COLON")
             # Map checklist names to MSG keys
-            checklist_msg_key = self._get_checklist_message_key(option.checklist_name)
+            checklist_msg_key = self._get_checklist_message_key(first_option.checklist_name)
             message_keys.append(checklist_msg_key)
-
-        message_keys.append("MSG_CHECKLIST_PRESS_ESC")
 
         logger.debug(f"Reading menu with {len(message_keys)} messages")
 
