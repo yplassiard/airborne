@@ -93,31 +93,34 @@ The `scripts/demo_autopilot.py` script now successfully demonstrates:
 - ✅ Unified with existing flight instrument readouts (airspeed, altitude, heading, vspeed, attitude)
 - ✅ Modular and extensible design
 
-### Phase Completion Status
+### Phase Completion Status (Updated 2025-10-20)
 
-**Fully Complete** ✅:
-- Phase 0: Project Setup
-- Phase 1: Core Framework
-- Phase 3: Physics & Math
-- Phase 4: First Playable Prototype 🎉 **NEWLY COMPLETED**
-- Phase 8: Radio & ATC
-- Phase 9: AI Traffic & TCAS
-- Phase 12: Advanced Avionics (Autopilot)
+**Fully Complete** ✅ (14 of 19 phases):
+- **Phase 0**: Project Setup
+- **Phase 1**: Core Framework
+- **Phase 2**: Audio System (stub mode, graceful degradation)
+- **Phase 3**: Physics & Math (6DOF flight model, vectors, collision)
+- **Phase 4**: First Playable Prototype (Pygame, Cessna 172, autopilot demo)
+- **Phase 5**: Ground Navigation (proximity audio, taxiways)
+- **Phase 6**: Terrain & Elevation (elevation service, CFIT warnings)
+- **Phase 7**: Checklists & Control Panels (auto-verification, TTS)
+- **Phase 8**: Radio & ATC (frequencies, phraseology, ATIS)
+- **Phase 8.5**: Interactive ATC Communications (menu, queue, readback)
+- **Phase 9**: AI Traffic & TCAS (traffic patterns, collision avoidance)
+- **Phase 12**: Advanced Avionics (autopilot with PID control)
+- **Phase 15**: Parking & Gate Infrastructure (database, generator, assignment)
+- **Phase 16**: Position Awareness & Orientation (location tracking, runway incursion)
+- **Phase 17**: Ground Services & Operations (refueling, pushback, boarding)
 
-**Fully Complete** ✅:
-- Phase 2: Audio System (BASS library runs in stub mode, graceful degradation works, all 752 tests passing)
-- Phase 5: Ground Navigation (Position updates wired, proximity system ready, all tests passing)
-- Phase 6: Terrain & Elevation (Elevation service operational, collision detection working)
-- Phase 7: Checklists & Panels (Complete with TTS integration, ready for keyboard input wiring)
-- Phase 8.5: Interactive ATC Communications (Menu, queue, readback systems with Oliver/Evan voices)
+**Not Started** ❌ (4 of 19 phases):
+- **Phase 10**: Cabin Simulation & Boarding
+- **Phase 11**: Network Layer & Multiplayer
+- **Phase 13**: Additional Aircraft (Boeing 737)
+- **Phase 18**: Integrated Ground-to-Takeoff Workflow
+- **Phase 19**: Enhanced Airport Facilities (Optional)
 
-**Not Started** ❌:
-- Phase 10: Cabin Simulation (0%)
-- Phase 11: Network Layer (0%)
-- Phase 13: Additional Aircraft (0%)
-
-**Ongoing** 🚧:
-- Phase 14: Polish & Optimization (23 mypy warnings remain)
+**Ongoing** 🚧 (1 of 19 phases):
+- **Phase 14**: Polish & Optimization
 
 ### Known Issues
 1. **Audio**: pybass3 hardcodes library name, causing BASS to run in stub mode (non-blocking)
@@ -907,7 +910,10 @@ The system is designed for multi-language expansion:
 
 ---
 
-## Phase 3: Physics & Math (4-6 hours)
+## Phase 3: Physics & Math (4-6 hours) ✅
+
+**Status**: COMPLETED - 2025-10-13
+**Notes**: Complete 6DOF flight model implemented with vectors, collision detection, and ground physics. Physics plugin operational. All tests passing.
 
 ### Objective
 Implement vector math, basic flight physics, collision detection.
@@ -1040,7 +1046,10 @@ Position += Velocity * dt
 
 ---
 
-## Phase 4: First Playable Prototype (6-8 hours)
+## Phase 4: First Playable Prototype (6-8 hours) ✅
+
+**Status**: COMPLETED - 2025-10-13
+**Notes**: Pygame window operational, input system working, Cessna 172 fully configured with engine/electrical/fuel systems, main.py runs complete game loop at 60 FPS. Autopilot demo successfully demonstrates takeoff and climb. All core systems integrated.
 
 ### Objective
 Create minimal Pygame window, implement simple engine, integrate systems, achieve first flight.
@@ -2615,9 +2624,9 @@ Improve audio design, performance, accessibility.
 
 ---
 
-## Phase 15: Parking & Gate Infrastructure (6-8 hours)
+## Phase 15: Parking & Gate Infrastructure (6-8 hours) ✅
 
-**Status**: STARTING - 2025-10-19
+**Status**: COMPLETED - 2025-10-19
 
 ### Objective
 Create comprehensive parking, gate, and stand infrastructure with assignment system for realistic ground operations at all airport sizes.
@@ -2923,7 +2932,10 @@ If aircraft crosses hold-short line AND NOT cleared:
 
 ---
 
-## Phase 17: Ground Services & Operations (8-10 hours)
+## Phase 17: Ground Services & Operations (8-10 hours) ✅
+
+**Status**: COMPLETED - 2025-10-20
+**Notes**: All ground services implemented (refueling, pushback, boarding, deboarding) with comprehensive testing. GroundServicesPlugin integrated with parking system. 18 tests passing. Services available based on airport category and parking status.
 
 ### Objective
 Implement realistic ground services including refueling, pushback, boarding, cargo, and ramp operations for complete airport ground handling.
@@ -3098,7 +3110,10 @@ Large airports: All services, 24/7 availability
 
 ---
 
-## Phase 18: Integrated Ground-to-Takeoff Workflow (6-8 hours)
+## Phase 18: Integrated Ground-to-Takeoff Workflow (6-8 hours) ❌
+
+**Status**: NOT STARTED
+**Notes**: All component systems are complete (parking, ground services, ATC, navigation, position tracking), but the integrated workflow has not been implemented. Progressive taxi system, ground traffic management, and complete demonstration script need to be created.
 
 ### Objective
 Create complete, realistic workflow from cold-and-dark at parking through taxi to takeoff, integrating all ground systems with ATC, checklists, and navigation.
@@ -3251,7 +3266,10 @@ Advise on initial contact you have Alpha"
 
 ---
 
-## Phase 19: Enhanced Airport Facilities (Optional, 4-6 hours)
+## Phase 19: Enhanced Airport Facilities (Optional, 4-6 hours) ❌
+
+**Status**: NOT STARTED
+**Notes**: This is an optional enhancement phase. None of the tasks have been started.
 
 ### Objective
 Add advanced airport facilities for realism at larger airports: multiple runways, FBO services, customs, de-icing, hangar operations.
@@ -3285,6 +3303,357 @@ Add advanced airport facilities for realism at larger airports: multiple runways
 - ✅ FBO services available at appropriate airports
 - ✅ International procedures implemented
 - ✅ Seasonal operations supported
+
+---
+
+## Phase 20: Flight Planning & Route Management (10-12 hours) ❌
+
+**Status**: NOT STARTED
+**Notes**: This phase introduces comprehensive flight planning capabilities with navigation database, route integration from open sources (OpenFlights, Flight Plan Database), optional premium integrations (SimBrief, Navigraph), realistic callsign system, and airport selection system.
+
+### Objective
+Implement professional flight planning system with local direct routes, published route integration, realistic callsigns, and airport selection capabilities.
+
+### Background
+Modern flight simulation requires proper flight planning. This phase provides:
+- **Local direct routes** - Simple point-to-point routing
+- **Published routes** - Community and real-world route databases
+- **Realistic callsigns** - ICAO-compliant (Type A/B/C formats)
+- **Airport selection** - Choose departure airport before spawn
+- **ATC integration** - File flight plans, get clearances
+
+### Tasks
+
+#### 20.1: Navigation Database Foundation (2-3 hours)
+**Files**:
+- `src/airborne/navigation/navdata.py` (new)
+- `src/airborne/navigation/waypoint.py` (refactor from ai_aircraft.py)
+- `data/navigation/` (data directory)
+
+**Requirements**:
+- Navaid types: VOR, NDB, DME, Waypoint, Fix, Airport
+- Airways: High/Low altitude airways with segments
+- Data formats: OurAirports + X-Plane compatibility
+- Spatial queries: Find navaids by identifier or position
+
+**Key Classes**:
+```python
+@dataclass
+class Navaid:
+    identifier: str          # "SFO", "KSFO", "MODET"
+    name: str               # "San Francisco VOR"
+    type: NavaidType        # VOR, NDB, WAYPOINT, FIX, AIRPORT
+    position: Vector3       # Lat/lon/alt
+    frequency: float | None # MHz (VOR/NDB only)
+    range_nm: float        # Service volume radius
+
+class NavDatabase:
+    def load_from_csv(path: str) -> None
+    def find_navaid(identifier: str) -> Navaid | None
+    def find_navaids_near(position: Vector3, radius_nm: float) -> list[Navaid]
+    def calculate_route_distance(waypoints: list[Navaid]) -> float
+```
+
+**Data Sources**:
+- OurAirports navaids.csv - Download from OurAirports database
+- Optional: X-Plane earth_fix.dat / earth_nav.dat format support
+- Custom CSV/JSON format with identifier, type, lat, lon, freq
+
+**Test**: Load navdata, query SFO VOR, find navaids within 50nm of KSFO, calculate route distance.
+
+#### 20.2: Enhanced Flight Plan System (2 hours)
+**Files**:
+- `src/airborne/navigation/flight_plan.py` (refactor from ai_aircraft.py)
+- `src/airborne/navigation/route.py` (new)
+
+**Requirements**:
+- Refactor FlightPlan from ai_aircraft.py to standalone module
+- Enhanced data model with full metadata (departure, arrival, route, altitude)
+- Route types: Direct, airways, SID/STAR
+- Performance calculations: Distance, time, fuel required
+- Altitude/speed constraints per waypoint
+
+**Key Classes**:
+```python
+@dataclass
+class EnhancedWaypoint:
+    navaid: Navaid                    # Reference to navaid
+    altitude_ft: float | None         # Target altitude
+    altitude_constraint: AltConstraint # AT, AT_OR_ABOVE, AT_OR_BELOW, BETWEEN
+    speed_kts: float | None          # Target speed
+    flyby: bool                       # Flyby (true) or flyover (false)
+
+@dataclass
+class FlightPlan:
+    callsign: str                    # Aircraft callsign
+    aircraft_type: str               # "C172", "B738"
+    departure: Airport               # ICAO departure airport
+    arrival: Airport                 # ICAO arrival airport
+    alternate: Airport | None        # Alternate airport
+    route: list[EnhancedWaypoint]    # Complete route
+    cruise_altitude_ft: float        # Planned cruise altitude
+    route_string: str                # "DCT SFO V25 OAK DCT"
+    estimated_time_enroute_min: float
+    estimated_fuel_required_gal: float
+    flight_rules: FlightRules        # VFR, IFR
+    is_filed_with_atc: bool
+
+class FlightPlanManager:
+    def create_direct_route(departure: Airport, arrival: Airport, cruise_alt_ft: float) -> FlightPlan
+    def calculate_performance(plan: FlightPlan, aircraft_perf: AircraftPerformance) -> FlightPlan
+    def validate_route(plan: FlightPlan) -> list[ValidationError]
+    def save_to_file(plan: FlightPlan, path: str, format: FileFormat) -> None
+    def load_from_file(path: str) -> FlightPlan
+```
+
+**Test**: Create direct KPAO → KSFO route, calculate distance (~10nm), validate route, save/load flight plan.
+
+#### 20.3: Route Database Integration (2-3 hours)
+**Files**:
+- `src/airborne/navigation/route_providers/` (new directory)
+  - `base_provider.py` (abstract base)
+  - `direct_provider.py` (simple direct routes)
+  - `openflights_provider.py` (OpenFlights database)
+  - `fpd_provider.py` (Flight Plan Database API)
+  - `simbrief_provider.py` (optional, requires API key)
+
+**Requirements**:
+- Provider pattern for extensible route sources
+- OpenFlights integration - Load routes.dat (67k routes)
+- Flight Plan Database API - Query flightplandatabase.com
+- Caching - Cache downloaded routes locally (SQLite)
+- Fallback chain - Try multiple providers in order
+
+**Base Provider Interface**:
+```python
+class RouteProvider(ABC):
+    @abstractmethod
+    def find_routes(departure_icao: str, arrival_icao: str) -> list[RouteDefinition]
+    @abstractmethod
+    def get_route_details(route_id: str) -> RouteDefinition | None
+
+@dataclass
+class RouteDefinition:
+    id: str
+    departure_icao: str
+    arrival_icao: str
+    route_string: str           # "DCT SFO V25 OAK DCT"
+    altitude_ft: float | None
+    distance_nm: float
+    source: str                 # "openflights", "fpd", "simbrief"
+    popularity: int             # Usage count
+```
+
+**Data Sources**:
+- **OpenFlights**: Download routes.dat from https://github.com/jpatokal/openflights (67k routes, free)
+- **Flight Plan Database API**: https://api.flightplandatabase.com/ (free tier: 100 req/day)
+- **SimBrief**: Optional, requires user API key (professional dispatch)
+- **Navigraph**: Optional, requires subscription (AIRAC navdata)
+
+**Test**: Direct provider creates KPAO → KSFO route, OpenFlights finds KSFO → KLAX routes, FPD API query (mock HTTP), fallback chain works.
+
+#### 20.4: Callsign System (1-2 hours)
+**Files**:
+- `src/airborne/aviation/callsign.py` (new)
+- `data/aviation/callsigns.yaml` (aircraft registry)
+
+**Requirements**:
+- ICAO-compliant callsign formats (Type A, B, C)
+- Type A: Registration only (N12345)
+- Type B: Telephony + last 4 chars (Cessna 2345)
+- Type C: Telephony + flight number (United 1234)
+- Validation and auto-generation
+- Country-specific formats (N for US, G- for UK, etc.)
+
+**Key Classes**:
+```python
+class CallsignType(Enum):
+    TYPE_A = "registration"      # N12345, G-ABCD
+    TYPE_B = "telephony_reg"     # Cessna 2345, Skyhawk 1AB
+    TYPE_C = "telephony_flight"  # United 1234, Speedbird 42
+
+@dataclass
+class Callsign:
+    full: str                    # "N12345" or "United 1234"
+    abbreviated: str | None      # "345" or "United 34" (after initial contact)
+    type: CallsignType
+    telephony: str | None        # "Cessna", "United", "Speedbird"
+
+class CallsignGenerator:
+    def generate_ga_callsign(country_code: str = "N") -> Callsign
+    def generate_airline_callsign(airline_icao: str) -> Callsign
+    def validate_callsign(callsign: str) -> bool
+```
+
+**Formats**:
+- US GA: N + 1-5 alphanumeric (N12345, N123AB)
+- US Airlines: 3-letter ICAO + flight number (UAL123, DAL456)
+- International: Country prefix + registration (G-ABCD, D-AIRF)
+
+**Test**: Generate 10 GA callsigns (verify N[1-5 chars]), parse "N12345" → Type A, parse "United 1234" → Type C, validate formats.
+
+#### 20.5: Airport Selection & Spawning System (2 hours)
+**Files**:
+- `src/airborne/core/app.py` (update CLI args)
+- `src/airborne/scenarios/flight_scenario.py` (new)
+- `src/airborne/scenarios/spawn_manager.py` (new)
+
+**Requirements**:
+- CLI argument: `--from-airport ICAO` (e.g., `--from-airport LFPG`)
+- Additional args: `--to-airport`, `--callsign`, `--route`
+- Default airport: KPAO if not specified
+- Parking assignment using existing parking system
+- Flight scenario: Complete scenario with origin, destination, callsign, FPL
+- Future: Placeholder for in-game airport selector UI
+
+**CLI Examples**:
+```bash
+# Spawn at specific airport
+uv run python -m airborne --from-airport LFPG
+
+# With destination (auto-creates direct flight plan)
+uv run python -m airborne --from-airport LFPG --to-airport EGLL
+
+# With callsign
+uv run python -m airborne --from-airport LFPG --callsign AFR1234
+
+# With route
+uv run python -m airborne --from-airport KSFO --to-airport KLAX --route "DCT SFO V25 LAX"
+```
+
+**Key Classes**:
+```python
+@dataclass
+class FlightScenario:
+    origin_airport: Airport
+    destination_airport: Airport | None
+    parking_spot: ParkingSpot | None
+    aircraft_type: str
+    callsign: Callsign
+    flight_plan: FlightPlan | None
+    cold_and_dark: bool
+
+class SpawnManager:
+    def create_scenario_from_cli(args: argparse.Namespace) -> FlightScenario
+    def spawn_aircraft(scenario: FlightScenario) -> None
+```
+
+**Test**: Parse CLI args, generate scenario with parking, spawn at correct position, default to KPAO.
+
+#### 20.6: ATC Flight Plan Integration (1-2 hours)
+**Files**:
+- `src/airborne/plugins/radio/atc_flight_plan.py` (new)
+- `src/airborne/plugins/radio/clearance_delivery.py` (new)
+
+**Requirements**:
+- File flight plan with ATC (IFR flights)
+- Clearance delivery - Get IFR clearance before taxi
+- Route amendments - ATC can modify route
+- VFR flight following activation
+
+**Key Classes**:
+```python
+class ATCFlightPlanManager:
+    def file_flight_plan(plan: FlightPlan) -> bool
+    def get_ifr_clearance(callsign: str) -> IFRClearance | None
+    def activate_vfr_flight_following(callsign: str) -> bool
+
+@dataclass
+class IFRClearance:
+    callsign: str
+    cleared_to: str              # Destination
+    route: str                   # "Climb via SID, as filed"
+    altitude: int                # Initial altitude
+    departure_frequency: float   # Departure freq
+    squawk: str                  # Transponder code
+```
+
+**Phraseology**:
+```
+Pilot: "Clearance, Cessna 123AB, IFR to San Francisco"
+ATC: "Cessna 123AB, cleared to San Francisco airport via direct,
+      climb and maintain 3000, expect 5000 one zero minutes after departure,
+      departure frequency 120.9, squawk 4521"
+Pilot: "Cleared to San Francisco, direct, 3000, 120.9, 4521, Cessna 123AB"
+```
+
+**Test**: File VFR plan, file IFR plan and get clearance, request clearance without plan (denied), amend route.
+
+#### 20.7: Configuration & Documentation (1 hour)
+**Files**:
+- `docs/FLIGHT_PLANNING.md` (user guide)
+- `config/flight_planning.yaml` (configuration)
+
+**Requirements**:
+- Configuration file for providers, API keys, defaults
+- User documentation with examples
+- Future UI design placeholder
+
+**Configuration** (`config/flight_planning.yaml`):
+```yaml
+flight_planning:
+  navdata:
+    provider: ourairports  # ourairports, xplane, navigraph
+    auto_update: false
+
+  route_providers:
+    - type: direct
+      enabled: true
+    - type: openflights
+      enabled: true
+      database_path: data/routes/openflights.db
+    - type: fpd
+      enabled: true
+      api_url: https://api.flightplandatabase.com
+    - type: simbrief
+      enabled: false
+      api_key: ""  # User must provide
+
+  callsigns:
+    default_country: N  # US registration
+    auto_generate: true
+
+  defaults:
+    departure_airport: KPAO
+    cruise_altitude_vfr: 3500
+    cruise_altitude_ifr: 5000
+```
+
+**Documentation Topics**:
+- Creating flight plans (CLI and future UI)
+- Route database sources
+- Callsign formats
+- Filing IFR flight plans
+- Optional SimBrief/Navigraph integration
+
+**Test**: Load config, validate settings, generate default scenario.
+
+### Success Criteria
+- ✅ Navigation database loads navaids from CSV
+- ✅ Direct routes created between any two airports
+- ✅ OpenFlights routes searchable and loadable
+- ✅ Flight Plan Database API returns routes
+- ✅ Callsigns generated in ICAO-compliant formats (Type A/B/C)
+- ✅ CLI spawn with `--from-airport ICAO` works correctly
+- ✅ Flight plans save/load to file (FPL, PLN formats)
+- ✅ ATC accepts and processes filed flight plans
+- ✅ Performance calculations (distance, time, fuel) accurate
+- ✅ All tests pass (>80% coverage)
+- ✅ Documentation complete with examples
+
+### Integration Points
+- **ATC System** (Phase 8): File flight plans, get clearances, route amendments
+- **Autopilot** (Phase 12): Load flight plan, LNAV following, direct-to waypoint
+- **Spawning** (Phase 4): Position aircraft at origin, assign parking, initialize with FPL
+- **Ground Services** (Phase 17): Fuel planning based on FPL
+- **Position Tracking** (Phase 16): Track progress along route, waypoint passage
+
+### Optional Future Enhancements (Phase 21)
+- SID/STAR database - Terminal procedures
+- Airway system - High/low altitude airways
+- Performance optimization - Wind-optimized routes
+- Weather integration - Route around weather
+- Charts integration - Approach plates (Navigraph)
 
 ---
 
@@ -3340,6 +3709,9 @@ Add advanced airport facilities for realism at larger airports: multiple runways
 ### M10: Parking-to-Takeoff Workflow (End of Phase 18)
 - Complete cold-dark to takeoff workflow, progressive taxi, ground traffic, works at all airport sizes
 
+### M11: Professional Flight Planning (End of Phase 20)
+- Navigation database, flight plan creation, route databases, realistic callsigns, airport selection, ATC integration
+
 ---
 
 ## Development Notes
@@ -3386,8 +3758,9 @@ Add advanced airport facilities for realism at larger airports: multiple runways
 
 This plan provides a clear, phased approach to building AirBorne. Each phase builds on the previous, with clear success criteria. The plugin architecture ensures flexibility and maintainability.
 
-**Estimated Total Development Time**: 110-160 hours
+**Estimated Total Development Time**: 120-172 hours
 - Core Framework & Basic Flight: 80-120 hours (Phases 0-14)
 - Complete Ground Operations: 30-40 hours (Phases 15-19)
+- Flight Planning & Route Management: 10-12 hours (Phase 20)
 
 **Next Step**: Begin Phase 0 - Project Setup

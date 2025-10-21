@@ -1,0 +1,161 @@
+# Aircraft callsign data for ICAO-compliant callsign generation
+# Format follows ICAO Annex 10, Volume II standards
+
+airlines:
+  # North America
+  - icao: UAL
+    telephony: United
+    name: United Airlines
+    country: US
+
+  - icao: DAL
+    telephony: Delta
+    name: Delta Air Lines
+    country: US
+
+  - icao: AAL
+    telephony: American
+    name: American Airlines
+    country: US
+
+  - icao: SWA
+    telephony: Southwest
+    name: Southwest Airlines
+    country: US
+
+  - icao: JBU
+    telephony: JetBlue
+    name: JetBlue Airways
+    country: US
+
+  - icao: ACA
+    telephony: Air Canada
+    name: Air Canada
+    country: CA
+
+  # Europe
+  - icao: BAW
+    telephony: Speedbird
+    name: British Airways
+    country: GB
+
+  - icao: DLH
+    telephony: Lufthansa
+    name: Lufthansa
+    country: DE
+
+  - icao: AFR
+    telephony: Air France
+    name: Air France
+    country: FR
+
+  - icao: KLM
+    telephony: KLM
+    name: KLM Royal Dutch Airlines
+    country: NL
+
+  - icao: RYR
+    telephony: Ryanair
+    name: Ryanair
+    country: IE
+
+  # Asia Pacific
+  - icao: JAL
+    telephony: Japan Air
+    name: Japan Airlines
+    country: JP
+
+  - icao: ANA
+    telephony: All Nippon
+    name: All Nippon Airways
+    country: JP
+
+  - icao: SIA
+    telephony: Singapore
+    name: Singapore Airlines
+    country: SG
+
+  - icao: QFA
+    telephony: Qantas
+    name: Qantas
+    country: AU
+
+  # Middle East
+  - icao: UAE
+    telephony: Emirates
+    name: Emirates
+    country: AE
+
+  - icao: QTR
+    telephony: Qatari
+    name: Qatar Airways
+    country: QA
+
+countries:
+  # North America
+  - code: N
+    name: United States
+    format: "N{1-5 alphanumeric}"
+    examples:
+      - N12345
+      - N1234A
+      - N123AB
+
+  - code: C
+    name: Canada
+    format: "C-{4 letters}"
+    examples:
+      - C-ABCD
+      - C-GEFT
+
+  # Europe
+  - code: G
+    name: United Kingdom
+    format: "G-{4 letters}"
+    examples:
+      - G-ABCD
+      - G-BOAC
+
+  - code: D
+    name: Germany
+    format: "D-{4 alphanumeric}"
+    examples:
+      - D-ABCD
+      - D-1234
+
+  - code: F
+    name: France
+    format: "F-{4 letters}"
+    examples:
+      - F-ABCD
+      - F-GXYZ
+
+  # Asia Pacific
+  - code: JA
+    name: Japan
+    format: "JA{4 alphanumeric}"
+    examples:
+      - JA1234
+      - JA12AB
+
+  - code: VH
+    name: Australia
+    format: "VH-{3 letters}"
+    examples:
+      - VH-ABC
+      - VH-OJA
+
+  # Other regions
+  - code: XA
+    name: Mexico
+    format: "XA-{3 letters}"
+    examples:
+      - XA-ABC
+      - XA-MEX
+
+  - code: ZK
+    name: New Zealand
+    format: "ZK-{3 letters}"
+    examples:
+      - ZK-ABC
+      - ZK-NZA
