@@ -922,6 +922,7 @@ class ControlPanelPlugin(IPlugin):
             # Menu keys
             pygame.K_F1,  # ATC menu
             pygame.K_F2,  # Checklist menu
+            pygame.K_F3,  # Ground services menu
             pygame.K_TAB,  # Menu toggle
             pygame.K_RETURN,  # Menu select
             pygame.K_ESCAPE,  # Menu back

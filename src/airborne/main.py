@@ -408,7 +408,7 @@ class AirBorne:
         # Ground services menu controls
         elif event.action == "ground_services_menu":
             # Send to ground services plugin
-            logger.info("F4 pressed - publishing ground_services_menu message")
+            logger.info("F3 pressed - publishing ground_services_menu message")
             self.message_queue.publish(
                 Message(
                     sender="main",

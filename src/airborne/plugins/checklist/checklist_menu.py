@@ -4,42 +4,25 @@ This module provides an interactive menu system for viewing available checklists
 and executing them with challenge-response verification.
 
 Typical usage example:
-    menu = ChecklistMenu(checklist_plugin, tts_provider, message_queue)
+    menu = ChecklistMenu(checklist_plugin, message_queue)
     menu.open()  # Show available checklists
     menu.select_option("1")  # Select first checklist
     menu.verify_item()  # Pilot verifies current item
 """
 
-from dataclasses import dataclass
 from typing import Any
 
 from airborne.core.logging_system import get_logger
-from airborne.core.messaging import Message, MessagePriority, MessageTopic
 from airborne.plugins.checklist.checklist_plugin import ChecklistPlugin
+from airborne.ui.menu import Menu, MenuOption
 
 logger = get_logger(__name__)
 
 
-@dataclass
-class ChecklistMenuOption:
-    """Represents a single checklist menu option.
-
-    Attributes:
-        key: Key to select this option (e.g., "1", "2").
-        checklist_id: ID of the checklist.
-        checklist_name: Display name of the checklist.
-        description: Brief description.
-    """
-
-    key: str
-    checklist_id: str
-    checklist_name: str
-    description: str
-
-
-class ChecklistMenu:
+class ChecklistMenu(Menu):
     """Interactive menu for checklist selection and execution.
 
+    Extends the generic Menu base class to provide checklist-specific functionality.
     Provides a user-friendly interface for:
     - Browsing available checklists
     - Selecting a checklist to execute
@@ -48,61 +31,63 @@ class ChecklistMenu:
 
     The menu uses a state machine:
     - CLOSED: Menu not visible
-    - CHECKLIST_SELECTION: Showing list of available checklists
-    - CHECKLIST_EXECUTION: Executing selected checklist
+    - OPEN: Showing list of available checklists (CHECKLIST_SELECTION in old API)
+    - CHECKLIST_EXECUTION: Executing selected checklist (additional state)
     """
 
     def __init__(
         self,
         checklist_plugin: ChecklistPlugin,
-        tts_provider: Any | None = None,
         message_queue: Any | None = None,
     ):
         """Initialize checklist menu.
 
         Args:
             checklist_plugin: ChecklistPlugin instance for checklist operations.
-            tts_provider: TTS provider for reading menu (deprecated, use message_queue).
             message_queue: Message queue for sending TTS requests.
         """
+        super().__init__(message_queue, sender_name="checklist_menu")
+
         self._checklist_plugin = checklist_plugin
-        self._tts = tts_provider
-        self._message_queue = message_queue
-        self._state = "CLOSED"  # CLOSED, CHECKLIST_SELECTION, CHECKLIST_EXECUTION
-        self._current_options: list[ChecklistMenuOption] = []
-        self._selected_index = 0  # For up/down navigation
+        self._executing_checklist = False
 
         logger.info("Checklist menu initialized")
 
-    def open(self) -> None:
-        """Open the checklist menu showing available checklists."""
-        # Get available checklists
-        checklist_ids = self._checklist_plugin.list_checklists()
+    # Public API methods
 
-        if not checklist_ids:
-            logger.warning("No checklists available")
-            self._speak_message("MSG_CHECKLIST_NONE_AVAILABLE")
-            return
+    def is_executing_checklist(self) -> bool:
+        """Check if currently executing a checklist.
 
-        # Build menu options
-        self._current_options = []
-        for idx, checklist_id in enumerate(checklist_ids, start=1):
-            checklist = self._checklist_plugin.get_checklist(checklist_id)
-            if checklist:
-                option = ChecklistMenuOption(
-                    key=str(idx),
-                    checklist_id=checklist.id,
-                    checklist_name=checklist.name,
-                    description=checklist.description,
-                )
-                self._current_options.append(option)
+        Returns:
+            True if in checklist execution mode.
+        """
+        return self._executing_checklist
 
-        self._state = "CHECKLIST_SELECTION"
-        self._selected_index = 0
-        logger.info(f"Checklist menu opened with {len(self._current_options)} checklists")
+    # Override base methods to handle CHECKLIST_EXECUTION state
 
-        # Read menu to player
-        self.read_menu()
+    def get_state(self) -> str:
+        """Get current menu state.
+
+        Returns:
+            Current state string (CLOSED, CHECKLIST_SELECTION, CHECKLIST_EXECUTION).
+        """
+        if self._executing_checklist:
+            return "CHECKLIST_EXECUTION"
+
+        # Map OPEN to CHECKLIST_SELECTION for backward compatibility
+        base_state = super().get_state()
+        if base_state == "OPEN":
+            return "CHECKLIST_SELECTION"
+        return base_state
+
+    def is_open(self) -> bool:
+        """Check if menu is currently open.
+
+        Returns:
+            True if menu is in any open state (selection or execution).
+        """
+        # Menu is considered "open" during checklist execution too
+        return super().is_open() or self._executing_checklist
 
     def close(self, speak: bool = True) -> None:
         """Close the checklist menu.
@@ -110,104 +95,111 @@ class ChecklistMenu:
         Args:
             speak: If True, speak "menu closed" message. Default True.
         """
-        if self._state != "CLOSED":
-            # If we're executing a checklist, we don't close - just exit selection menu
-            if self._state == "CHECKLIST_EXECUTION":
-                logger.debug("Cannot close menu during checklist execution")
-                return
+        # If we're executing a checklist, we don't close - just exit selection menu
+        if self._executing_checklist:
+            logger.debug("Cannot close menu during checklist execution")
+            return
 
-            self._state = "CLOSED"
-            self._current_options = []
-            self._selected_index = 0
-            logger.debug("Checklist menu closed")
+        super().close(speak)
 
-            if speak:
-                self._speak_message("MSG_CHECKLIST_MENU_CLOSED")
+    # Implement abstract methods from Menu base class
 
-    def select_option(self, key: str) -> bool:
-        """Select a menu option by key (number).
+    def _build_options(self, context: Any) -> list[MenuOption]:
+        """Build menu options from available checklists.
 
         Args:
-            key: Option key (e.g., "1", "2", "3").
+            context: Not used for checklist menu.
 
         Returns:
-            True if option was found and selected, False otherwise.
+            List of MenuOption for available checklists.
         """
-        if self._state != "CHECKLIST_SELECTION":
-            logger.warning(f"Cannot select option, menu state is: {self._state}")
-            return False
+        # Get available checklists
+        checklist_ids = self._checklist_plugin.list_checklists()
 
-        # Find option by key
-        selected_option = None
-        for option in self._current_options:
-            if option.key == key:
-                selected_option = option
-                break
+        if not checklist_ids:
+            logger.warning("No checklists available")
+            return []
 
-        if not selected_option:
-            logger.debug(f"Invalid option selected: {key}")
-            self._speak_message("MSG_CHECKLIST_INVALID_OPTION")
-            return False
+        # Build menu options
+        options = []
+        for idx, checklist_id in enumerate(checklist_ids, start=1):
+            checklist = self._checklist_plugin.get_checklist(checklist_id)
+            if checklist:
+                message_key = self._get_checklist_message_key(checklist.name)
+                option = MenuOption(
+                    key=str(idx),
+                    label=checklist.name,
+                    message_key=message_key,
+                    data={
+                        "checklist_id": checklist.id,
+                        "description": checklist.description,
+                    },
+                )
+                options.append(option)
 
-        logger.info(f"Selected checklist: {selected_option.checklist_name}")
+        return options
+
+    def _handle_selection(self, option: MenuOption) -> None:
+        """Handle selection of a checklist.
+
+        Args:
+            option: The selected MenuOption containing checklist_id in data.
+        """
+        checklist_id = option.data.get("checklist_id")
+        if not checklist_id:
+            logger.error("Selected option missing checklist_id")
+            return
+
+        logger.info(f"Selected checklist: {option.label}")
 
         # Start the checklist
-        success = self._checklist_plugin.start_checklist(selected_option.checklist_id)
+        success = self._checklist_plugin.start_checklist(checklist_id)
 
         if success:
-            self._state = "CHECKLIST_EXECUTION"
-            # Don't close menu immediately - wait for checklist completion
+            # Close menu silently and enter execution state
+            super().close(speak=False)
+            self._executing_checklist = True
+            # Don't close menu completely - wait for checklist completion
         else:
-            self._speak_message("MSG_CHECKLIST_START_FAILED")
+            self._speak("MSG_CHECKLIST_START_FAILED")
 
-        return success
-
-    def move_selection_up(self) -> bool:
-        """Move selection up in the list.
+    def _get_menu_opened_message(self) -> str:
+        """Get TTS message key for menu opened.
 
         Returns:
-            True if selection moved, False if at top.
+            Message key string.
         """
-        if self._state != "CHECKLIST_SELECTION" or not self._current_options:
-            return False
+        return "MSG_CHECKLIST_MENU_OPENED"
 
-        if self._selected_index > 0:
-            self._selected_index -= 1
-            self._announce_current_selection()
-            return True
-
-        return False
-
-    def move_selection_down(self) -> bool:
-        """Move selection down in the list.
+    def _get_menu_closed_message(self) -> str:
+        """Get TTS message key for menu closed.
 
         Returns:
-            True if selection moved, False if at bottom.
+            Message key string.
         """
-        if self._state != "CHECKLIST_SELECTION" or not self._current_options:
-            return False
+        return "MSG_CHECKLIST_MENU_CLOSED"
 
-        if self._selected_index < len(self._current_options) - 1:
-            self._selected_index += 1
-            self._announce_current_selection()
-            return True
-
-        return False
-
-    def select_current(self) -> bool:
-        """Select the currently highlighted option.
+    def _get_invalid_option_message(self) -> str:
+        """Get TTS message key for invalid option.
 
         Returns:
-            True if option was selected, False otherwise.
+            Message key string.
         """
-        if self._state != "CHECKLIST_SELECTION" or not self._current_options:
-            return False
+        return "MSG_CHECKLIST_INVALID_OPTION"
 
-        if 0 <= self._selected_index < len(self._current_options):
-            selected_option = self._current_options[self._selected_index]
-            return self.select_option(selected_option.key)
+    def _is_available(self, context: Any) -> bool:
+        """Check if checklist menu should be available.
 
-        return False
+        Args:
+            context: Not used.
+
+        Returns:
+            True if checklists are available.
+        """
+        # Always available if checklists exist
+        return len(self._checklist_plugin.list_checklists()) > 0
+
+    # Checklist-specific methods
 
     def verify_item(self) -> bool:
         """Pilot verifies the current checklist item.
@@ -217,7 +209,7 @@ class ChecklistMenu:
         Returns:
             True if item was verified successfully.
         """
-        if self._state != "CHECKLIST_EXECUTION":
+        if not self._executing_checklist:
             return False
 
         # Complete current item
@@ -226,9 +218,7 @@ class ChecklistMenu:
         # If checklist is complete, close menu silently
         if not success:
             # Checklist completed - close menu without announcement
-            self._state = "CLOSED"
-            self._current_options = []
-            self._selected_index = 0
+            self._executing_checklist = False
             logger.debug("Checklist completed - menu closed automatically")
 
         return success
@@ -239,7 +229,7 @@ class ChecklistMenu:
         Returns:
             True if item was skipped successfully.
         """
-        if self._state != "CHECKLIST_EXECUTION":
+        if not self._executing_checklist:
             return False
 
         # Skip current item
@@ -248,7 +238,7 @@ class ChecklistMenu:
         # If checklist is complete, return to menu
         if not success:
             # Checklist completed
-            self._state = "CHECKLIST_SELECTION"
+            self._executing_checklist = False
             # Re-open menu to show checklists again
             self.open()
 
@@ -260,7 +250,7 @@ class ChecklistMenu:
         Returns:
             True if checklist was cancelled successfully.
         """
-        if self._state != "CHECKLIST_EXECUTION":
+        if not self._executing_checklist:
             return False
 
         # Cancel the active checklist
@@ -268,51 +258,11 @@ class ChecklistMenu:
 
         if success:
             # Return to checklist selection
-            self._state = "CHECKLIST_SELECTION"
+            self._executing_checklist = False
             # Re-open menu to show checklists again
             self.open()
 
         return success
-
-    def read_menu(self) -> None:
-        """Read menu options aloud using TTS."""
-        if self._state != "CHECKLIST_SELECTION" or not self._current_options:
-            return
-
-        # Build list of message keys to speak - only announce first (focused) option
-        message_keys = ["MSG_CHECKLIST_MENU_OPENED"]
-
-        # Add only the first checklist option
-        if self._current_options:
-            first_option = self._current_options[0]
-            # Speak: "Number 1: Before Engine Start"
-            message_keys.append(f"MSG_NUMBER_{first_option.key}")
-            message_keys.append("MSG_WORD_COLON")
-            # Map checklist names to MSG keys
-            checklist_msg_key = self._get_checklist_message_key(first_option.checklist_name)
-            message_keys.append(checklist_msg_key)
-
-        logger.debug(f"Reading menu with {len(message_keys)} messages")
-
-        # Speak menu using message queue
-        self._speak_message(message_keys)
-
-    def _announce_current_selection(self) -> None:
-        """Announce the currently selected option."""
-        if not (0 <= self._selected_index < len(self._current_options)):
-            return
-
-        option = self._current_options[self._selected_index]
-        checklist_msg_key = self._get_checklist_message_key(option.checklist_name)
-
-        # Speak: "Number 1: Before Engine Start"
-        message_keys = [
-            f"MSG_NUMBER_{option.key}",
-            "MSG_WORD_COLON",
-            checklist_msg_key,
-        ]
-
-        self._speak_message(message_keys)
 
     def _get_checklist_message_key(self, checklist_name: str) -> str:
         """Get MSG key for checklist name.
@@ -337,46 +287,3 @@ class ChecklistMenu:
         }
 
         return name_to_key.get(checklist_name, "MSG_CHECKLIST_UNKNOWN")
-
-    def _speak_message(self, message_keys: str | list[str]) -> None:
-        """Speak message using message queue.
-
-        Args:
-            message_keys: Message key or list of keys.
-        """
-        if not self._message_queue:
-            return
-
-        self._message_queue.publish(
-            Message(
-                sender="checklist_menu",
-                recipients=["*"],
-                topic=MessageTopic.TTS_SPEAK,
-                data={"text": message_keys, "priority": "high", "interrupt": True},
-                priority=MessagePriority.HIGH,
-            )
-        )
-
-    def is_open(self) -> bool:
-        """Check if menu is currently open.
-
-        Returns:
-            True if menu is in any open state.
-        """
-        return self._state != "CLOSED"
-
-    def is_executing_checklist(self) -> bool:
-        """Check if currently executing a checklist.
-
-        Returns:
-            True if in checklist execution mode.
-        """
-        return self._state == "CHECKLIST_EXECUTION"
-
-    def get_state(self) -> str:
-        """Get current menu state.
-
-        Returns:
-            Current state string.
-        """
-        return self._state

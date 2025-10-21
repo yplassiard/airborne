@@ -4,58 +4,7 @@ from unittest.mock import Mock
 
 import pytest
 
-from airborne.plugins.radio.atc_menu import ATCMenu, ATCMenuOption, FlightPhase
-
-
-class TestATCMenuOption:
-    """Test ATCMenuOption dataclass."""
-
-    def test_create_option(self):
-        """Test creating a basic menu option."""
-        option = ATCMenuOption(
-            key="1",
-            label="Request Taxi",
-            pilot_message="PILOT_REQUEST_TAXI",
-            expected_atc_response="ATC_GROUND_TAXI_RWY_31",
-        )
-
-        assert option.key == "1"
-        assert option.label == "Request Taxi"
-        assert option.pilot_message == "PILOT_REQUEST_TAXI"
-        assert option.expected_atc_response == "ATC_GROUND_TAXI_RWY_31"
-        assert option.enabled is True
-
-    def test_create_option_with_list(self):
-        """Test creating option with multiple message keys."""
-        option = ATCMenuOption(
-            key="1",
-            label="Request ATIS",
-            pilot_message="PILOT_REQUEST_ATIS",
-            expected_atc_response=["ATIS_AIRPORT_INFO", "ATIS_INFO_ALPHA"],
-        )
-
-        assert isinstance(option.expected_atc_response, list)
-        assert len(option.expected_atc_response) == 2
-
-    def test_create_option_with_callback(self):
-        """Test creating option with callback."""
-        callback_called = False
-
-        def callback():
-            nonlocal callback_called
-            callback_called = True
-
-        option = ATCMenuOption(
-            key="1",
-            label="Test",
-            pilot_message="TEST",
-            expected_atc_response="TEST",
-            callback=callback,
-        )
-
-        assert option.callback is not None
-        option.callback()
-        assert callback_called
+from airborne.plugins.radio.atc_menu import ATCMenu, FlightPhase
 
 
 class TestFlightPhase:
@@ -298,15 +247,11 @@ class TestATCMenu:
     def test_read_menu(self, menu, mock_message_queue):
         """Test reading menu aloud."""
         state = {"on_ground": True, "engine_running": True, "altitude_agl": 0.0}
+
+        # Open menu - this automatically announces the menu
         menu.open(state)
 
-        # Clear the message queue calls from open()
-        mock_message_queue.publish.reset_mock()
-
-        # Read menu again
-        menu.read_menu()
-
-        # Should have published TTS message
+        # Should have published TTS message during open
         mock_message_queue.publish.assert_called()
 
         # Check that message data contains message keys (menu now uses keys)
@@ -316,7 +261,7 @@ class TestATCMenu:
         assert isinstance(message_keys, list)
         assert len(message_keys) > 0
         # Should contain menu-related message keys
-        assert any("MSG_ATC_MENU" in key or "MSG_ATC_OPTION" in key for key in message_keys)
+        assert any("MSG_ATC_MENU" in str(key) or "MSG_ATC_OPTION" in str(key) for key in message_keys)
 
     def test_option_with_callback(self, menu, mock_queue):
         """Test that option callback is executed."""
@@ -329,8 +274,8 @@ class TestATCMenu:
         state = {"on_ground": True, "engine_running": True, "altitude_agl": 0.0}
         menu.open(state)
 
-        # Modify first option to have callback
-        menu._current_options[0].callback = callback
+        # Modify first option to have callback (callbacks are now in data dict)
+        menu._current_options[0].data["callback"] = callback
 
         # Select option
         menu.select_option("1")

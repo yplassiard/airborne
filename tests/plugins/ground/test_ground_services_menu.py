@@ -181,9 +181,9 @@ def test_menu_builds_options_correctly(menu):
 
     # Menu should have 3 options
     assert len(menu._current_options) == 3
-    assert menu._current_options[0].service_type == ServiceType.REFUEL
-    assert menu._current_options[1].service_type == ServiceType.PUSHBACK
-    assert menu._current_options[2].service_type == ServiceType.BOARDING
+    assert menu._current_options[0].data["service_type"] == ServiceType.REFUEL
+    assert menu._current_options[1].data["service_type"] == ServiceType.PUSHBACK
+    assert menu._current_options[2].data["service_type"] == ServiceType.BOARDING
 
 
 def test_menu_select_option_publishes_service_request(menu, message_queue):
