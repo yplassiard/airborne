@@ -118,6 +118,10 @@ class TestGroundServicesPlugin:
 
         message_queue.subscribe("ground.services.available", capture_availability)
 
+        # Process initial availability message from initialization
+        message_queue.process()
+        availability_messages.clear()
+
         # Park at gate
         message = Message(
             sender="test",
@@ -172,12 +176,14 @@ class TestGroundServicesPlugin:
         self, plugin: GroundServicesPlugin, message_queue: MessageQueue
     ) -> None:
         """Test service request when parked."""
+        from airborne.core.messaging import MessageTopic
+
         audio_messages: list = []
 
         def capture_audio(msg):  # type: ignore
             audio_messages.append(msg)
 
-        message_queue.subscribe("ground.audio.speak", capture_audio)
+        message_queue.subscribe(MessageTopic.TTS_SPEAK, capture_audio)
 
         # Park at gate
         plugin.is_at_parking = True
@@ -197,10 +203,10 @@ class TestGroundServicesPlugin:
 
         plugin.handle_message(message)
 
-        # Should start service
+        # Should start service and publish acknowledgment message
         message_queue.process()
         assert len(audio_messages) == 1
-        assert "dispatched" in audio_messages[0].data["text"].lower()
+        assert audio_messages[0].data["message_key"] == "MSG_REFUEL_ACKNOWLEDGED"
 
         # Check service status
         assert plugin.service_manager is not None
@@ -370,6 +376,10 @@ class TestGroundServicesPlugin:
             availability_messages.append(msg)
 
         message_queue.subscribe("ground.services.available", capture_availability)
+
+        # Process initial availability message from initialization
+        message_queue.process()
+        availability_messages.clear()
 
         # Park at gate
         message = Message(

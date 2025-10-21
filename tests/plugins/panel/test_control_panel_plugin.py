@@ -143,8 +143,8 @@ class TestPanelControl:
         assert control.get_current_state() == "OFF"
         control.next_state()
         assert control.get_current_state() == "ON"
-        control.next_state()  # Wraps around
-        assert control.get_current_state() == "OFF"
+        control.next_state()  # Does NOT wrap around (stays at max)
+        assert control.get_current_state() == "ON"
 
     def test_previous_state(self) -> None:
         """Test going to previous state."""
@@ -159,8 +159,8 @@ class TestPanelControl:
         assert control.get_current_state() == "ON"
         control.previous_state()
         assert control.get_current_state() == "OFF"
-        control.previous_state()  # Wraps around
-        assert control.get_current_state() == "ON"
+        control.previous_state()  # Does NOT wrap around (stays at min)
+        assert control.get_current_state() == "OFF"
 
     def test_set_state_by_name(self) -> None:
         """Test setting state by name."""

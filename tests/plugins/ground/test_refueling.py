@@ -46,13 +46,15 @@ class TestRefuelingService:
         self, refueling_service: RefuelingService, message_queue: MessageQueue
     ) -> None:
         """Test starting refueling for GA aircraft."""
+        from airborne.core.messaging import MessageTopic
+
         # Set up message capture
         audio_messages: list = []
 
         def capture_audio(msg):  # type: ignore
             audio_messages.append(msg)
 
-        message_queue.subscribe("ground.audio.speak", capture_audio)
+        message_queue.subscribe(MessageTopic.TTS_SPEAK, capture_audio)
 
         request = ServiceRequest(
             service_type=ServiceType.REFUEL,
@@ -81,7 +83,7 @@ class TestRefuelingService:
         # Process queue and check audio message
         message_queue.process()
         assert len(audio_messages) == 1
-        assert "Fuel truck dispatched" in audio_messages[0].data["text"]
+        assert audio_messages[0].data["message_key"] == "MSG_REFUEL_ACKNOWLEDGED"
 
     def test_start_refueling_jet_aircraft(
         self, refueling_service: RefuelingService, message_queue: MessageQueue
@@ -339,13 +341,15 @@ class TestRefuelingService:
         self, refueling_service: RefuelingService, message_queue: MessageQueue
     ) -> None:
         """Test that audio messages are published at each phase."""
+        from airborne.core.messaging import MessageTopic
+
         # Set up message capture
         audio_messages: list = []
 
         def capture_audio(msg):  # type: ignore
             audio_messages.append(msg)
 
-        message_queue.subscribe("ground.audio.speak", capture_audio)
+        message_queue.subscribe(MessageTopic.TTS_SPEAK, capture_audio)
 
         request = ServiceRequest(
             service_type=ServiceType.REFUEL,
@@ -358,7 +362,7 @@ class TestRefuelingService:
         refueling_service.start(request)
         message_queue.process()
 
-        # Should have initial dispatch message
+        # Should have initial acknowledgment message
         assert len(audio_messages) == 1
         audio_messages.clear()
 
@@ -366,20 +370,20 @@ class TestRefuelingService:
         refueling_service._transition_to_connecting()
         message_queue.process()
         assert len(audio_messages) == 1
-        assert "connected" in audio_messages[0].data["text"].lower()
+        assert audio_messages[0].data["message_key"] == "MSG_REFUEL_STARTING"
 
         # Transition to refueling
         refueling_service._transition_to_refueling()
         message_queue.process()
         assert len(audio_messages) == 2  # Previous + new
-        assert "in progress" in audio_messages[1].data["text"].lower()
+        assert audio_messages[1].data["message_key"] == "MSG_REFUEL_IN_PROGRESS"
 
         # Transition to complete
         refueling_service.fuel_added = refueling_service.fuel_to_add
         refueling_service._transition_to_complete()
         message_queue.process()
         assert len(audio_messages) == 3  # All messages
-        assert "complete" in audio_messages[2].data["text"].lower()
+        assert audio_messages[2].data["message_key"] == "MSG_REFUEL_COMPLETE"
 
     def test_zero_fuel_request(self, refueling_service: RefuelingService) -> None:
         """Test requesting zero fuel (should still start but complete immediately)."""

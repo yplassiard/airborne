@@ -79,8 +79,8 @@ class TestAudioPluginInitialization:
         # Should register components
         assert context.plugin_registry.register.call_count == 3
 
-        # Should subscribe to eight message topics: POSITION_UPDATED, TTS_SPEAK, TTS_INTERRUPT, PROXIMITY_BEEP, CONTROL_INPUT, ENGINE_STATE, SYSTEM_STATE, electrical.master_switch
-        assert context.message_queue.subscribe.call_count == 8
+        # Should subscribe to nine message topics: POSITION_UPDATED, TTS_SPEAK, TTS_INTERRUPT, PROXIMITY_BEEP, CONTROL_INPUT, ENGINE_STATE, SYSTEM_STATE, electrical.master_switch, audio.play_click
+        assert context.message_queue.subscribe.call_count == 9
 
 
 class TestAudioPluginPositionHandling:
@@ -210,8 +210,8 @@ class TestAudioPluginShutdown:
         """Test audio plugin shutdown."""
         plugin.shutdown()
 
-        # Should unsubscribe from messages (POSITION_UPDATED, TTS_SPEAK, CONTROL_INPUT, TTS_INTERRUPT, ENGINE_STATE, SYSTEM_STATE, PROXIMITY_BEEP, electrical.master_switch)
-        assert plugin.context.message_queue.unsubscribe.call_count == 8
+        # Should unsubscribe from messages (POSITION_UPDATED, TTS_SPEAK, CONTROL_INPUT, TTS_INTERRUPT, ENGINE_STATE, SYSTEM_STATE, PROXIMITY_BEEP, electrical.master_switch, audio.play_click)
+        assert plugin.context.message_queue.unsubscribe.call_count == 9
 
         # Should unregister components
         assert plugin.context.plugin_registry.unregister.call_count == 3

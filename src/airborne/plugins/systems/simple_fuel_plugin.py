@@ -136,6 +136,9 @@ class SimpleFuelSystem(IPlugin):
         # Subscribe to fuel control messages
         context.message_queue.subscribe(MessageTopic.FUEL_STATE, self.handle_message)
 
+        # Calculate initial fuel pressure before publishing state
+        self._update_fuel_pressure()
+
         # Publish initial state immediately after initialization
         self._publish_state()
 

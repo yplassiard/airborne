@@ -78,12 +78,14 @@ class TestPushbackService:
         self, pushback_service: PushbackService, message_queue: MessageQueue
     ) -> None:
         """Test starting pushback with NORTH direction."""
+        from airborne.core.messaging import MessageTopic
+
         audio_messages: list = []
 
         def capture_audio(msg):  # type: ignore
             audio_messages.append(msg)
 
-        message_queue.subscribe("ground.audio.speak", capture_audio)
+        message_queue.subscribe(MessageTopic.TTS_SPEAK, capture_audio)
 
         request = ServiceRequest(
             service_type=ServiceType.PUSHBACK,
@@ -107,7 +109,7 @@ class TestPushbackService:
         # Check audio message
         message_queue.process()
         assert len(audio_messages) == 1
-        assert "brake" in audio_messages[0].data["text"].lower()
+        assert audio_messages[0].data["message_key"] == "MSG_PUSHBACK_ACKNOWLEDGED"
 
     def test_start_pushback_with_heading(self, pushback_service: PushbackService) -> None:
         """Test starting pushback with specific heading."""
@@ -341,12 +343,14 @@ class TestPushbackService:
         self, pushback_service: PushbackService, message_queue: MessageQueue
     ) -> None:
         """Test audio messages are published at each phase."""
+        from airborne.core.messaging import MessageTopic
+
         audio_messages: list = []
 
         def capture_audio(msg):  # type: ignore
             audio_messages.append(msg)
 
-        message_queue.subscribe("ground.audio.speak", capture_audio)
+        message_queue.subscribe(MessageTopic.TTS_SPEAK, capture_audio)
 
         request = ServiceRequest(
             service_type=ServiceType.PUSHBACK,
@@ -362,7 +366,7 @@ class TestPushbackService:
         pushback_service.start(request)
         message_queue.process()
 
-        # Should have initial brake release message
+        # Should have initial pushback acknowledged message
         assert len(audio_messages) == 1
         audio_messages.clear()
 
@@ -370,13 +374,13 @@ class TestPushbackService:
         pushback_service._transition_to_pushing_back()
         message_queue.process()
         assert len(audio_messages) == 1
-        assert "started" in audio_messages[0].data["text"].lower()
+        assert audio_messages[0].data["message_key"] == "MSG_PUSHBACK_STARTING"
 
         # Transition to complete
         pushback_service._transition_to_complete()
         message_queue.process()
         assert len(audio_messages) == 2
-        assert "complete" in audio_messages[1].data["text"].lower()
+        assert audio_messages[1].data["message_key"] == "MSG_PUSHBACK_COMPLETE"
 
     def test_get_progress_waiting_brake(self, pushback_service: PushbackService) -> None:
         """Test progress during brake release wait."""

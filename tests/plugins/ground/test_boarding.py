@@ -39,12 +39,14 @@ class TestBoardingService:
         self, boarding_service: BoardingService, message_queue: MessageQueue
     ) -> None:
         """Test starting boarding for jet aircraft."""
+        from airborne.core.messaging import MessageTopic
+
         audio_messages: list = []
 
         def capture_audio(msg):  # type: ignore
             audio_messages.append(msg)
 
-        message_queue.subscribe("ground.audio.speak", capture_audio)
+        message_queue.subscribe(MessageTopic.TTS_SPEAK, capture_audio)
 
         request = ServiceRequest(
             service_type=ServiceType.BOARDING,
@@ -64,7 +66,7 @@ class TestBoardingService:
 
         message_queue.process()
         assert len(audio_messages) == 1
-        assert "100 passengers" in audio_messages[0].data["text"]
+        assert audio_messages[0].data["message_key"] == "MSG_BOARDING_ACKNOWLEDGED"
 
     def test_start_boarding_ga(self, boarding_service: BoardingService) -> None:
         """Test boarding for GA aircraft is faster."""
@@ -123,12 +125,14 @@ class TestBoardingService:
         self, boarding_service: BoardingService, message_queue: MessageQueue
     ) -> None:
         """Test progress announcements at 25% intervals."""
+        from airborne.core.messaging import MessageTopic
+
         audio_messages: list = []
 
         def capture_audio(msg):  # type: ignore
             audio_messages.append(msg)
 
-        message_queue.subscribe("ground.audio.speak", capture_audio)
+        message_queue.subscribe(MessageTopic.TTS_SPEAK, capture_audio)
 
         request = ServiceRequest(
             service_type=ServiceType.BOARDING,
@@ -146,13 +150,13 @@ class TestBoardingService:
         boarding_service.passengers_boarded = 25
         boarding_service.update(0.1)
         message_queue.process()
-        assert any("25%" in msg.data["text"] for msg in audio_messages)
+        assert any(msg.data.get("message_key") == "MSG_BOARDING_IN_PROGRESS" for msg in audio_messages)
 
         # Simulate 50% progress
         boarding_service.passengers_boarded = 50
         boarding_service.update(0.1)
         message_queue.process()
-        assert any("50%" in msg.data["text"] for msg in audio_messages)
+        assert any(msg.data.get("message_key") == "MSG_BOARDING_IN_PROGRESS" for msg in audio_messages)
 
 
 class TestDeboardingService:
@@ -167,12 +171,14 @@ class TestDeboardingService:
         self, deboarding_service: DeboardingService, message_queue: MessageQueue
     ) -> None:
         """Test starting deboarding service."""
+        from airborne.core.messaging import MessageTopic
+
         audio_messages: list = []
 
         def capture_audio(msg):  # type: ignore
             audio_messages.append(msg)
 
-        message_queue.subscribe("ground.audio.speak", capture_audio)
+        message_queue.subscribe(MessageTopic.TTS_SPEAK, capture_audio)
 
         request = ServiceRequest(
             service_type=ServiceType.DEBOARDING,
@@ -191,7 +197,7 @@ class TestDeboardingService:
 
         message_queue.process()
         assert len(audio_messages) == 1
-        assert "Deboarding started" in audio_messages[0].data["text"]
+        assert audio_messages[0].data["message_key"] == "MSG_DEBOARDING_ACKNOWLEDGED"
 
     def test_deboarding_faster_than_boarding(self, deboarding_service: DeboardingService) -> None:
         """Test deboarding is faster than boarding."""

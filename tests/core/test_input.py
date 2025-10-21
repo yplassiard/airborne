@@ -193,7 +193,7 @@ class TestInputManagerKeyboard:
 
         keydown = Mock()
         keydown.type = pygame.KEYDOWN
-        keydown.key = pygame.K_PAGEUP  # Throttle increase
+        keydown.key = pygame.K_HOME  # Throttle increase
         manager.process_events([keydown])
 
         # Call update to apply continuous throttle change
@@ -430,23 +430,31 @@ class TestInputManagerThrottle:
 
         keydown = Mock()
         keydown.type = pygame.KEYDOWN
-        keydown.key = pygame.K_PAGEUP  # Throttle increase
+        keydown.key = pygame.K_HOME  # Throttle increase
         manager.process_events([keydown])
 
         # Multiple updates to reach full throttle
-        for _ in range(50):  # 50 * 0.01 = 0.5, should reach 1.0
+        # Rate limiting: 0.1s between clicks, 0.016s per update = ~7 updates per click
+        # Need 50 clicks (0.5 / 0.01) to reach 1.0, so 50 * 7 = 350 updates
+        for _ in range(350):
             manager.update(0.016)
 
         assert manager._target_throttle == 1.0
 
-    def test_throttle_idle(self, manager: InputManager) -> None:
-        """Test throttle idle action."""
-        manager.state.throttle = 0.8
+    def test_throttle_decrease_to_idle(self, manager: InputManager) -> None:
+        """Test throttle decrease moves towards idle."""
+        manager._target_throttle = 0.5
 
         keydown = Mock()
         keydown.type = pygame.KEYDOWN
-        keydown.key = pygame.K_PAGEDOWN  # Changed from K_i to K_PAGEDOWN
+        keydown.key = pygame.K_END  # Throttle decrease
         manager.process_events([keydown])
+
+        # Multiple updates to reach idle throttle
+        # Rate limiting: 0.1s between clicks, 0.016s per update = ~7 updates per click
+        # Need 50 clicks (0.5 / 0.01) to reach 0.0, so 50 * 7 = 350 updates
+        for _ in range(350):
+            manager.update(0.016)
 
         assert manager._target_throttle == 0.0
 
@@ -454,14 +462,16 @@ class TestInputManagerThrottle:
         """Test incrementing throttle multiple times with update loop."""
         keydown = Mock()
         keydown.type = pygame.KEYDOWN
-        keydown.key = pygame.K_PAGEUP  # Throttle increase
+        keydown.key = pygame.K_HOME  # Throttle increase
         manager.process_events([keydown])
 
-        # Call update 5 times to increment throttle continuously
-        for _ in range(5):
+        # Call update 35 times to increment throttle continuously
+        # Rate limiting: 0.1s between clicks, 0.016s per update = ~7 updates per click
+        # 35 updates = 5 clicks = 5 * 0.01 = 0.05
+        for _ in range(35):
             manager.update(0.016)
 
-        # Should be 5 * 0.01 = 0.05 (changed from 0.25)
+        # Should be 5 * 0.01 = 0.05
         assert manager._target_throttle == pytest.approx(0.05)
 
     def test_throttle_clamps_at_maximum(self, manager: InputManager) -> None:
@@ -470,11 +480,13 @@ class TestInputManagerThrottle:
 
         keydown = Mock()
         keydown.type = pygame.KEYDOWN
-        keydown.key = pygame.K_PAGEUP  # Throttle increase
+        keydown.key = pygame.K_HOME  # Throttle increase
         manager.process_events([keydown])
 
         # Call update multiple times to exceed 1.0
-        for _ in range(5):
+        # Rate limiting: 0.1s between clicks, 0.016s per update = ~7 updates per click
+        # 35 updates = 5 clicks = 5 * 0.01 = 0.05, which would exceed 1.0
+        for _ in range(35):
             manager.update(0.016)
 
         assert manager._target_throttle == 1.0

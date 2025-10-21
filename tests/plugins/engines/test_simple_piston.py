@@ -60,8 +60,8 @@ class TestSimplePistonEngineInitialization:
         engine.initialize(context)
 
         assert engine.context == context
-        # Should subscribe to three message topics
-        assert context.message_queue.subscribe.call_count == 3
+        # Should subscribe to seven message topics (3 system + 4 control panel)
+        assert context.message_queue.subscribe.call_count == 7
 
         # Verify each expected subscribe call
         subscribe_calls = context.message_queue.subscribe.call_args_list
@@ -70,6 +70,10 @@ class TestSimplePistonEngineInitialization:
         assert MessageTopic.ENGINE_STATE in topics_subscribed
         assert MessageTopic.ELECTRICAL_STATE in topics_subscribed
         assert MessageTopic.FUEL_STATE in topics_subscribed
+        assert "engine.magnetos" in topics_subscribed
+        assert "engine.starter" in topics_subscribed
+        assert "engine.mixture" in topics_subscribed
+        assert "engine.throttle" in topics_subscribed
 
     def test_initial_state(self) -> None:
         """Test initial engine state."""
@@ -485,8 +489,8 @@ class TestSimplePistonEngineShutdown:
         """Test shutdown cleans up subscriptions."""
         running_engine.shutdown()
 
-        # Should unsubscribe from all three message topics
-        assert running_engine.context.message_queue.unsubscribe.call_count == 3
+        # Should unsubscribe from all seven message topics (3 system + 4 control panel)
+        assert running_engine.context.message_queue.unsubscribe.call_count == 7
 
         # Verify each expected unsubscribe call
         unsubscribe_calls = running_engine.context.message_queue.unsubscribe.call_args_list
@@ -495,6 +499,10 @@ class TestSimplePistonEngineShutdown:
         assert MessageTopic.ENGINE_STATE in topics_unsubscribed
         assert MessageTopic.ELECTRICAL_STATE in topics_unsubscribed
         assert MessageTopic.FUEL_STATE in topics_unsubscribed
+        assert "engine.magnetos" in topics_unsubscribed
+        assert "engine.starter" in topics_unsubscribed
+        assert "engine.mixture" in topics_unsubscribed
+        assert "engine.throttle" in topics_unsubscribed
 
         assert running_engine.running is False
         assert running_engine.rpm == 0.0

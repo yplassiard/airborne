@@ -324,7 +324,8 @@ class InputManager:  # pylint: disable=too-many-instance-attributes
 
         # Throttle rate limiting (10 clicks per second = 0.1s between clicks)
         self._throttle_click_interval = 0.1  # seconds between throttle adjustments
-        self._time_since_last_throttle_click = 0.0
+        # Initialize to interval so first throttle action works immediately
+        self._time_since_last_throttle_click = self._throttle_click_interval
 
         logger.info(
             "Input manager initialized with %d key bindings", len(self.config.keyboard_bindings)
