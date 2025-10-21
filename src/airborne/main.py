@@ -5,8 +5,11 @@ sets up core systems, and runs the main game loop.
 
 Typical usage:
     uv run python -m airborne.main
+    uv run python -m airborne.main --from-airport KPAO
+    uv run python -m airborne.main --from-airport KPAO --to-airport KSFO
 """
 
+import argparse
 import sys
 from typing import TYPE_CHECKING
 
@@ -35,8 +38,15 @@ class AirBorne:
     Manages initialization, game loop, and shutdown of all systems.
     """
 
-    def __init__(self) -> None:
-        """Initialize the application."""
+    def __init__(self, args: argparse.Namespace | None = None) -> None:
+        """Initialize the application.
+
+        Args:
+            args: Command line arguments (optional)
+        """
+        # Store CLI arguments
+        self.args = args or argparse.Namespace(from_airport=None, to_airport=None, callsign=None)
+
         # Initialize logging first
         initialize_logging("config/logging.yaml")
         logger.info("AirBorne starting up...")
@@ -74,6 +84,9 @@ class AirBorne:
         # Aircraft
         self.aircraft: Aircraft | None = None
 
+        # Initialize navigation and scenario systems
+        self._initialize_navigation_systems()
+
         # Load plugins and aircraft
         self._initialize_plugins()
 
@@ -109,6 +122,65 @@ class AirBorne:
                 priority=MessagePriority.HIGH,
             )
         )
+
+    def _initialize_navigation_systems(self) -> None:
+        """Initialize navigation, aviation, and scenario systems."""
+        from airborne.airports.database import AirportDatabase
+        from airborne.aviation import CallsignGenerator
+        from airborne.scenario import ScenarioBuilder, SpawnLocation, SpawnManager
+
+        logger.info("Initializing navigation systems...")
+
+        # Load airport database
+        self.airport_db = AirportDatabase()
+        self.airport_db.load_from_csv("data/airports")
+        logger.info(f"Loaded {len(self.airport_db.airports)} airports")
+
+        # Initialize callsign generator
+        self.callsign_gen = CallsignGenerator(callsigns_file="data/aviation/callsigns.yaml")
+
+        # Create scenario from CLI args or default
+        if self.args.from_airport:
+            airport_icao = self.args.from_airport.upper()
+            logger.info(f"Using departure airport from CLI: {airport_icao}")
+        else:
+            # Default to Palo Alto
+            airport_icao = "KPAO"
+            logger.info(f"Using default departure airport: {airport_icao}")
+
+        # Generate or use provided callsign
+        if self.args.callsign:
+            callsign = self.args.callsign
+        else:
+            callsign_obj = self.callsign_gen.generate_ga_callsign("N")
+            callsign = callsign_obj.full
+
+        # Build scenario
+        self.scenario = (
+            ScenarioBuilder()
+            .with_airport(airport_icao)
+            .with_spawn_location(SpawnLocation.RAMP)
+            .with_callsign(callsign)
+            .build()
+        )
+
+        logger.info(
+            f"Scenario created: {callsign} at {airport_icao} ({self.scenario.spawn_location.value})"
+        )
+
+        # Create spawn manager and get spawn state
+        spawn_manager = SpawnManager(self.airport_db)
+        try:
+            self.spawn_state = spawn_manager.spawn_aircraft(self.scenario)
+            logger.info(
+                f"Spawn position: {self.spawn_state.position}, "
+                f"heading: {self.spawn_state.heading:.0f}°"
+            )
+        except ValueError as e:
+            logger.error(f"Failed to spawn aircraft: {e}")
+            # Fall back to default position
+            self.spawn_state = None
+            logger.warning("Using default spawn position")
 
     def _initialize_plugins(self) -> None:
         """Initialize core plugins and load aircraft."""
@@ -803,6 +875,35 @@ class AirBorne:
         logger.info("Shutdown complete")
 
 
+def parse_args() -> argparse.Namespace:
+    """Parse command line arguments.
+
+    Returns:
+        Parsed arguments
+    """
+    parser = argparse.ArgumentParser(description="AirBorne - Blind-Accessible Flight Simulator")
+
+    parser.add_argument(
+        "--from-airport",
+        type=str,
+        help="Departure airport ICAO code (e.g., KPAO, KSFO)",
+    )
+
+    parser.add_argument(
+        "--to-airport",
+        type=str,
+        help="Destination airport ICAO code (e.g., KSFO, KLAX)",
+    )
+
+    parser.add_argument(
+        "--callsign",
+        type=str,
+        help="Aircraft callsign (e.g., N12345, Cessna 123)",
+    )
+
+    return parser.parse_args()
+
+
 def main() -> int:
     """Main entry point.
 
@@ -810,7 +911,8 @@ def main() -> int:
         Exit code (0 for success).
     """
     try:
-        app = AirBorne()
+        args = parse_args()
+        app = AirBorne(args)
         app.run()
         return 0
     except Exception as e:  # pylint: disable=broad-exception-caught
