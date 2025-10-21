@@ -13,8 +13,9 @@ AirBorne is a blind-accessible flight simulator with self-voicing capabilities, 
 **Instrument Readouts Complete** ✅ - All engine/electrical/fuel instruments with pre-recorded TTS!
 
 ### Test Results (Updated 2025-10-21)
-- **1065/1090 tests passing (97.7%)** ✅
-- **170 new tests** added in Phase 20 (all passing!)
+- **1097/1122 tests passing (97.8%)** ✅
+- **202 new tests** added in recent phases (all passing!)
+  - UI: 32 tests (menu system, question widget)
   - Navigation: 61 tests (waypoint, navdata, flight_plan, routes)
   - Aviation: 40 tests (callsigns)
   - Scenario: 40 tests (scenario builder, spawn manager)
@@ -48,10 +49,14 @@ AirBorne is a blind-accessible flight simulator with self-voicing capabilities, 
 - ✅ Automatic demo script executes full flight sequence
 - ✅ Terrain collision detection operational
 - ✅ Audio plugin runs in stub mode (graceful degradation)
-- ✅ **NEW**: Instrument readouts for engine (RPM, oil pressure, oil temp, manifold pressure, fuel flow)
-- ✅ **NEW**: Instrument readouts for electrical (battery voltage, battery %, charging status, alternator)
-- ✅ **NEW**: Instrument readouts for fuel (quantity, remaining time)
-- ✅ **NEW**: 151 pre-recorded TTS audio files (Samantha 200WPM)
+- ✅ **NEW**: Generic menu system with unified navigation and TTS
+- ✅ **NEW**: All three interactive menus working: F1 (ATC), F2 (Checklist), F3 (Ground Services)
+- ✅ **NEW**: Audio feedback for menu availability ("not at parking", "no services")
+- ✅ Instrument readouts for engine (RPM, oil pressure, oil temp, manifold pressure, fuel flow)
+- ✅ Instrument readouts for electrical (battery voltage, battery %, charging status, alternator)
+- ✅ Instrument readouts for fuel (quantity, remaining time)
+- ✅ 151 pre-recorded TTS audio files (Samantha 200WPM)
+- ✅ 13 ground services audio files (cockpit + ops voices)
 - ✅ Clean shutdown
 
 ### Automatic Demo Working! 🎉
@@ -137,6 +142,16 @@ The `scripts/demo_autopilot.py` script now successfully demonstrates:
 4. **Test Failures**: 25 tests failing (97.3% pass rate) - mostly input manager and audio plugin initialization
 
 ### Recent Commits (2025-10-21)
+- `feat(menu): create generic menu system and fix F3 ground services menu with audio feedback` ✅
+  - Created generic `Menu` base class and `Question` widget (`src/airborne/ui/`)
+  - Refactored ATC, Checklist, and Ground Services menus to use unified base class
+  - Fixed F3 key blocking by adding to control panel passthrough keys
+  - Generated 13 ground services audio files (menu, options, error messages)
+  - Added audio feedback when ground services unavailable ("not at parking", "no services")
+  - 32 new UI tests (all passing)
+  - Removed ~200 lines of duplicated menu code
+  - All three menus now working: F1 (ATC) ✅, F2 (Checklist) ✅, F3 (Ground Services) ✅
+- `chore(gitignore): exclude generated speech .wav files` ✅
 - `feat(main): integrate flight planning system with CLI args for airport selection and callsign` ✅
 - `feat(navigation): add flight planning system with routes, callsigns, and scenarios` ✅
   - 84 files changed, 72,836 insertions
