@@ -57,6 +57,7 @@ dmypy.json
 # Project specific
 data/airports/*.csv
 data/terrain/cache/
+data/speech/**/*.wav
 *.log
 
 # Documentation builds
