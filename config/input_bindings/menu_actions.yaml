@@ -1,0 +1,116 @@
+# Menu Action Bindings
+# Maps menu actions to multiple input sources (keyboard, joystick, network)
+
+actions:
+  # ATC Menu
+  MENU_ATC:
+    bindings:
+      - type: keyboard
+        key: F1
+      - type: joystick_button
+        button: 0
+        device: any  # Match any joystick
+      - type: network
+        command: "open_atc_menu"
+
+  # Checklist Menu
+  MENU_CHECKLIST:
+    bindings:
+      - type: keyboard
+        key: F2
+      - type: joystick_button
+        button: 1
+        device: any
+      - type: network
+        command: "open_checklist_menu"
+
+  # Ground Services Menu
+  MENU_GROUND_SERVICES:
+    bindings:
+      - type: keyboard
+        key: F3
+      - type: joystick_button
+        button: 2
+        device: any
+      - type: network
+        command: "open_ground_services_menu"
+
+  # Menu Navigation - Up
+  MENU_UP:
+    bindings:
+      - type: keyboard
+        key: UP
+      - type: joystick_axis
+        axis: 1  # Y axis
+        threshold: 0.5
+        direction: negative
+        device: any
+      - type: joystick_hat
+        hat: 0
+        value: [0, 1]  # Up
+      - type: network
+        command: "menu_up"
+
+  # Menu Navigation - Down
+  MENU_DOWN:
+    bindings:
+      - type: keyboard
+        key: DOWN
+      - type: joystick_axis
+        axis: 1  # Y axis
+        threshold: 0.5
+        direction: positive
+        device: any
+      - type: joystick_hat
+        hat: 0
+        value: [0, -1]  # Down
+      - type: network
+        command: "menu_down"
+
+  # Menu Selection
+  MENU_SELECT:
+    bindings:
+      - type: keyboard
+        key: RETURN
+      - type: keyboard
+        key: TAB
+      - type: joystick_button
+        button: 0
+        device: any
+      - type: network
+        command: "menu_select"
+
+  # Menu Close/Back
+  MENU_CLOSE:
+    bindings:
+      - type: keyboard
+        key: ESCAPE
+      - type: joystick_button
+        button: 1
+        device: any
+      - type: network
+        command: "menu_close"
+
+  # Checklist Verification - Affirmative
+  CHECKLIST_VERIFY_YES:
+    bindings:
+      - type: keyboard
+        key: RETURN
+        mods: SHIFT  # Shift+Enter
+      - type: joystick_button
+        button: 3  # Triangle/Y button
+        device: any
+      - type: network
+        command: "checklist_verify_yes"
+
+  # Checklist Verification - Negative
+  CHECKLIST_VERIFY_NO:
+    bindings:
+      - type: keyboard
+        key: RETURN
+        mods: CTRL  # Ctrl+Enter
+      - type: joystick_button
+        button: 2  # Square/X button
+        device: any
+      - type: network
+        command: "checklist_verify_no"

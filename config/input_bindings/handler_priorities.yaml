@@ -1,0 +1,20 @@
+# Input Handler Priorities
+# Lower number = higher priority (processed first)
+#
+# Priority ranges:
+# - 0-99: Modal overlays (menus, dialogs)
+# - 100-199: Context handlers (control panel)
+# - 200+: Default handlers (flight controls)
+
+priorities:
+  # Modal overlays (highest priority)
+  checklist_menu: 10
+  atc_menu: 20
+  ground_services_menu: 30
+
+  # Context handlers
+  control_panel: 100
+
+  # Default handlers (lowest priority)
+  instrument_readouts: 200
+  flight_controls: 210

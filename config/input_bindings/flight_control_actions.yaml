@@ -1,0 +1,130 @@
+# Flight Control Action Bindings
+# Maps flight control actions to keyboard, joystick, and network inputs
+
+actions:
+  # Pitch Controls
+  FLIGHT_PITCH_UP:
+    bindings:
+      - type: keyboard
+        key: DOWN
+      - type: joystick_axis
+        axis: 1  # Y axis
+        threshold: 0.1
+        direction: positive
+        device: any
+      - type: network
+        command: "pitch_up"
+
+  FLIGHT_PITCH_DOWN:
+    bindings:
+      - type: keyboard
+        key: UP
+      - type: joystick_axis
+        axis: 1  # Y axis
+        threshold: 0.1
+        direction: negative
+        device: any
+      - type: network
+        command: "pitch_down"
+
+  # Roll Controls
+  FLIGHT_ROLL_LEFT:
+    bindings:
+      - type: keyboard
+        key: LEFT
+      - type: joystick_axis
+        axis: 0  # X axis
+        threshold: 0.1
+        direction: negative
+        device: any
+      - type: network
+        command: "roll_left"
+
+  FLIGHT_ROLL_RIGHT:
+    bindings:
+      - type: keyboard
+        key: RIGHT
+      - type: joystick_axis
+        axis: 0  # X axis
+        threshold: 0.1
+        direction: positive
+        device: any
+      - type: network
+        command: "roll_right"
+
+  # Yaw Controls
+  FLIGHT_YAW_LEFT:
+    bindings:
+      - type: keyboard
+        key: COMMA  # ,
+      - type: joystick_axis
+        axis: 2  # Rudder axis
+        threshold: 0.1
+        direction: negative
+        device: any
+      - type: joystick_button
+        button: 4  # L1/LB
+        device: any
+      - type: network
+        command: "yaw_left"
+
+  FLIGHT_YAW_RIGHT:
+    bindings:
+      - type: keyboard
+        key: PERIOD  # .
+      - type: joystick_axis
+        axis: 2  # Rudder axis
+        threshold: 0.1
+        direction: positive
+        device: any
+      - type: joystick_button
+        button: 5  # R1/RB
+        device: any
+      - type: network
+        command: "yaw_right"
+
+  # Throttle Controls
+  FLIGHT_THROTTLE_INCREASE:
+    bindings:
+      - type: keyboard
+        key: PAGEUP
+      - type: joystick_axis
+        axis: 3  # Throttle axis
+        threshold: 0.1
+        direction: positive
+        device: any
+      - type: network
+        command: "throttle_increase"
+
+  FLIGHT_THROTTLE_DECREASE:
+    bindings:
+      - type: keyboard
+        key: PAGEDOWN
+      - type: joystick_axis
+        axis: 3  # Throttle axis
+        threshold: 0.1
+        direction: negative
+        device: any
+      - type: network
+        command: "throttle_decrease"
+
+  # Elevator Trim
+  FLIGHT_TRIM_UP:
+    bindings:
+      - type: keyboard
+        key: HOME
+      - type: joystick_hat
+        hat: 0
+        value: [0, 1]  # D-pad up
+      - type: network
+        command: "trim_up"
+
+  FLIGHT_TRIM_DOWN:
+    bindings:
+      - type: keyboard
+        key: END
+      - type: joystick_hat
+        hat: 0
+        value: [0, -1]  # D-pad down
+      - type: network
+        command: "trim_down"

@@ -15,9 +15,17 @@ from typing import TYPE_CHECKING
 
 import pygame
 
+from airborne.adapters import (
+    ChecklistMenuInputHandler,
+    ControlPanelInputHandler,
+    MenuInputHandler,
+)
 from airborne.core.event_bus import EventBus
 from airborne.core.game_loop import GameLoop  # noqa: F401
 from airborne.core.input import InputActionEvent, InputManager, InputStateEvent  # noqa: F401
+from airborne.core.input_config import InputConfig
+from airborne.core.input_event import InputEvent
+from airborne.core.input_handler_manager import InputHandlerManager
 from airborne.core.logging_system import get_logger, initialize_logging
 from airborne.core.messaging import Message, MessagePriority, MessageQueue, MessageTopic
 from airborne.core.plugin import PluginContext
@@ -67,6 +75,11 @@ class AirBorne:
 
         # Initialize input system
         self.input_manager = InputManager(self.event_bus)
+
+        # Initialize new input handler system
+        self.input_config = InputConfig.load_from_directory("config/input_bindings")
+        self.input_handler_manager = InputHandlerManager()
+        logger.info("Input handler system initialized")
 
         # Plugin system
         self.plugin_loader = PluginLoader(["src/airborne/plugins"])
@@ -287,9 +300,68 @@ class AirBorne:
 
             logger.info("All plugins and aircraft loaded successfully")
 
+            # Initialize input handlers with loaded plugins
+            self._initialize_input_handlers()
+
         except Exception as e:
             logger.error("Failed to initialize plugins: %s", e)
             raise
+
+    def _initialize_input_handlers(self) -> None:
+        """Initialize and register input handlers with priority-based dispatch."""
+        logger.info("Registering input handlers...")
+
+        # Register checklist menu handler (priority 10 - highest)
+        if (
+            hasattr(self, "checklist_plugin")
+            and self.checklist_plugin
+            and self.checklist_plugin.checklist_menu
+        ):
+            checklist_handler = ChecklistMenuInputHandler(
+                menu=self.checklist_plugin.checklist_menu,
+                name="checklist_menu",
+                priority=self.input_config.get_handler_priority("checklist_menu"),
+            )
+            self.input_handler_manager.register(checklist_handler)
+            logger.info("Registered checklist menu handler")
+
+        # Register ATC menu handler (priority 20)
+        if hasattr(self, "radio_plugin") and self.radio_plugin and self.radio_plugin.atc_menu:
+            atc_handler = MenuInputHandler(
+                menu=self.radio_plugin.atc_menu,
+                name="atc_menu",
+                priority=self.input_config.get_handler_priority("atc_menu"),
+            )
+            self.input_handler_manager.register(atc_handler)
+            logger.info("Registered ATC menu handler")
+
+        # Register ground services menu handler (priority 30)
+        if (
+            hasattr(self, "ground_services_plugin")
+            and self.ground_services_plugin
+            and self.ground_services_plugin.ground_services_menu
+        ):
+            ground_handler = MenuInputHandler(
+                menu=self.ground_services_plugin.ground_services_menu,
+                name="ground_services_menu",
+                priority=self.input_config.get_handler_priority("ground_services_menu"),
+            )
+            self.input_handler_manager.register(ground_handler)
+            logger.info("Registered ground services menu handler")
+
+        # Register control panel handler (priority 100)
+        if hasattr(self, "control_panel_plugin") and self.control_panel_plugin:
+            panel_handler = ControlPanelInputHandler(
+                control_panel=self.control_panel_plugin,
+                name="control_panel",
+                priority=self.input_config.get_handler_priority("control_panel"),
+            )
+            self.input_handler_manager.register(panel_handler)
+            logger.info("Registered control panel handler")
+
+        logger.info(
+            f"Input handler registration complete: {self.input_handler_manager.get_handler_count()} handlers registered"
+        )
 
     def _handle_input_action(self, event: InputActionEvent) -> None:
         """Handle input action events.
@@ -447,7 +519,7 @@ class AirBorne:
         self._shutdown()
 
     def _process_events(self) -> None:
-        """Process pygame events."""
+        """Process pygame events using new input handler system."""
         events = pygame.event.get()
         remaining_events = []
 
@@ -459,172 +531,21 @@ class AirBorne:
                 self.screen = pygame.display.set_mode((event.w, event.h), pygame.RESIZABLE)
                 logger.debug("Window resized to %dx%d", event.w, event.h)
                 remaining_events.append(event)
-            elif (
-                event.type == pygame.KEYDOWN
-                and hasattr(self, "checklist_plugin")
-                and self.checklist_plugin
-                and self.checklist_plugin.checklist_menu
-                and self.checklist_plugin.checklist_menu.is_open()
-            ):
-                # Checklist menu is open - intercept keys
-                handled = self._handle_checklist_menu_key(event.key)
+            elif event.type == pygame.KEYDOWN:
+                # Convert pygame event to InputEvent
+                input_event = InputEvent.from_keyboard(key=event.key, mods=pygame.key.get_mods())
+
+                # Dispatch through handler manager (priority-based)
+                handled = self.input_handler_manager.process_input(input_event)
+
+                # If not handled, add to remaining events
                 if not handled:
                     remaining_events.append(event)
-            elif (
-                event.type == pygame.KEYDOWN
-                and hasattr(self, "radio_plugin")
-                and self.radio_plugin
-                and self.radio_plugin.atc_menu
-                and self.radio_plugin.atc_menu.is_open()
-            ):
-                # ATC menu is open - intercept keys
-                handled = self._handle_atc_menu_key(event.key)
-                if not handled:
-                    remaining_events.append(event)
-            elif (
-                event.type == pygame.KEYDOWN
-                and hasattr(self, "ground_services_plugin")
-                and self.ground_services_plugin
-                and self.ground_services_plugin.ground_services_menu
-                and self.ground_services_plugin.ground_services_menu.is_open()
-            ):
-                # Ground services menu is open - intercept keys
-                handled = self._handle_ground_services_menu_key(event.key)
-                if not handled:
-                    remaining_events.append(event)
-            elif (
-                event.type == pygame.KEYDOWN
-                and hasattr(self, "control_panel_plugin")
-                and self.control_panel_plugin
-                and self.control_panel_plugin.handle_key_press(event.key, pygame.key.get_mods())
-            ):
-                # Event was handled by panel system, don't add to remaining_events
-                pass
             else:
                 remaining_events.append(event)
 
         # Pass remaining events to input manager
         self.input_manager.process_events(remaining_events)
-
-    def _handle_checklist_menu_key(self, key: int) -> bool:
-        """Handle key press when checklist menu is open.
-
-        Args:
-            key: pygame key constant
-
-        Returns:
-            True if key was handled, False otherwise
-        """
-        menu = self.checklist_plugin.checklist_menu
-        if not menu:
-            return False
-
-        # Number keys select checklist (in selection mode)
-        if menu.get_state() == "CHECKLIST_SELECTION":
-            # ESC closes menu
-            if key == pygame.K_ESCAPE:
-                menu.close()
-                return True
-            if pygame.K_1 <= key <= pygame.K_9:
-                number = key - pygame.K_0
-                menu.select_option(str(number))
-                return True
-            # Up/Down arrows navigate
-            elif key == pygame.K_UP:
-                menu.move_selection_up()
-                return True
-            elif key == pygame.K_DOWN:
-                menu.move_selection_down()
-                return True
-            # Enter selects current
-            elif key in (pygame.K_RETURN, pygame.K_KP_ENTER):
-                menu.select_current()
-                return True
-
-        # Checklist execution mode
-        elif menu.get_state() == "CHECKLIST_EXECUTION":
-            mods = pygame.key.get_mods()
-
-            # Shift+Enter verifies/checks the current item
-            if key in (pygame.K_RETURN, pygame.K_KP_ENTER) and (mods & pygame.KMOD_SHIFT):
-                menu.verify_item()
-                return True
-            # Ctrl+Enter fails/cancels the checklist
-            elif (
-                key in (pygame.K_RETURN, pygame.K_KP_ENTER)
-                and (mods & pygame.KMOD_CTRL)
-                or key == pygame.K_ESCAPE
-            ):
-                menu.cancel_checklist()
-                return True
-
-        return False
-
-    def _handle_atc_menu_key(self, key: int) -> bool:
-        """Handle key press when ATC menu is open.
-
-        Args:
-            key: pygame key constant
-
-        Returns:
-            True if key was handled, False otherwise
-        """
-        menu = self.radio_plugin.atc_menu
-        if not menu:
-            return False
-
-        # ESC closes menu
-        if key == pygame.K_ESCAPE:
-            menu.close()
-            return True
-
-        # Number keys select option
-        if pygame.K_1 <= key <= pygame.K_9:
-            number = key - pygame.K_0
-            menu.select_option(str(number))
-            return True
-
-        # Up/Down arrows navigate
-        if key == pygame.K_UP:
-            menu.move_selection_up()
-            return True
-
-        if key == pygame.K_DOWN:
-            menu.move_selection_down()
-            return True
-
-        # Enter selects current
-        if key in (pygame.K_RETURN, pygame.K_KP_ENTER):
-            menu.select_current()
-            return True
-
-        return False
-
-    def _handle_ground_services_menu_key(self, key: int) -> bool:
-        """Handle key press when ground services menu is open.
-
-        Args:
-            key: pygame key constant
-
-        Returns:
-            True if key was handled, False otherwise
-        """
-        menu = self.ground_services_plugin.ground_services_menu
-        if not menu:
-            return False
-
-        # ESC closes menu
-        if key == pygame.K_ESCAPE:
-            menu.close()
-            return True
-
-        # Number keys select option
-        if pygame.K_1 <= key <= pygame.K_9:
-            number = key - pygame.K_0
-            menu.select_option(str(number))
-            return True
-
-        return False
 
     def _update(self, dt: float) -> None:
         """Update game state.
