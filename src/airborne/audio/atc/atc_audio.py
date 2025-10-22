@@ -28,6 +28,7 @@ except ImportError:
 
 from airborne.audio.effects.radio_filter import RadioEffectFilter
 from airborne.core.logging_system import get_logger
+from airborne.core.resource_path import get_resource_path
 
 logger = get_logger(__name__)
 
@@ -239,7 +240,7 @@ class ATCAudioManager:
             logger.warning("Static layer enabled but no file specified")
             return
 
-        static_path = Path(static_file)
+        static_path = get_resource_path(static_file)
         if not static_path.exists():
             logger.warning(f"Static layer file not found: {static_path}")
             return

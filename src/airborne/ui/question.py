@@ -17,8 +17,9 @@ Typical usage:
     question.ask(on_response=handle_response)
 """
 
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Any, Callable
+from typing import Any
 
 from airborne.core.logging_system import get_logger
 from airborne.core.messaging import Message, MessagePriority, MessageQueue, MessageTopic

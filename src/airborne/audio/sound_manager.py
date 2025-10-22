@@ -17,6 +17,7 @@ from typing import Any
 from airborne.audio.engine.base import IAudioEngine, Sound, Vector3
 from airborne.audio.tts.base import ITTSProvider, TTSPriority
 from airborne.core.logging_system import get_logger
+from airborne.core.resource_path import get_resource_path
 
 logger = get_logger(__name__)
 
@@ -259,12 +260,15 @@ class SoundManager:
             return self._tts_provider.is_speaking()
         return False
 
-    def start_engine_sound(self, path: str = "assets/sounds/aircraft/engine.wav") -> None:
+    def start_engine_sound(self, path: str | None = None) -> None:
         """Start looping engine sound.
 
         Args:
-            path: Path to engine sound file.
+            path: Path to engine sound file (default: assets/sounds/aircraft/engine.wav).
         """
+        if path is None:
+            path = str(get_resource_path("assets/sounds/aircraft/engine.wav"))
+
         if not self._audio_engine:
             return
 
@@ -309,12 +313,15 @@ class SoundManager:
         self._engine_pitch_full = pitch_full
         logger.debug(f"Engine pitch range set: {pitch_idle} to {pitch_full}")
 
-    def start_wind_sound(self, path: str = "assets/sounds/aircraft/wind.mp3") -> None:
+    def start_wind_sound(self, path: str | None = None) -> None:
         """Start looping wind sound.
 
         Args:
-            path: Path to wind sound file.
+            path: Path to wind sound file (default: assets/sounds/aircraft/wind.mp3).
         """
+        if path is None:
+            path = str(get_resource_path("assets/sounds/aircraft/wind.mp3"))
+
         if not self._audio_engine:
             return
 
@@ -353,9 +360,9 @@ class SoundManager:
             gear_down: True for gear down, False for gear up.
         """
         if gear_down:
-            path = "assets/sounds/aircraft/geardown1.mp3"
+            path = str(get_resource_path("assets/sounds/aircraft/geardown1.mp3"))
         else:
-            path = "assets/sounds/aircraft/gearup1.mp3"
+            path = str(get_resource_path("assets/sounds/aircraft/gearup1.mp3"))
 
         try:
             self.play_sound_2d(path, volume=0.8)
@@ -369,9 +376,9 @@ class SoundManager:
             extending: True for extending, False for retracting.
         """
         if extending:
-            path = "assets/sounds/aircraft/flapson1.mp3"
+            path = str(get_resource_path("assets/sounds/aircraft/flapson1.mp3"))
         else:
-            path = "assets/sounds/aircraft/flapsoff1.mp3"
+            path = str(get_resource_path("assets/sounds/aircraft/flapsoff1.mp3"))
 
         try:
             self.play_sound_2d(path, volume=0.6)
@@ -385,9 +392,9 @@ class SoundManager:
             brakes_on: True for brakes on, False for brakes off.
         """
         if brakes_on:
-            path = "assets/sounds/aircraft/brakeson.mp3"
+            path = str(get_resource_path("assets/sounds/aircraft/brakeson.mp3"))
         else:
-            path = "assets/sounds/aircraft/brakesoff.mp3"
+            path = str(get_resource_path("assets/sounds/aircraft/brakesoff.mp3"))
 
         try:
             self.play_sound_2d(path, volume=0.7)
@@ -401,9 +408,9 @@ class SoundManager:
             switch_on: True for switch on, False for switch off.
         """
         if switch_on:
-            path = "assets/sounds/aircraft/switch_on.wav"
+            path = str(get_resource_path("assets/sounds/aircraft/switch_on.wav"))
         else:
-            path = "assets/sounds/aircraft/switch_off.wav"
+            path = str(get_resource_path("assets/sounds/aircraft/switch_off.wav"))
 
         try:
             self.play_sound_2d(path, volume=0.5)
@@ -412,7 +419,7 @@ class SoundManager:
 
     def play_button_sound(self) -> None:
         """Play button press sound."""
-        path = "assets/sounds/aircraft/button_press.wav"
+        path = str(get_resource_path("assets/sounds/aircraft/button_press.wav"))
 
         try:
             self.play_sound_2d(path, volume=0.5)
@@ -421,7 +428,7 @@ class SoundManager:
 
     def play_knob_sound(self) -> None:
         """Play knob turn sound."""
-        path = "assets/sounds/aircraft/knob_turn.wav"
+        path = str(get_resource_path("assets/sounds/aircraft/knob_turn.wav"))
 
         try:
             self.play_sound_2d(path, volume=0.4)
@@ -459,7 +466,7 @@ class SoundManager:
 
             # Play batteryon1.mp3 (one-shot)
             try:
-                path = "assets/sounds/aircraft/batteryon1.mp3"
+                path = str(get_resource_path("assets/sounds/aircraft/batteryon1.mp3"))
                 self._battery_on_source_id = self.play_sound_2d(path, volume=0.6)
                 self._battery_sequence_active = True
                 self._battery_sequence_callback = on_complete_callback
@@ -487,18 +494,21 @@ class SoundManager:
 
             # Play batteryoff1.mp3
             try:
-                path = "assets/sounds/aircraft/batteryoff1.mp3"
+                path = str(get_resource_path("assets/sounds/aircraft/batteryoff1.mp3"))
                 self.play_sound_2d(path, volume=0.6)
                 logger.info("Battery shutdown sound played (batteryoff1.mp3)")
             except FileNotFoundError:
                 logger.warning("Battery shutdown sound not found: batteryoff1.mp3")
 
-    def start_rolling_sound(self, path: str = "assets/sounds/aircraft/rolling.wav") -> None:
+    def start_rolling_sound(self, path: str | None = None) -> None:
         """Start looping rolling/tire sound.
 
         Args:
-            path: Path to rolling sound file.
+            path: Path to rolling sound file (default: assets/sounds/aircraft/rolling.wav).
         """
+        if path is None:
+            path = str(get_resource_path("assets/sounds/aircraft/rolling.wav"))
+
         if not self._audio_engine:
             return
 
@@ -575,7 +585,9 @@ class SoundManager:
                 try:
                     # Load with loop mode enabled
                     loop_sound = self._audio_engine.load_sound(
-                        "assets/sounds/aircraft/batteryloop1.mp3", preload=True, loop_mode=True
+                        str(get_resource_path("assets/sounds/aircraft/batteryloop1.mp3")),
+                        preload=True,
+                        loop_mode=True,
                     )
                     self._battery_loop_source_id = self._audio_engine.play_2d(
                         loop_sound, volume=0.5, pitch=1.0, loop=True

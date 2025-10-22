@@ -20,6 +20,7 @@ from airborne.audio.tts.speech_messages import SpeechMessages
 from airborne.core.logging_system import get_logger
 from airborne.core.messaging import Message, MessagePriority, MessageTopic
 from airborne.core.plugin import IPlugin, PluginContext, PluginMetadata, PluginType
+from airborne.core.resource_path import get_config_path, get_data_path, get_resource_path
 
 logger = get_logger(__name__)
 
@@ -155,8 +156,10 @@ class AudioPlugin(IPlugin):
             from airborne.audio.tts.audio_provider import AudioSpeechProvider
 
             self.tts_provider = AudioSpeechProvider()
-            # Pass audio engine reference to TTS provider
+            # Pass audio engine reference and resource paths to TTS provider
             tts_config["audio_engine"] = self.audio_engine
+            tts_config["speech_dir"] = str(get_data_path("speech"))
+            tts_config["config_dir"] = str(get_resource_path("config"))
             self.tts_provider.initialize(tts_config)
         else:
             logger.error("TTS provider disabled due to missing audio engine")
@@ -179,12 +182,10 @@ class AudioPlugin(IPlugin):
         # Create ATC audio manager for radio communications
         if self.audio_engine:
             try:
-                from pathlib import Path
-
                 from airborne.audio.atc.atc_audio import ATCAudioManager
 
-                config_dir = Path("config")
-                speech_dir = Path("data/speech/en")  # ATC uses same speech dir for now
+                config_dir = get_resource_path("config")
+                speech_dir = get_data_path("speech/en")  # ATC uses same speech dir for now
                 self.atc_audio_manager = ATCAudioManager(self.audio_engine, config_dir, speech_dir)
                 logger.info("ATC audio manager initialized")
             except Exception as e:
@@ -233,12 +234,11 @@ class AudioPlugin(IPlugin):
                 logger.info(f"Engine pitch range configured: {pitch_idle} to {pitch_full}")
 
                 # Store custom engine sound file path for later use
-                self._engine_sound_path = engine_sounds.get(
-                    "running", "assets/sounds/aircraft/engine.wav"
-                )
+                engine_sound_relative = engine_sounds.get("running", "assets/sounds/aircraft/engine.wav")
+                self._engine_sound_path = str(get_resource_path(engine_sound_relative))
                 logger.info(f"Engine sound configured: {self._engine_sound_path}")
             else:
-                self._engine_sound_path = "assets/sounds/aircraft/engine.wav"
+                self._engine_sound_path = str(get_resource_path("assets/sounds/aircraft/engine.wav"))
 
             self.sound_manager.start_wind_sound()
             self._engine_sound_active = False  # Engine sound starts off
@@ -592,9 +592,9 @@ class AudioPlugin(IPlugin):
 
                 # Use different click sounds for different control types
                 if control_type == "switch":
-                    sound_file = "assets/sounds/aircraft/click_switch.mp3"
+                    sound_file = str(get_resource_path("assets/sounds/aircraft/click_switch.mp3"))
                 else:  # knob or slider - both use knob click
-                    sound_file = "assets/sounds/aircraft/click_knob.mp3"
+                    sound_file = str(get_resource_path("assets/sounds/aircraft/click_knob.mp3"))
 
                 self.sound_manager.play_sound_2d(sound_file, volume=0.8)
 

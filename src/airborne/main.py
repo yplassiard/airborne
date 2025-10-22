@@ -11,6 +11,7 @@ Typical usage:
 
 import argparse
 import sys
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 import pygame
@@ -31,6 +32,13 @@ from airborne.core.messaging import Message, MessagePriority, MessageQueue, Mess
 from airborne.core.plugin import PluginContext
 from airborne.core.plugin_loader import PluginLoader
 from airborne.core.registry import ComponentRegistry
+from airborne.core.resource_path import (
+    get_asset_path,
+    get_config_path,
+    get_data_path,
+    get_plugin_dir,
+    get_resource_path,
+)
 
 if TYPE_CHECKING:
     from airborne.aircraft.aircraft import Aircraft
@@ -55,8 +63,13 @@ class AirBorne:
         # Store CLI arguments
         self.args = args or argparse.Namespace(from_airport=None, to_airport=None, callsign=None)
 
-        # Initialize logging first
-        initialize_logging("config/logging.yaml")
+        # Initialize logging first (use platform-specific directories)
+        logging_config = get_config_path("logging.yaml")
+        if logging_config.exists():
+            initialize_logging(str(logging_config), use_platform_dir=True)
+        else:
+            # Fall back to default config if file not found
+            initialize_logging(use_platform_dir=True)
         logger.info("AirBorne starting up...")
 
         # Initialize Pygame
@@ -77,12 +90,13 @@ class AirBorne:
         self.input_manager = InputManager(self.event_bus)
 
         # Initialize new input handler system
-        self.input_config = InputConfig.load_from_directory("config/input_bindings")
+        input_bindings_dir = get_config_path("input_bindings")
+        self.input_config = InputConfig.load_from_directory(str(input_bindings_dir))
         self.input_handler_manager = InputHandlerManager()
         logger.info("Input handler system initialized")
 
         # Plugin system
-        self.plugin_loader = PluginLoader(["src/airborne/plugins"])
+        self.plugin_loader = PluginLoader([str(get_plugin_dir())])
         self.plugin_context = PluginContext(
             event_bus=self.event_bus,
             message_queue=self.message_queue,
@@ -146,11 +160,13 @@ class AirBorne:
 
         # Load airport database
         self.airport_db = AirportDatabase()
-        self.airport_db.load_from_csv("data/airports")
+        self.airport_db.load_from_csv(str(get_data_path("airports")))
         logger.info(f"Loaded {len(self.airport_db.airports)} airports")
 
         # Initialize callsign generator
-        self.callsign_gen = CallsignGenerator(callsigns_file="data/aviation/callsigns.yaml")
+        self.callsign_gen = CallsignGenerator(
+            callsigns_file=str(get_data_path("aviation/callsigns.yaml"))
+        )
 
         # Create scenario from CLI args or default
         if self.args.from_airport:
@@ -209,7 +225,7 @@ class AirBorne:
             # Load aircraft config to get flight model params
             from airborne.aircraft.builder import AircraftBuilder
 
-            aircraft_config_path = "config/aircraft/cessna172.yaml"
+            aircraft_config_path = str(get_config_path("aircraft/cessna172.yaml"))
             config = AircraftBuilder.load_config(aircraft_config_path)
 
             # Extract flight model config from aircraft config
@@ -265,7 +281,7 @@ class AirBorne:
             self.control_panel_plugin = ControlPanelPlugin()
             # Configure panel definition file
             self.plugin_context.config["panels"] = {
-                "definition": "config/panels/cessna172_panel.yaml"
+                "definition": str(get_config_path("panels/cessna172_panel.yaml"))
             }
             self.control_panel_plugin.initialize(self.plugin_context)
 
@@ -275,7 +291,9 @@ class AirBorne:
 
             self.checklist_plugin = ChecklistPlugin()
             # Configure checklist directory
-            self.plugin_context.config["checklists"] = {"directory": "config/checklists"}
+            self.plugin_context.config["checklists"] = {
+                "directory": str(get_config_path("checklists"))
+            }
             self.checklist_plugin.initialize(self.plugin_context)
 
             # Load ground services plugin

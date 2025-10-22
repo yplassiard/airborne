@@ -15,7 +15,6 @@ Typical usage example:
     menu.select_option("1")
 """
 
-from collections.abc import Callable
 from enum import Enum
 from typing import Any
 

@@ -1,7 +1,14 @@
 """Advanced logging system for plugins and core components.
 
 This module provides a flexible logging system with YAML configuration,
-per-plugin loggers, and optimization for high-volume logging.
+per-plugin loggers, platform-aware log locations, and startup-based rotation.
+
+Platform-specific log locations:
+    - macOS: ~/Library/Logs/AirBorne/airborne.log
+    - Linux: ~/.airborne/logs/airborne.log
+    - Windows: %AppData%/AirBorne/Logs/airborne.log
+
+Each game start rotates logs, keeping the last 5 launches.
 
 Typical usage example:
     from airborne.core.logging_system import get_logger
@@ -17,7 +24,11 @@ Typical usage example:
 
 import logging
 import logging.handlers
+import os
+import platform
+import shutil
 import time
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -33,14 +44,82 @@ class LoggingError(Exception):
     """Raised when logging system operations fail."""
 
 
-def initialize_logging(config_path: str | Path | None = None) -> None:
+def get_platform_log_dir() -> Path:
+    """Get platform-specific log directory.
+
+    Returns:
+        Path to the platform-appropriate log directory:
+        - macOS: ~/Library/Logs/AirBorne
+        - Linux: ~/.airborne/logs
+        - Windows: %AppData%/AirBorne/Logs
+
+    Examples:
+        >>> log_dir = get_platform_log_dir()
+        >>> print(log_dir)
+        PosixPath('/Users/username/Library/Logs/AirBorne')
+    """
+    system = platform.system()
+
+    if system == "Darwin":  # macOS
+        return Path.home() / "Library" / "Logs" / "AirBorne"
+    elif system == "Windows":
+        appdata = Path(os.environ.get("APPDATA", Path.home() / "AppData" / "Roaming"))
+        return appdata / "AirBorne" / "Logs"
+    else:  # Linux and other Unix-like systems
+        return Path.home() / ".airborne" / "logs"
+
+
+def rotate_logs(log_dir: Path, log_filename: str = "airborne.log", keep_count: int = 5) -> None:
+    """Rotate logs on startup, keeping the last N launches.
+
+    Renames current log to airborne.log.1, shifts older logs, and deletes
+    logs beyond keep_count.
+
+    Args:
+        log_dir: Directory containing log files.
+        log_filename: Base name of the log file (default: "airborne.log").
+        keep_count: Number of old logs to keep (default: 5).
+
+    Examples:
+        >>> rotate_logs(Path("logs"), "airborne.log", 5)
+        # airborne.log -> airborne.log.1
+        # airborne.log.1 -> airborne.log.2
+        # ...
+        # airborne.log.5 -> deleted
+    """
+    log_file = log_dir / log_filename
+
+    # If current log doesn't exist, nothing to rotate
+    if not log_file.exists():
+        return
+
+    # Delete oldest log if it exists (beyond keep_count)
+    oldest_log = log_dir / f"{log_filename}.{keep_count}"
+    if oldest_log.exists():
+        oldest_log.unlink()
+
+    # Shift existing numbered logs
+    for i in range(keep_count - 1, 0, -1):
+        old_log = log_dir / f"{log_filename}.{i}"
+        new_log = log_dir / f"{log_filename}.{i + 1}"
+        if old_log.exists():
+            old_log.rename(new_log)
+
+    # Rename current log to .1
+    log_file.rename(log_dir / f"{log_filename}.1")
+
+
+def initialize_logging(config_path: str | Path | None = None, use_platform_dir: bool = True) -> None:
     """Initialize the logging system from YAML configuration.
 
     This should be called once at application startup before any logging occurs.
+    Automatically rotates logs on startup, keeping the last 5 launches.
 
     Args:
         config_path: Path to logging configuration YAML file.
             If None, uses default configuration.
+        use_platform_dir: If True, use platform-specific log directory.
+            If False, use directory from config (for development/testing).
 
     Raises:
         LoggingError: If initialization fails.
@@ -66,8 +145,18 @@ def initialize_logging(config_path: str | Path | None = None) -> None:
     else:
         _logging_config = _get_default_config()
 
+    # Override log directory with platform-specific location if requested
+    if use_platform_dir:
+        _logging_config["log_dir"] = str(get_platform_log_dir())
+
     # Create log directories
     _setup_directories()
+
+    # Rotate logs from previous sessions
+    log_dir = Path(_logging_config.get("log_dir", "logs"))
+    log_filename = _logging_config.get("combined_log", {}).get("filename", "airborne.log")
+    keep_count = _logging_config.get("combined_log", {}).get("backup_count", 5)
+    rotate_logs(log_dir, log_filename, keep_count)
 
     # Configure root logger
     _configure_root_logger()
@@ -123,16 +212,16 @@ def _configure_root_logger() -> None:
         console_handler.setFormatter(_get_formatter())
         root_logger.addHandler(console_handler)
 
-    # Combined log file handler
+    # Combined log file handler (simple FileHandler, rotation done on startup)
     if _logging_config.get("combined_log", {}).get("enabled", True):
         combined_config = _logging_config["combined_log"]
         log_dir = Path(_logging_config.get("log_dir", "logs"))
         log_file = log_dir / combined_config.get("filename", "airborne.log")
 
-        file_handler = logging.handlers.RotatingFileHandler(
+        # Use simple FileHandler since we rotate on startup, not by size
+        file_handler = logging.FileHandler(
             log_file,
-            maxBytes=combined_config.get("max_bytes", 10485760),
-            backupCount=combined_config.get("backup_count", 5),
+            mode='w',  # Overwrite - we already rotated old log
             encoding="utf-8",
         )
         file_handler.setLevel(logging.DEBUG)
