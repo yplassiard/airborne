@@ -79,12 +79,13 @@ class TestPhysicsPluginInitialization:
         assert plugin.context == context
         assert plugin.flight_model is not None
         assert plugin.collision_detector is not None
+        assert plugin.ground_physics is not None
 
-        # Should register components
-        assert context.plugin_registry.register.call_count == 2
+        # Should register three components (flight_model, collision_detector, ground_physics)
+        assert context.plugin_registry.register.call_count == 3
 
-        # Should subscribe to control inputs and terrain
-        assert context.message_queue.subscribe.call_count == 2
+        # Should subscribe to three topics (control inputs, terrain, parking_brake)
+        assert context.message_queue.subscribe.call_count == 3
 
 
 class TestPhysicsPluginControlInput:
@@ -354,8 +355,8 @@ class TestPhysicsPluginShutdown:
         """Test physics plugin shutdown."""
         plugin.shutdown()
 
-        # Should unsubscribe from messages
-        assert plugin.context.message_queue.unsubscribe.call_count == 2
+        # Should unsubscribe from three topics (control inputs, terrain, parking_brake)
+        assert plugin.context.message_queue.unsubscribe.call_count == 3
 
-        # Should unregister components
-        assert plugin.context.plugin_registry.unregister.call_count == 2
+        # Should unregister three components (flight_model, collision_detector, ground_physics)
+        assert plugin.context.plugin_registry.unregister.call_count == 3

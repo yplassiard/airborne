@@ -290,6 +290,7 @@ class InputManager:  # pylint: disable=too-many-instance-attributes
         event_bus: EventBus,
         config: InputConfig | None = None,
         message_queue: MessageQueue | None = None,
+        aircraft_config: dict | None = None,
     ) -> None:
         """Initialize input manager.
 
@@ -297,10 +298,15 @@ class InputManager:  # pylint: disable=too-many-instance-attributes
             event_bus: Event bus for publishing input events.
             config: Input configuration (uses defaults if None).
             message_queue: Message queue for inter-plugin communication (optional).
+            aircraft_config: Aircraft configuration (for fixed_gear, etc.).
         """
         self.event_bus = event_bus
         self.message_queue = message_queue
         self.config = config if config is not None else InputConfig()
+
+        # Aircraft configuration
+        self.aircraft_config = aircraft_config or {}
+        self.fixed_gear = self.aircraft_config.get("fixed_gear", False)
 
         # Current input state
         self.state = InputState()
@@ -527,6 +533,10 @@ class InputManager:  # pylint: disable=too-many-instance-attributes
                 InputActionEvent(action=action.value, value=self._target_throttle)
             )
         elif action == InputAction.GEAR_TOGGLE:
+            # Skip gear toggle for fixed gear aircraft
+            if self.fixed_gear:
+                logger.debug("Gear toggle ignored (fixed gear aircraft)")
+                return
             self.state.gear = 0.0 if self.state.gear > 0.5 else 1.0
             self.event_bus.publish(InputActionEvent(action=action.value, value=self.state.gear))
         elif action == InputAction.FLAPS_UP:
@@ -535,6 +545,23 @@ class InputManager:  # pylint: disable=too-many-instance-attributes
         elif action == InputAction.FLAPS_DOWN:
             self.state.flaps = min(1.0, self.state.flaps + 0.25)
             self.event_bus.publish(InputActionEvent(action=action.value, value=self.state.flaps))
+        elif action == InputAction.PARKING_BRAKE:
+            # Toggle parking brake via message queue to physics plugin
+            if self.message_queue:
+                from airborne.core.messaging import Message, MessagePriority
+
+                self.message_queue.publish(
+                    Message(
+                        sender="input_manager",
+                        recipients=["physics_plugin"],
+                        topic="parking_brake",
+                        data={},
+                        priority=MessagePriority.HIGH,
+                    )
+                )
+                logger.debug("Parking brake toggle message sent")
+            # Also publish to event bus for TTS feedback
+            self.event_bus.publish(InputActionEvent(action=action.value))
         else:
             # Publish discrete action events (menu, TTS, etc.)
             self.event_bus.publish(InputActionEvent(action=action.value))

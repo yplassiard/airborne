@@ -11,7 +11,6 @@ Typical usage:
 
 import argparse
 import sys
-from pathlib import Path
 from typing import TYPE_CHECKING
 
 import pygame
@@ -33,11 +32,9 @@ from airborne.core.plugin import PluginContext
 from airborne.core.plugin_loader import PluginLoader
 from airborne.core.registry import ComponentRegistry
 from airborne.core.resource_path import (
-    get_asset_path,
     get_config_path,
     get_data_path,
     get_plugin_dir,
-    get_resource_path,
 )
 
 if TYPE_CHECKING:
@@ -86,7 +83,7 @@ class AirBorne:
         self.message_queue = MessageQueue()
         self.registry = ComponentRegistry()
 
-        # Initialize input system (with message queue for inter-plugin communication)
+        # Initialize input system (will be updated with aircraft config after loading)
         self.input_manager = InputManager(self.event_bus, message_queue=self.message_queue)
 
         # Initialize new input handler system
@@ -244,6 +241,12 @@ class AirBorne:
                     self.plugin_context.config["audio"] = {}
                 self.plugin_context.config["audio"]["aircraft"] = audio_config
 
+            # Extract aircraft characteristics (fixed_gear, etc.)
+            aircraft_info = config.get("aircraft", {})
+            fixed_gear = aircraft_info.get("fixed_gear", False)
+            self.plugin_context.config["aircraft"] = {"fixed_gear": fixed_gear}
+            logger.info(f"Aircraft configuration: fixed_gear={fixed_gear}")
+
             # Load physics plugin
             logger.info("Loading physics plugin...")
             from airborne.plugins.core.physics_plugin import PhysicsPlugin
@@ -317,6 +320,15 @@ class AirBorne:
             self.aircraft = builder.build(aircraft_config_path)
 
             logger.info("All plugins and aircraft loaded successfully")
+
+            # Update InputManager with aircraft configuration
+            self.input_manager.aircraft_config = self.plugin_context.config.get("aircraft", {})
+            self.input_manager.fixed_gear = self.input_manager.aircraft_config.get(
+                "fixed_gear", False
+            )
+            logger.info(
+                f"InputManager updated with aircraft config: fixed_gear={self.input_manager.fixed_gear}"
+            )
 
             # Initialize input handlers with loaded plugins
             self._initialize_input_handlers()

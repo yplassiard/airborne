@@ -5,6 +5,7 @@ aircraft:
   name: "Cessna 172 Skyhawk"
   icao_code: "C172"
   manufacturer: "Cessna"
+  fixed_gear: true  # C172 has fixed landing gear (not retractable)
 
   # Flight model configuration
   flight_model: "Simple6DOF"
@@ -194,5 +195,8 @@ aircraft:
       alternator_switch: false      # Start with alternator off
     engine:
       running: false                # Engine not running
-      mixture: 1.0                  # Full rich
+      mixture: 0.0                  # Idle cutoff (full lean)
       throttle: 0.0                 # Idle
+    controls:
+      parking_brake: true           # Parking brake set
+      gear_down: true               # Fixed gear (always down)

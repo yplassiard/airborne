@@ -60,8 +60,8 @@ class TestSimplePistonEngineInitialization:
         engine.initialize(context)
 
         assert engine.context == context
-        # Should subscribe to seven message topics (3 system + 4 control panel)
-        assert context.message_queue.subscribe.call_count == 7
+        # Should subscribe to eight message topics (4 system + 4 control panel)
+        assert context.message_queue.subscribe.call_count == 8
 
         # Verify each expected subscribe call
         subscribe_calls = context.message_queue.subscribe.call_args_list
@@ -489,8 +489,8 @@ class TestSimplePistonEngineShutdown:
         """Test shutdown cleans up subscriptions."""
         running_engine.shutdown()
 
-        # Should unsubscribe from all seven message topics (3 system + 4 control panel)
-        assert running_engine.context.message_queue.unsubscribe.call_count == 7
+        # Should unsubscribe from all eight message topics (4 system + 4 control panel)
+        assert running_engine.context.message_queue.unsubscribe.call_count == 8
 
         # Verify each expected unsubscribe call
         unsubscribe_calls = running_engine.context.message_queue.unsubscribe.call_args_list

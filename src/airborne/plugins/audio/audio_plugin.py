@@ -20,7 +20,7 @@ from airborne.audio.tts.speech_messages import SpeechMessages
 from airborne.core.logging_system import get_logger
 from airborne.core.messaging import Message, MessagePriority, MessageTopic
 from airborne.core.plugin import IPlugin, PluginContext, PluginMetadata, PluginType
-from airborne.core.resource_path import get_config_path, get_data_path, get_resource_path
+from airborne.core.resource_path import get_data_path, get_resource_path
 
 logger = get_logger(__name__)
 
@@ -77,6 +77,9 @@ class AudioPlugin(IPlugin):
         self._audio_update_accumulator = 0.0
         self._audio_update_interval = 0.005  # Update audio every 5ms (200Hz) for smooth transitions
 
+        # Aircraft configuration
+        self._fixed_gear = False  # Will be updated during initialize
+
         # Flight state for instrument readouts
         self._airspeed = 0.0  # knots
         self._groundspeed = 0.0  # knots
@@ -130,6 +133,11 @@ class AudioPlugin(IPlugin):
             context: Plugin context with access to core systems.
         """
         self.context = context
+
+        # Get aircraft config (for fixed_gear, etc.)
+        aircraft_config = context.config.get("aircraft", {})
+        self._fixed_gear = aircraft_config.get("fixed_gear", False)
+        logger.info(f"AudioPlugin: fixed_gear={self._fixed_gear}")
 
         # Get audio config from context
         audio_config = context.config.get("audio", {})
@@ -234,11 +242,15 @@ class AudioPlugin(IPlugin):
                 logger.info(f"Engine pitch range configured: {pitch_idle} to {pitch_full}")
 
                 # Store custom engine sound file path for later use
-                engine_sound_relative = engine_sounds.get("running", "assets/sounds/aircraft/engine.wav")
+                engine_sound_relative = engine_sounds.get(
+                    "running", "assets/sounds/aircraft/engine.wav"
+                )
                 self._engine_sound_path = str(get_resource_path(engine_sound_relative))
                 logger.info(f"Engine sound configured: {self._engine_sound_path}")
             else:
-                self._engine_sound_path = str(get_resource_path("assets/sounds/aircraft/engine.wav"))
+                self._engine_sound_path = str(
+                    get_resource_path("assets/sounds/aircraft/engine.wav")
+                )
 
             self.sound_manager.start_wind_sound()
             self._engine_sound_active = False  # Engine sound starts off
@@ -315,8 +327,8 @@ class AudioPlugin(IPlugin):
             # Handle control input changes for sound effects
             data = message.data
 
-            # Gear change
-            if "gear" in data and self.sound_manager:
+            # Gear change (skip for fixed gear aircraft)
+            if "gear" in data and self.sound_manager and not self._fixed_gear:
                 gear = data["gear"]
                 if gear != self._last_gear_state:
                     self.sound_manager.play_gear_sound(gear > 0.5)
@@ -748,18 +760,27 @@ class AudioPlugin(IPlugin):
 
         else:
             # Map actions to TTS announcements
-            action_messages = {
-                "gear_toggle": "Gear " + ("down" if self._last_gear_state > 0.5 else "up"),
-                "flaps_down": "Flaps extending",
-                "flaps_up": "Flaps retracting",
-                "throttle_increase": "Throttle increased",
-                "throttle_decrease": "Throttle decreased",
-                "throttle_full": "Full throttle",
-                "throttle_idle": "Throttle idle",
-                "brakes_on": "Brakes on",
-                "pause": "Paused",
-                "tts_next": "Next",
-            }
+            # Skip gear_toggle announcement for fixed gear aircraft
+            action_messages = {}
+            if not self._fixed_gear:
+                action_messages["gear_toggle"] = "Gear " + (
+                    "down" if self._last_gear_state > 0.5 else "up"
+                )
+
+            action_messages.update(
+                {
+                    "flaps_down": "Flaps extending",
+                    "flaps_up": "Flaps retracting",
+                    "throttle_increase": "Throttle increased",
+                    "throttle_decrease": "Throttle decreased",
+                    "throttle_full": "Full throttle",
+                    "throttle_idle": "Throttle idle",
+                    "brakes_on": "Brakes on",
+                    "parking_brake": "Parking brake",
+                    "pause": "Paused",
+                    "tts_next": "Next",
+                }
+            )
 
             message = action_messages.get(event.action)
 

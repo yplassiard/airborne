@@ -16,6 +16,8 @@ from airborne.core.plugin import IPlugin, PluginContext, PluginMetadata, PluginT
 from airborne.physics.collision import TerrainCollisionDetector
 from airborne.physics.flight_model.base import AircraftState, ControlInputs, IFlightModel
 from airborne.physics.flight_model.simple_6dof import Simple6DOFFlightModel
+from airborne.physics.ground_physics import GroundContact, GroundPhysics
+from airborne.physics.vectors import Vector3
 
 logger = get_logger(__name__)
 
@@ -37,9 +39,13 @@ class PhysicsPlugin(IPlugin):
         self.context: PluginContext | None = None
         self.flight_model: IFlightModel | None = None
         self.collision_detector: TerrainCollisionDetector | None = None
+        self.ground_physics: GroundPhysics | None = None
 
         # Control inputs (updated via messages)
         self.control_inputs = ControlInputs()
+
+        # Parking brake state (persists independent of regular brakes)
+        self.parking_brake_engaged = False
 
         # Terrain elevation (updated via messages)
         self._terrain_elevation: float = 0.0
@@ -91,13 +97,32 @@ class PhysicsPlugin(IPlugin):
         # Elevation service will be provided by terrain plugin if available
         self.collision_detector = TerrainCollisionDetector(elevation_service=None)
 
+        # Create ground physics with aircraft mass from flight model config
+        aircraft_mass_kg = (
+            flight_model_config.get("weight_lbs", 2450.0) * 0.453592
+        )  # Convert lbs to kg
+        self.ground_physics = GroundPhysics(
+            mass_kg=aircraft_mass_kg,
+            max_brake_force_n=15000.0,  # Cessna 172 brake force
+            max_steering_angle_deg=60.0,  # Nosewheel steering angle
+        )
+        logger.info(f"Ground physics initialized with mass={aircraft_mass_kg:.1f} kg")
+
+        # Initialize parking brake from initial state if available
+        initial_state = context.config.get("aircraft", {}).get("initial_state", {})
+        controls_state = initial_state.get("controls", {})
+        self.parking_brake_engaged = controls_state.get("parking_brake", False)
+        logger.info(f"Parking brake initial state: {self.parking_brake_engaged}")
+
         # Register components in registry
         if context.plugin_registry:
             context.plugin_registry.register("flight_model", self.flight_model)
             context.plugin_registry.register("collision_detector", self.collision_detector)
+            context.plugin_registry.register("ground_physics", self.ground_physics)
 
-        # Subscribe to control input messages
+        # Subscribe to control input messages and parking brake toggle
         context.message_queue.subscribe(MessageTopic.CONTROL_INPUT, self.handle_message)
+        context.message_queue.subscribe("parking_brake", self.handle_message)
 
         # Subscribe to terrain updates
         context.message_queue.subscribe(MessageTopic.TERRAIN_UPDATED, self.handle_message)
@@ -162,11 +187,13 @@ class PhysicsPlugin(IPlugin):
             self.context.message_queue.unsubscribe(
                 MessageTopic.TERRAIN_UPDATED, self.handle_message
             )
+            self.context.message_queue.unsubscribe("parking_brake", self.handle_message)
 
             # Unregister components
             if self.context.plugin_registry:
                 self.context.plugin_registry.unregister("flight_model")
                 self.context.plugin_registry.unregister("collision_detector")
+                self.context.plugin_registry.unregister("ground_physics")
 
         logger.info("Physics plugin shutdown")
 
@@ -201,6 +228,11 @@ class PhysicsPlugin(IPlugin):
             if "elevation" in data:
                 self._terrain_elevation = float(data["elevation"])
 
+        elif message.topic == "parking_brake":
+            # Toggle parking brake
+            self.parking_brake_engaged = not self.parking_brake_engaged
+            logger.info(f"Parking brake {'engaged' if self.parking_brake_engaged else 'released'}")
+
     def on_config_changed(self, config: dict[str, Any]) -> None:
         """Handle configuration changes.
 
@@ -234,11 +266,44 @@ class PhysicsPlugin(IPlugin):
             # Stop vertical velocity
             state.velocity.y = max(0.0, state.velocity.y)
 
-            # Apply friction to horizontal velocity when on ground
-            if state.on_ground:
-                friction_factor = 0.95  # 5% velocity loss per frame
-                state.velocity.x *= friction_factor
-                state.velocity.z *= friction_factor
+            # Apply realistic ground physics when on ground
+            if state.on_ground and self.ground_physics:
+                # Calculate ground speed (horizontal velocity magnitude)
+                ground_velocity = Vector3(state.velocity.x, 0.0, state.velocity.z)
+                ground_speed_mps = ground_velocity.magnitude()
+
+                # Calculate heading from velocity vector
+                import math
+
+                heading_deg = math.degrees(math.atan2(state.velocity.x, state.velocity.z))
+
+                # Create ground contact state
+                contact = GroundContact(
+                    on_ground=True,
+                    gear_compression=1.0,  # Full compression when on ground
+                    surface_type="asphalt",  # Default to asphalt
+                    ground_speed_mps=ground_speed_mps,
+                    heading_deg=heading_deg,
+                    ground_friction=0.8,
+                )
+
+                # Use parking brake or regular brakes
+                brake_input = 1.0 if self.parking_brake_engaged else self.control_inputs.brakes
+
+                # Calculate ground forces
+                ground_forces = self.ground_physics.calculate_ground_forces(
+                    contact=contact,
+                    rudder_input=self.control_inputs.yaw,
+                    brake_input=brake_input,
+                    velocity=ground_velocity,
+                )
+
+                # Apply ground forces to aircraft state (convert N to acceleration)
+                # F = ma, so a = F/m
+                if self.ground_physics.mass_kg > 0:
+                    ground_accel = ground_forces.total_force * (1.0 / self.ground_physics.mass_kg)
+                    state.acceleration.x += ground_accel.x
+                    state.acceleration.z += ground_accel.z
 
     def _publish_position_update(self, state: AircraftState) -> None:
         """Publish position update message.
@@ -281,6 +346,7 @@ class PhysicsPlugin(IPlugin):
                         "z": state.angular_velocity.z,
                     },
                     "airspeed": state.get_airspeed(),
+                    "groundspeed": self._calculate_groundspeed(state),  # For rolling sound
                     "mass": state.mass,
                     "fuel": state.fuel,
                     "on_ground": state.on_ground,
@@ -291,3 +357,21 @@ class PhysicsPlugin(IPlugin):
                 priority=MessagePriority.HIGH,
             )
         )
+
+    def _calculate_groundspeed(self, state: AircraftState) -> float:
+        """Calculate ground speed in knots from horizontal velocity.
+
+        Args:
+            state: Aircraft state.
+
+        Returns:
+            Ground speed in knots.
+        """
+        # Ground speed = horizontal velocity magnitude (ignore vertical component)
+        ground_velocity = Vector3(state.velocity.x, 0.0, state.velocity.z)
+        ground_speed_mps = ground_velocity.magnitude()
+
+        # Convert m/s to knots (1 m/s = 1.94384 knots)
+        ground_speed_knots = ground_speed_mps * 1.94384
+
+        return ground_speed_knots
