@@ -88,14 +88,40 @@ uv run python src/airborne/main.py
 
 ### 3. First Flight
 
-On startup, you'll spawn at Palo Alto Airport (KPAO) on the ramp with a Cessna 172. Press:
-- **F2**: Open checklist menu and complete "Before Engine Start"
-- **Tab**: Navigate control panel and turn on master switch, fuel pump
-- **F2**: Complete "Engine Start" checklist
-- **Arrow keys**: Flight controls (pitch/roll)
-- **Comma/Period**: Rudder (yaw left/right)
-- **Page Up/Down**: Throttle
-- **F1**: ATC menu for clearances and communications
+On startup, you'll spawn at Palo Alto Airport (KPAO) on the ramp with a Cessna 172.
+
+**Basic Start Procedure:**
+1. **F2** - Open checklist menu
+2. **Up/Down arrows** - Navigate to "Before Engine Start" checklist
+3. **Return or Tab** - Select checklist
+4. **Ctrl+1** - Navigate to Instrument Panel
+5. **M** - Turn on master switch (battery)
+6. **Ctrl+2** - Navigate to Pedestal panel
+7. **P** - Turn on fuel pump
+8. **F2** - Return to checklist menu and complete "Engine Start" checklist
+9. **Ctrl+3** - Navigate to Engine Controls panel
+10. **S** - Hold starter button until engine starts
+
+**Flight Controls:**
+- **Arrow keys** - Pitch (up/down) and roll (left/right)
+- **Comma/Period** - Rudder (yaw left/right)
+- **Page Up/Down** - Throttle (increase/decrease)
+- **Home/End** - Elevator trim (up/down)
+
+**Menus:**
+- **F1** - ATC menu (clearances and communications)
+- **F2** - Checklist menu (procedures)
+- **F3** - Ground services menu (refuel, pushback, boarding)
+- **Escape** - Close current menu
+
+**Control Panels:**
+- **Ctrl+1** - Instrument Panel (master, avionics, lights)
+- **Ctrl+2** - Pedestal (mixture, throttle, fuel)
+- **Ctrl+3** - Engine Controls (magnetos, starter)
+- **Ctrl+4** - Overhead Panel (pitot heat)
+- **Ctrl+5** - Flight Controls (flaps, trim, brakes)
+
+See `config/input_bindings/` for complete key binding reference.
 
 ## Building Standalone Applications
 
