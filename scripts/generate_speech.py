@@ -3,8 +3,9 @@
 
 Generates speech files for all voice types using the unified config/speech.yaml configuration.
 Supports:
-- macOS: Uses 'say' command with native voices
-- Windows/Linux: Uses pyttsx3 library
+- kokoro: Kokoro ONNX TTS (high-quality, local, multilingual)
+- say: macOS native 'say' command
+- pyttsx3: Windows/Linux TTS library
 
 Usage:
     python scripts/generate_speech.py              # Generate all voices
@@ -40,6 +41,124 @@ def check_ffmpeg():
         return True
     except (subprocess.CalledProcessError, FileNotFoundError):
         return False
+
+
+def check_kokoro():
+    """Check if Kokoro TTS is available.
+
+    Returns:
+        Tuple of (available: bool, message: str)
+    """
+    try:
+        from pathlib import Path
+
+        import kokoro_onnx  # noqa: F401
+
+        # Check if model files exist
+        model_path = Path("assets/models/kokoro-v1.0.onnx")
+        voices_path = Path("assets/models/voices-v1.0.bin")
+
+        if not model_path.exists():
+            return False, f"Model file not found: {model_path}"
+        if not voices_path.exists():
+            return False, f"Voices file not found: {voices_path}"
+
+        return True, "Kokoro TTS available"
+    except ImportError:
+        return False, "kokoro-onnx not installed (run: ./scripts/install_kokoro.sh)"
+
+
+# Global Kokoro instance (initialized once, reused for all generations)
+_kokoro_instance = None
+
+
+def get_kokoro_instance():
+    """Get or create the global Kokoro instance.
+
+    Returns:
+        Kokoro instance or None if not available
+    """
+    global _kokoro_instance
+
+    if _kokoro_instance is None:
+        available, msg = check_kokoro()
+        if not available:
+            print(f"Warning: Kokoro not available - {msg}")
+            return None
+
+        try:
+            from kokoro_onnx import Kokoro
+
+            print("Initializing Kokoro TTS...")
+            _kokoro_instance = Kokoro(
+                model_path="assets/models/kokoro-v1.0.onnx",
+                voices_path="assets/models/voices-v1.0.bin",
+            )
+            print("✓ Kokoro initialized")
+        except Exception as e:
+            print(f"Error initializing Kokoro: {e}")
+            return None
+
+    return _kokoro_instance
+
+
+def wpm_to_speed(wpm):
+    """Convert words-per-minute to Kokoro speed multiplier.
+
+    Args:
+        wpm: Words per minute (typical range: 140-220)
+
+    Returns:
+        Speed multiplier (0.5-2.0)
+    """
+    # Typical speech rate is ~180 WPM, map this to 1.0
+    # 180 WPM = 1.0x speed
+    # 90 WPM = 0.5x speed (slowest)
+    # 360 WPM = 2.0x speed (fastest)
+    return max(0.5, min(2.0, wpm / 180.0))
+
+
+def generate_with_kokoro_batch(items, voice_name, language, rate):
+    """Generate speech using Kokoro TTS in batches.
+
+    Args:
+        items: List of (text, output_path) tuples
+        voice_name: Kokoro voice name (e.g., "af_bella", "am_adam")
+        language: Language code (e.g., "en-us", "fr-fr")
+        rate: Words per minute (converted to speed multiplier)
+    """
+    import soundfile as sf
+
+    kokoro = get_kokoro_instance()
+    if kokoro is None:
+        print("Error: Kokoro not available")
+        return
+
+    speed = wpm_to_speed(rate)
+
+    for text, output_path in items:
+        try:
+            # Generate audio with Kokoro
+            samples, sample_rate = kokoro.create(text, voice=voice_name, lang=language, speed=speed)
+
+            # Save as WAV file
+            sf.write(str(output_path), samples, sample_rate)
+
+        except Exception as e:
+            print(f"    Error generating with Kokoro: {e}")
+
+
+def generate_with_kokoro(text, output_path, voice_name, language, rate):
+    """Generate speech using Kokoro TTS (single file - legacy).
+
+    Args:
+        text: Text to speak
+        output_path: Output WAV file path
+        voice_name: Kokoro voice name (e.g., "af_bella", "am_adam")
+        language: Language code (e.g., "en-us", "fr-fr")
+        rate: Words per minute (converted to speed multiplier)
+    """
+    generate_with_kokoro_batch([(text, output_path)], voice_name, language, rate)
 
 
 def generate_with_say_batch(items, voice_name, rate, batch_size=8):
@@ -179,7 +298,9 @@ def generate_with_pyttsx3(text, output_path, voice_name, rate):
         print("    Warning: ffmpeg not available, kept as WAV")
 
 
-def generate_speech_file(message_key, text, voice_config, output_dir, force=False):
+def generate_speech_file(
+    message_key, text, voice_config, output_dir, language="en-us", force=False
+):
     """Generate a single speech file.
 
     Args:
@@ -187,6 +308,7 @@ def generate_speech_file(message_key, text, voice_config, output_dir, force=Fals
         text: Text to speak
         voice_config: Voice configuration dict
         output_dir: Output directory path
+        language: Language code (e.g., "en-us", "fr-fr")
         force: If True, regenerate even if file exists
 
     Returns:
@@ -202,7 +324,15 @@ def generate_speech_file(message_key, text, voice_config, output_dir, force=Fals
     engine = voice_config.get("engine", "say")
 
     try:
-        if platform_type == "macos" and engine == "say":
+        if engine == "kokoro":
+            generate_with_kokoro(
+                text,
+                output_path,
+                voice_config["voice_name"],
+                voice_config.get("language", language),
+                voice_config["rate"],
+            )
+        elif platform_type == "macos" and engine == "say":
             generate_with_say(text, output_path, voice_config["voice_name"], voice_config["rate"])
         else:
             generate_with_pyttsx3(
@@ -494,13 +624,21 @@ def generate_voice_messages(voice_name, voice_config, messages, base_dir, force=
     if items_to_generate:
         platform_type = detect_platform()
         engine = voice_config.get("engine", "say")
-        if platform_type == "macos" and engine == "say":
-            print(f"\n  Batch generating {len(items_to_generate)} files...")
+        language = voice_config.get("language", "en-us")
+
+        if engine == "kokoro":
+            print(f"\n  Batch generating {len(items_to_generate)} files with Kokoro...")
+            generate_with_kokoro_batch(
+                items_to_generate, voice_config["voice_name"], language, voice_config["rate"]
+            )
+        elif platform_type == "macos" and engine == "say":
+            print(f"\n  Batch generating {len(items_to_generate)} files with macOS say...")
             generate_with_say_batch(
                 items_to_generate, voice_config["voice_name"], voice_config["rate"], batch_size=8
             )
         else:
             # pyttsx3 doesn't benefit from batching, process normally
+            print(f"\n  Generating {len(items_to_generate)} files with pyttsx3...")
             for text, output_path in items_to_generate:
                 try:
                     generate_with_pyttsx3(
@@ -573,7 +711,14 @@ def list_voices(config):
         print(f"  Description: {voice_config['description']}")
         print(f"  Engine: {voice_config['engine']}")
         print(f"  Voice: {voice_config['voice_name']}")
-        print(f"  Rate: {voice_config['rate']} WPM")
+        print(f"  Rate: {voice_config['rate']} WPM", end="")
+        if voice_config["engine"] == "kokoro":
+            speed = wpm_to_speed(voice_config["rate"])
+            print(f" (Kokoro speed: {speed:.2f}x)")
+        else:
+            print()
+        if "language" in voice_config:
+            print(f"  Language: {voice_config['language']}")
         print(f"  Output: data/speech/<lang>/{voice_config['output_dir']}/")
 
 
@@ -617,10 +762,13 @@ def main():
         list_voices(config)
         return 0
 
-    # Determine platform
+    # Determine platform and available TTS engines
     platform_type = detect_platform()
+    kokoro_available, kokoro_msg = check_kokoro()
+
     print(f"Platform: {platform_type}")
     print(f"FFmpeg available: {check_ffmpeg()}")
+    print(f"Kokoro TTS: {'✓ Available' if kokoro_available else '✗ ' + kokoro_msg}")
 
     # Get voices to generate
     if args.voices:
