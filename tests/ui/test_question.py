@@ -179,6 +179,7 @@ def test_question_get_options_returns_copy(question):
 
 def test_question_callback_exception_handling(question):
     """Test callback exceptions are caught."""
+
     def bad_callback(option):
         raise RuntimeError("Test error")
 

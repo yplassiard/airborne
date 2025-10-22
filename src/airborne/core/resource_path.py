@@ -12,7 +12,6 @@ Typical usage:
 
 import sys
 from pathlib import Path
-from typing import Optional
 
 
 def is_bundled() -> bool:
@@ -27,10 +26,10 @@ def is_bundled() -> bool:
         >>> is_bundled()
         True   # When running from packaged app
     """
-    return hasattr(sys, '_MEIPASS')
+    return hasattr(sys, "_MEIPASS")
 
 
-def get_bundle_dir() -> Optional[Path]:
+def get_bundle_dir() -> Path | None:
     """Get the PyInstaller bundle directory if running from bundle.
 
     Returns:
@@ -43,7 +42,7 @@ def get_bundle_dir() -> Optional[Path]:
         PosixPath('/private/var/.../Contents/Frameworks')  # When bundled
     """
     if is_bundled():
-        return Path(getattr(sys, '_MEIPASS'))
+        return Path(sys._MEIPASS)
     return None
 
 
@@ -63,7 +62,7 @@ def get_project_root() -> Path:
     """
     if is_bundled():
         # PyInstaller extracts to sys._MEIPASS
-        return Path(getattr(sys, '_MEIPASS'))
+        return Path(sys._MEIPASS)
     else:
         # When running from source, go up from src/airborne/core to project root
         return Path(__file__).parent.parent.parent.parent

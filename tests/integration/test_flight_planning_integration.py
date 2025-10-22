@@ -54,12 +54,7 @@ class TestFlightPlanningIntegration:
         callsign = callsign_gen.generate_ga_callsign("N")
 
         # Create scenario
-        scenario = (
-            ScenarioBuilder()
-            .with_airport("KSFO")
-            .with_callsign(callsign.full)
-            .build()
-        )
+        scenario = ScenarioBuilder().with_airport("KSFO").with_callsign(callsign.full).build()
 
         assert scenario.callsign == callsign.full
         assert callsign.full.startswith("N")

@@ -261,7 +261,9 @@ class TestATCMenu:
         assert isinstance(message_keys, list)
         assert len(message_keys) > 0
         # Should contain menu-related message keys
-        assert any("MSG_ATC_MENU" in str(key) or "MSG_ATC_OPTION" in str(key) for key in message_keys)
+        assert any(
+            "MSG_ATC_MENU" in str(key) or "MSG_ATC_OPTION" in str(key) for key in message_keys
+        )
 
     def test_option_with_callback(self, menu, mock_queue):
         """Test that option callback is executed."""

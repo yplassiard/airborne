@@ -1,6 +1,5 @@
 """Tests for InputEvent abstraction."""
 
-
 from airborne.core.input_event import InputEvent, InputSourceType
 
 

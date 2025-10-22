@@ -1,7 +1,6 @@
 """Unit tests for the logging system with platform-aware paths and rotation."""
 
 import logging
-import platform
 import tempfile
 from pathlib import Path
 from unittest.mock import patch
@@ -139,21 +138,20 @@ class TestLoggingInitialization:
 
     def test_initialize_with_platform_dir(self) -> None:
         """Test initialization uses platform-specific directory."""
-        with tempfile.TemporaryDirectory() as tmpdir:
-            with patch(
-                "airborne.core.logging_system.get_platform_log_dir", return_value=Path(tmpdir)
-            ):
-                initialize_logging(use_platform_dir=True)
+        with tempfile.TemporaryDirectory() as tmpdir, patch(
+            "airborne.core.logging_system.get_platform_log_dir", return_value=Path(tmpdir)
+        ):
+            initialize_logging(use_platform_dir=True)
 
-                # Check logger works
-                logger = get_logger("test")
-                logger.info("Test message")
+            # Check logger works
+            logger = get_logger("test")
+            logger.info("Test message")
 
-                # Log file should be created in platform dir
-                log_file = Path(tmpdir) / "airborne.log"
-                assert log_file.exists()
+            # Log file should be created in platform dir
+            log_file = Path(tmpdir) / "airborne.log"
+            assert log_file.exists()
 
-                shutdown_logging()
+            shutdown_logging()
 
     def test_initialize_without_platform_dir(self) -> None:
         """Test initialization uses config directory when use_platform_dir=False."""
@@ -174,18 +172,17 @@ class TestLoggingInitialization:
 
     def test_multiple_initialization_calls(self) -> None:
         """Test that multiple initialization calls don't cause errors."""
-        with tempfile.TemporaryDirectory() as tmpdir:
-            with patch(
-                "airborne.core.logging_system.get_platform_log_dir", return_value=Path(tmpdir)
-            ):
-                initialize_logging(use_platform_dir=True)
-                # Second call should work fine (though typically avoided)
-                initialize_logging(use_platform_dir=True)
+        with tempfile.TemporaryDirectory() as tmpdir, patch(
+            "airborne.core.logging_system.get_platform_log_dir", return_value=Path(tmpdir)
+        ):
+            initialize_logging(use_platform_dir=True)
+            # Second call should work fine (though typically avoided)
+            initialize_logging(use_platform_dir=True)
 
-                logger = get_logger("test")
-                logger.info("Test message")
+            logger = get_logger("test")
+            logger.info("Test message")
 
-                shutdown_logging()
+            shutdown_logging()
 
 
 class TestLoggerFunctionality:
@@ -193,55 +190,52 @@ class TestLoggerFunctionality:
 
     def test_get_logger_creates_logger(self) -> None:
         """Test that get_logger returns a valid logger."""
-        with tempfile.TemporaryDirectory() as tmpdir:
-            with patch(
-                "airborne.core.logging_system.get_platform_log_dir", return_value=Path(tmpdir)
-            ):
-                initialize_logging(use_platform_dir=True)
+        with tempfile.TemporaryDirectory() as tmpdir, patch(
+            "airborne.core.logging_system.get_platform_log_dir", return_value=Path(tmpdir)
+        ):
+            initialize_logging(use_platform_dir=True)
 
-                logger = get_logger("test_component")
-                assert isinstance(logger, logging.Logger)
-                assert logger.name == "test_component"
+            logger = get_logger("test_component")
+            assert isinstance(logger, logging.Logger)
+            assert logger.name == "test_component"
 
-                shutdown_logging()
+            shutdown_logging()
 
     def test_get_logger_caches_loggers(self) -> None:
         """Test that loggers are cached and reused."""
-        with tempfile.TemporaryDirectory() as tmpdir:
-            with patch(
-                "airborne.core.logging_system.get_platform_log_dir", return_value=Path(tmpdir)
-            ):
-                initialize_logging(use_platform_dir=True)
+        with tempfile.TemporaryDirectory() as tmpdir, patch(
+            "airborne.core.logging_system.get_platform_log_dir", return_value=Path(tmpdir)
+        ):
+            initialize_logging(use_platform_dir=True)
 
-                logger1 = get_logger("test")
-                logger2 = get_logger("test")
+            logger1 = get_logger("test")
+            logger2 = get_logger("test")
 
-                # Should be the same object
-                assert logger1 is logger2
+            # Should be the same object
+            assert logger1 is logger2
 
-                shutdown_logging()
+            shutdown_logging()
 
     def test_logger_writes_to_file(self) -> None:
         """Test that logger messages are written to log file."""
-        with tempfile.TemporaryDirectory() as tmpdir:
-            with patch(
-                "airborne.core.logging_system.get_platform_log_dir", return_value=Path(tmpdir)
-            ):
-                initialize_logging(use_platform_dir=True)
+        with tempfile.TemporaryDirectory() as tmpdir, patch(
+            "airborne.core.logging_system.get_platform_log_dir", return_value=Path(tmpdir)
+        ):
+            initialize_logging(use_platform_dir=True)
 
-                logger = get_logger("test")
-                logger.info("Test log message")
-                logger.debug("Debug message")
-                logger.error("Error message")
+            logger = get_logger("test")
+            logger.info("Test log message")
+            logger.debug("Debug message")
+            logger.error("Error message")
 
-                shutdown_logging()
+            shutdown_logging()
 
-                # Check log file contains messages
-                log_file = Path(tmpdir) / "airborne.log"
-                content = log_file.read_text()
-                assert "Test log message" in content
-                assert "Debug message" in content
-                assert "Error message" in content
+            # Check log file contains messages
+            log_file = Path(tmpdir) / "airborne.log"
+            content = log_file.read_text()
+            assert "Test log message" in content
+            assert "Debug message" in content
+            assert "Error message" in content
 
     def test_auto_initialize_on_first_logger(self) -> None:
         """Test that getting a logger auto-initializes if not done explicitly."""
@@ -257,57 +251,55 @@ class TestLogRotationIntegration:
 
     def test_startup_rotates_existing_log(self) -> None:
         """Test that initialization rotates existing log from previous session."""
-        with tempfile.TemporaryDirectory() as tmpdir:
-            with patch(
-                "airborne.core.logging_system.get_platform_log_dir", return_value=Path(tmpdir)
-            ):
-                # First session - create a log
-                initialize_logging(use_platform_dir=True)
-                logger = get_logger("test")
-                logger.info("First session")
-                shutdown_logging()
+        with tempfile.TemporaryDirectory() as tmpdir, patch(
+            "airborne.core.logging_system.get_platform_log_dir", return_value=Path(tmpdir)
+        ):
+            # First session - create a log
+            initialize_logging(use_platform_dir=True)
+            logger = get_logger("test")
+            logger.info("First session")
+            shutdown_logging()
 
-                # Verify log exists
-                log_file = Path(tmpdir) / "airborne.log"
-                assert log_file.exists()
-                first_content = log_file.read_text()
-                assert "First session" in first_content
+            # Verify log exists
+            log_file = Path(tmpdir) / "airborne.log"
+            assert log_file.exists()
+            first_content = log_file.read_text()
+            assert "First session" in first_content
 
-                # Second session - should rotate previous log
-                initialize_logging(use_platform_dir=True)
-                logger = get_logger("test")
-                logger.info("Second session")
-                shutdown_logging()
+            # Second session - should rotate previous log
+            initialize_logging(use_platform_dir=True)
+            logger = get_logger("test")
+            logger.info("Second session")
+            shutdown_logging()
 
-                # Previous log should be rotated to .1
-                rotated_log = Path(tmpdir) / "airborne.log.1"
-                assert rotated_log.exists()
-                assert "First session" in rotated_log.read_text()
+            # Previous log should be rotated to .1
+            rotated_log = Path(tmpdir) / "airborne.log.1"
+            assert rotated_log.exists()
+            assert "First session" in rotated_log.read_text()
 
-                # Current log should have new content
-                assert "Second session" in log_file.read_text()
-                assert "First session" not in log_file.read_text()
+            # Current log should have new content
+            assert "Second session" in log_file.read_text()
+            assert "First session" not in log_file.read_text()
 
     def test_multiple_sessions_keep_five_logs(self) -> None:
         """Test that only 5 most recent logs are kept across multiple sessions."""
-        with tempfile.TemporaryDirectory() as tmpdir:
-            with patch(
-                "airborne.core.logging_system.get_platform_log_dir", return_value=Path(tmpdir)
-            ):
-                # Run 7 sessions
-                for i in range(7):
-                    initialize_logging(use_platform_dir=True)
-                    logger = get_logger("test")
-                    logger.info(f"Session {i}")
-                    shutdown_logging()
+        with tempfile.TemporaryDirectory() as tmpdir, patch(
+            "airborne.core.logging_system.get_platform_log_dir", return_value=Path(tmpdir)
+        ):
+            # Run 7 sessions
+            for i in range(7):
+                initialize_logging(use_platform_dir=True)
+                logger = get_logger("test")
+                logger.info(f"Session {i}")
+                shutdown_logging()
 
-                # Should have current log + 5 rotated logs
-                log_files = list(Path(tmpdir).glob("airborne.log*"))
-                assert len(log_files) == 6  # airborne.log + .1 through .5
+            # Should have current log + 5 rotated logs
+            log_files = list(Path(tmpdir).glob("airborne.log*"))
+            assert len(log_files) == 6  # airborne.log + .1 through .5
 
-                # Oldest sessions should be gone (sessions 0 and 1)
-                rotated_5 = Path(tmpdir) / "airborne.log.5"
-                assert rotated_5.exists()
-                content_5 = rotated_5.read_text()
-                # .5 should have session 1 (0 was deleted, 1->2->3->4->5)
-                assert "Session 1" in content_5
+            # Oldest sessions should be gone (sessions 0 and 1)
+            rotated_5 = Path(tmpdir) / "airborne.log.5"
+            assert rotated_5.exists()
+            content_5 = rotated_5.read_text()
+            # .5 should have session 1 (0 was deleted, 1->2->3->4->5)
+            assert "Session 1" in content_5

@@ -150,13 +150,17 @@ class TestBoardingService:
         boarding_service.passengers_boarded = 25
         boarding_service.update(0.1)
         message_queue.process()
-        assert any(msg.data.get("message_key") == "MSG_BOARDING_IN_PROGRESS" for msg in audio_messages)
+        assert any(
+            msg.data.get("message_key") == "MSG_BOARDING_IN_PROGRESS" for msg in audio_messages
+        )
 
         # Simulate 50% progress
         boarding_service.passengers_boarded = 50
         boarding_service.update(0.1)
         message_queue.process()
-        assert any(msg.data.get("message_key") == "MSG_BOARDING_IN_PROGRESS" for msg in audio_messages)
+        assert any(
+            msg.data.get("message_key") == "MSG_BOARDING_IN_PROGRESS" for msg in audio_messages
+        )
 
 
 class TestDeboardingService:

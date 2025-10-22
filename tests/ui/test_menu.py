@@ -117,7 +117,9 @@ def test_menu_close(menu):
 
 def test_menu_select_option(menu):
     """Test selecting option by key."""
-    option1 = MenuOption(key="1", label="Option 1", message_key="MSG_OPT_1", data={"action": "test"})
+    option1 = MenuOption(
+        key="1", label="Option 1", message_key="MSG_OPT_1", data={"action": "test"}
+    )
     option2 = MenuOption(key="2", label="Option 2", message_key="MSG_OPT_2")
     menu.test_options = [option1, option2]
     menu.open()

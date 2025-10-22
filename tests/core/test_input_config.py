@@ -1,6 +1,5 @@
 """Tests for InputConfig YAML loader."""
 
-
 import pygame
 
 from airborne.core.input_config import InputConfig

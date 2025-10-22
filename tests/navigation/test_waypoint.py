@@ -1,6 +1,5 @@
 """Tests for navigation waypoint."""
 
-
 from airborne.navigation.waypoint import Waypoint
 from airborne.physics.vectors import Vector3
 

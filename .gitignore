@@ -71,3 +71,5 @@ data/airports/taxiway_cache*.json
 # Kokoro TTS models (download via scripts/install_kokoro.sh)
 assets/models/*.onnx
 assets/models/*.bin
+data/speech
+logs

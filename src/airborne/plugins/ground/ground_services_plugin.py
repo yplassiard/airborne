@@ -323,7 +323,11 @@ class GroundServicesPlugin(IPlugin):
             return
 
         action = message.data.get("action", "")
-        logger.info("Ground services menu action: %s, is_open: %s", action, self.ground_services_menu.is_open())
+        logger.info(
+            "Ground services menu action: %s, is_open: %s",
+            action,
+            self.ground_services_menu.is_open(),
+        )
 
         if action == "toggle":
             if self.ground_services_menu.is_open():

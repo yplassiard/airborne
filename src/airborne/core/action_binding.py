@@ -190,7 +190,12 @@ class InputBinding:
         if abs(event.axis_value) < self.axis_threshold:
             return False
 
-        return not (self.axis_direction == "positive" and event.axis_value < 0 or self.axis_direction == "negative" and event.axis_value > 0)
+        return not (
+            self.axis_direction == "positive"
+            and event.axis_value < 0
+            or self.axis_direction == "negative"
+            and event.axis_value > 0
+        )
 
     def _matches_network(self, event: InputEvent) -> bool:
         """Check network event match."""

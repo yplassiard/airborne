@@ -26,9 +26,7 @@ import logging
 import logging.handlers
 import os
 import platform
-import shutil
 import time
-from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -109,7 +107,9 @@ def rotate_logs(log_dir: Path, log_filename: str = "airborne.log", keep_count: i
     log_file.rename(log_dir / f"{log_filename}.1")
 
 
-def initialize_logging(config_path: str | Path | None = None, use_platform_dir: bool = True) -> None:
+def initialize_logging(
+    config_path: str | Path | None = None, use_platform_dir: bool = True
+) -> None:
     """Initialize the logging system from YAML configuration.
 
     This should be called once at application startup before any logging occurs.
@@ -221,7 +221,7 @@ def _configure_root_logger() -> None:
         # Use simple FileHandler since we rotate on startup, not by size
         file_handler = logging.FileHandler(
             log_file,
-            mode='w',  # Overwrite - we already rotated old log
+            mode="w",  # Overwrite - we already rotated old log
             encoding="utf-8",
         )
         file_handler.setLevel(logging.DEBUG)

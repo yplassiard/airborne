@@ -304,9 +304,10 @@ class CallsignGenerator:
             if len(parts) == 2:
                 telephony, suffix = parts
                 # Telephony should be alphabetic, suffix can be alphanumeric
-                if telephony.replace("-", "").isalpha() and suffix.replace(
-                    "-", ""
-                ).replace(".", "").isalnum():
+                if (
+                    telephony.replace("-", "").isalpha()
+                    and suffix.replace("-", "").replace(".", "").isalnum()
+                ):
                     return True
 
         return False
