@@ -86,8 +86,8 @@ class AirBorne:
         self.message_queue = MessageQueue()
         self.registry = ComponentRegistry()
 
-        # Initialize input system
-        self.input_manager = InputManager(self.event_bus)
+        # Initialize input system (with message queue for inter-plugin communication)
+        self.input_manager = InputManager(self.event_bus, message_queue=self.message_queue)
 
         # Initialize new input handler system
         input_bindings_dir = get_config_path("input_bindings")

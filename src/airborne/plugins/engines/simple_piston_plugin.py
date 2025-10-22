@@ -12,8 +12,11 @@ Typical usage:
 from dataclasses import dataclass
 
 from airborne.core.event_bus import Event
+from airborne.core.logging_system import get_logger
 from airborne.core.messaging import Message, MessagePriority, MessageTopic
 from airborne.core.plugin import IPlugin, PluginContext, PluginMetadata, PluginType
+
+logger = get_logger(__name__)
 
 
 @dataclass
@@ -82,6 +85,10 @@ class SimplePistonEngine(IPlugin):
         self.requires_fuel: bool = True  # Whether fuel is required to start
         self.requires_magnetos: bool = True  # Whether magnetos are required to start
 
+        # Engine parameters (set during initialize)
+        self.idle_rpm: float = 600.0  # Idle RPM
+        self.max_rpm: float = 2700.0  # Maximum RPM
+
         # Electrical state (from electrical system messages)
         self._electrical_voltage: float = 0.0
         self._electrical_available: bool = False
@@ -130,9 +137,16 @@ class SimplePistonEngine(IPlugin):
                 self.requires_fuel = bool(cfg["requires_fuel"])
             if "requires_magnetos" in cfg:
                 self.requires_magnetos = bool(cfg["requires_magnetos"])
+            if "idle_rpm" in cfg:
+                self.idle_rpm = float(cfg["idle_rpm"])
+            if "max_rpm" in cfg:
+                self.max_rpm = float(cfg["max_rpm"])
 
         # Subscribe to control messages
         context.message_queue.subscribe(MessageTopic.ENGINE_STATE, self.handle_message)
+
+        # Subscribe to control input messages from InputManager (for throttle)
+        context.message_queue.subscribe(MessageTopic.CONTROL_INPUT, self.handle_message)
 
         # Subscribe to electrical state messages (to check if starter can engage)
         context.message_queue.subscribe(MessageTopic.ELECTRICAL_STATE, self.handle_message)
@@ -205,6 +219,7 @@ class SimplePistonEngine(IPlugin):
         if self.context:
             # Unsubscribe from messages
             self.context.message_queue.unsubscribe(MessageTopic.ENGINE_STATE, self.handle_message)
+            self.context.message_queue.unsubscribe(MessageTopic.CONTROL_INPUT, self.handle_message)
             self.context.message_queue.unsubscribe(
                 MessageTopic.ELECTRICAL_STATE, self.handle_message
             )
@@ -240,10 +255,37 @@ class SimplePistonEngine(IPlugin):
                 self.magneto_right = bool(data["magneto_right"])
 
             if "mixture" in data:
+                old_mixture = self.mixture
                 self.mixture = max(0.0, min(1.0, float(data["mixture"])))
+                if abs(old_mixture - self.mixture) > 0.01:
+                    logger.debug(
+                        "Engine: Mixture changed from %.3f to %.3f (via ENGINE_STATE message)",
+                        old_mixture,
+                        self.mixture,
+                    )
 
             if "throttle" in data:
+                old_throttle = self.throttle
                 self.throttle = max(0.0, min(1.0, float(data["throttle"])))
+                if abs(old_throttle - self.throttle) > 0.01:
+                    logger.debug(
+                        "Engine: Throttle changed from %.3f to %.3f (via ENGINE_STATE message)",
+                        old_throttle,
+                        self.throttle,
+                    )
+
+        elif message.topic == MessageTopic.CONTROL_INPUT:
+            # Handle control inputs from InputManager (for throttle)
+            data = message.data
+            if "throttle" in data:
+                old_throttle = self.throttle
+                self.throttle = max(0.0, min(1.0, float(data["throttle"])))
+                if abs(old_throttle - self.throttle) > 0.01:
+                    logger.debug(
+                        "Engine: Throttle changed from %.3f to %.3f (via CONTROL_INPUT from InputManager)",
+                        old_throttle,
+                        self.throttle,
+                    )
 
         elif message.topic == MessageTopic.ELECTRICAL_STATE:
             # Update electrical state from electrical system
@@ -316,8 +358,16 @@ class SimplePistonEngine(IPlugin):
             data = message.data
             if "value" in data:
                 # Normalize from 0-100 to 0.0-1.0
+                old_throttle = self.throttle
                 throttle_pct = float(data["value"])
                 self.throttle = max(0.0, min(1.0, throttle_pct / 100.0))
+                if abs(old_throttle - self.throttle) > 0.01:
+                    logger.debug(
+                        "Engine: Throttle changed from %.3f to %.3f (via engine.throttle panel message, %.1f%%)",
+                        old_throttle,
+                        self.throttle,
+                        throttle_pct,
+                    )
 
     def _update_combustion(self, dt: float) -> None:
         """Update combustion process.
@@ -366,7 +416,11 @@ class SimplePistonEngine(IPlugin):
                 base_combustion = 50.0  # Base energy during cranking
                 target_energy = base_combustion + self.throttle * mixture_efficiency * 100.0
             else:
-                target_energy = self.throttle * mixture_efficiency * 100.0
+                # Engine needs minimum combustion energy to maintain idle RPM
+                # Use same ratio as RPM: idle_rpm / max_rpm
+                idle_energy_ratio = self.idle_rpm / self.max_rpm  # ~0.22 for 600/2700
+                min_idle_energy = idle_energy_ratio * 100.0  # ~22 energy units at idle
+                target_energy = max(min_idle_energy, self.throttle * mixture_efficiency * 100.0)
 
             # Smooth transition
             energy_rate = 200.0  # Energy change rate
@@ -393,9 +447,7 @@ class SimplePistonEngine(IPlugin):
             # Running: RPM based on throttle and combustion
             # Need combustion energy to maintain RPM
             if self._combustion_energy > 10.0:
-                idle_rpm = 600.0
-                max_rpm = 2700.0
-                target_rpm = idle_rpm + (max_rpm - idle_rpm) * self.throttle
+                target_rpm = self.idle_rpm + (self.max_rpm - self.idle_rpm) * self.throttle
             else:
                 # Not enough combustion, engine dying
                 target_rpm = self._combustion_energy * 20.0

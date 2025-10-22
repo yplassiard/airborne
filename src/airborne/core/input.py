@@ -30,6 +30,7 @@ import pygame  # pylint: disable=no-member
 
 from airborne.core.event_bus import Event, EventBus
 from airborne.core.logging_system import get_logger
+from airborne.core.messaging import Message, MessagePriority, MessageQueue, MessageTopic
 
 logger = get_logger(__name__)
 
@@ -284,18 +285,28 @@ class InputManager:  # pylint: disable=too-many-instance-attributes
         >>> print(f"Throttle: {state.throttle:.2f}")
     """
 
-    def __init__(self, event_bus: EventBus, config: InputConfig | None = None) -> None:
+    def __init__(
+        self,
+        event_bus: EventBus,
+        config: InputConfig | None = None,
+        message_queue: MessageQueue | None = None,
+    ) -> None:
         """Initialize input manager.
 
         Args:
             event_bus: Event bus for publishing input events.
             config: Input configuration (uses defaults if None).
+            message_queue: Message queue for inter-plugin communication (optional).
         """
         self.event_bus = event_bus
+        self.message_queue = message_queue
         self.config = config if config is not None else InputConfig()
 
         # Current input state
         self.state = InputState()
+
+        # Previous state for change detection
+        self._previous_throttle = 0.0
 
         # Key press state tracking
         self._keys_pressed: set[int] = set()
@@ -593,7 +604,7 @@ class InputManager:  # pylint: disable=too-many-instance-attributes
         # Clamp all values
         self.state.clamp_all()
 
-        # Publish state update
+        # Publish state update to event bus (for UI/audio feedback)
         self.event_bus.publish(
             InputStateEvent(
                 pitch=self.state.pitch,
@@ -605,6 +616,38 @@ class InputManager:  # pylint: disable=too-many-instance-attributes
                 gear=self.state.gear,
             )
         )
+
+        # Publish control inputs to message queue (for physics and systems)
+        if self.message_queue:
+            # Detect throttle changes for debug logging
+            throttle_changed = abs(self.state.throttle - self._previous_throttle) > 0.001
+            if throttle_changed:
+                logger.debug(
+                    "InputManager: Throttle changed from %.3f to %.3f (target: %.3f)",
+                    self._previous_throttle,
+                    self.state.throttle,
+                    self._target_throttle,
+                )
+                self._previous_throttle = self.state.throttle
+
+            # Publish control inputs message for physics plugin
+            self.message_queue.publish(
+                Message(
+                    sender="input_manager",
+                    recipients=["*"],
+                    topic=MessageTopic.CONTROL_INPUT,
+                    data={
+                        "pitch": self.state.pitch,
+                        "roll": self.state.roll,
+                        "yaw": self.state.yaw,
+                        "throttle": self.state.throttle,
+                        "brakes": self.state.brakes,
+                        "flaps": self.state.flaps,
+                        "gear": self.state.gear,
+                    },
+                    priority=MessagePriority.HIGH,
+                )
+            )
 
     def _update_keyboard_controls(self) -> None:
         """Update continuous controls from keyboard."""

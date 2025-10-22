@@ -313,7 +313,11 @@ class SimplePistonEngine(IEngine):
         """
         # Power depends on RPM and throttle
         rpm_factor = self.rpm / self.config.max_rpm
-        throttle_factor = controls.throttle
+
+        # Use minimum throttle for power calculation to maintain idle
+        # Engine produces small amount of power even at 0% throttle (idle)
+        idle_throttle = self.config.idle_rpm / self.config.max_rpm  # ~0.22 for 600/2700
+        throttle_factor = max(idle_throttle, controls.throttle)
 
         # Mixture adjustment (too rich or too lean reduces power)
         mixture_factor = 1.0
@@ -335,7 +339,8 @@ class SimplePistonEngine(IEngine):
         )
 
         # Manifold pressure (throttle controlled)
-        self.manifold_pressure = 10.0 + 19.92 * controls.throttle  # 10-29.92 inHg
+        # At idle (0% throttle), manifold pressure is around 10-12 inHg
+        self.manifold_pressure = 10.0 + 19.92 * max(idle_throttle, controls.throttle)
 
     def _calculate_fuel_consumption(self, controls: EngineControls, fuel_available: float) -> None:
         """Calculate fuel consumption rate.
