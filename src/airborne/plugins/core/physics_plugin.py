@@ -18,6 +18,7 @@ from airborne.physics.flight_model.base import AircraftState, ControlInputs, IFl
 from airborne.physics.flight_model.simple_6dof import Simple6DOFFlightModel
 from airborne.physics.ground_physics import GroundContact, GroundPhysics
 from airborne.physics.vectors import Vector3
+from airborne.systems.propeller import FixedPitchPropeller, IPropeller
 
 logger = get_logger(__name__)
 
@@ -40,6 +41,7 @@ class PhysicsPlugin(IPlugin):
         self.flight_model: IFlightModel | None = None
         self.collision_detector: TerrainCollisionDetector | None = None
         self.ground_physics: GroundPhysics | None = None
+        self.propeller: IPropeller | None = None
 
         # Control inputs (updated via messages)
         self.control_inputs = ControlInputs()
@@ -93,6 +95,25 @@ class PhysicsPlugin(IPlugin):
         # Initialize flight model with config
         self.flight_model.initialize(flight_model_config)
 
+        # Create propeller model if configured
+        propeller_config = context.config.get("propeller", {})
+        if propeller_config:
+            propeller_type = propeller_config.get("type", "fixed_pitch")
+            if propeller_type == "fixed_pitch":
+                self.propeller = FixedPitchPropeller(
+                    diameter_m=propeller_config.get("diameter_m", 1.905),
+                    pitch_ratio=propeller_config.get("pitch_ratio", 0.6),
+                    efficiency_static=propeller_config.get("efficiency_static", 0.50),
+                    efficiency_cruise=propeller_config.get("efficiency_cruise", 0.80),
+                    cruise_advance_ratio=propeller_config.get("cruise_advance_ratio", 0.6),
+                )
+                # Attach propeller to flight model
+                if hasattr(self.flight_model, "propeller"):
+                    self.flight_model.propeller = self.propeller
+                    logger.info("Propeller model attached to flight model")
+            else:
+                logger.warning(f"Unknown propeller type: {propeller_type}")
+
         # Create collision detector (without elevation service for now)
         # Elevation service will be provided by terrain plugin if available
         self.collision_detector = TerrainCollisionDetector(elevation_service=None)
@@ -126,6 +147,9 @@ class PhysicsPlugin(IPlugin):
 
         # Subscribe to terrain updates
         context.message_queue.subscribe(MessageTopic.TERRAIN_UPDATED, self.handle_message)
+
+        # Subscribe to engine state (to get power and RPM for propeller calculations)
+        context.message_queue.subscribe(MessageTopic.ENGINE_STATE, self.handle_message)
 
         logger.info("Physics plugin initialized")
 
@@ -188,6 +212,7 @@ class PhysicsPlugin(IPlugin):
                 MessageTopic.TERRAIN_UPDATED, self.handle_message
             )
             self.context.message_queue.unsubscribe("parking_brake", self.handle_message)
+            self.context.message_queue.unsubscribe(MessageTopic.ENGINE_STATE, self.handle_message)
 
             # Unregister components
             if self.context.plugin_registry:
@@ -232,6 +257,14 @@ class PhysicsPlugin(IPlugin):
             # Toggle parking brake
             self.parking_brake_engaged = not self.parking_brake_engaged
             logger.info(f"Parking brake {'engaged' if self.parking_brake_engaged else 'released'}")
+
+        elif message.topic == MessageTopic.ENGINE_STATE:
+            # Update engine state for propeller thrust calculations
+            data = message.data
+            if "power_hp" in data and "rpm" in data and hasattr(self.flight_model, "engine_power_hp"):
+                # Update flight model's engine power and RPM
+                self.flight_model.engine_power_hp = float(data["power_hp"])
+                self.flight_model.engine_rpm = float(data["rpm"])
 
     def on_config_changed(self, config: dict[str, Any]) -> None:
         """Handle configuration changes.

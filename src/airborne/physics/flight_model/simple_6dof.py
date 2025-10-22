@@ -18,6 +18,7 @@ Typical usage example:
 """
 
 import math
+from typing import TYPE_CHECKING
 
 from airborne.core.logging_system import get_logger
 from airborne.physics.flight_model.base import (
@@ -27,6 +28,9 @@ from airborne.physics.flight_model.base import (
     IFlightModel,
 )
 from airborne.physics.vectors import Vector3
+
+if TYPE_CHECKING:
+    from airborne.systems.propeller.base import IPropeller
 
 logger = get_logger(__name__)
 
@@ -64,10 +68,15 @@ class Simple6DOFFlightModel(IFlightModel):
         # Aircraft parameters (set in initialize())
         self.wing_area = 0.0  # m²
         self.empty_mass = 0.0  # kg
-        self.max_thrust = 0.0  # N
+        self.max_thrust = 0.0  # N (fallback if no propeller)
         self.drag_coefficient = 0.027  # Typical for light aircraft
         self.lift_coefficient_slope = 0.1  # CL per degree AOA
         self.max_fuel = 100.0  # kg
+
+        # Propeller model (optional - if present, overrides max_thrust)
+        self.propeller: IPropeller | None = None
+        self.engine_power_hp = 0.0  # Current engine power (from ENGINE_STATE)
+        self.engine_rpm = 0.0  # Current engine RPM (from ENGINE_STATE)
 
         # Current state
         self.state = AircraftState()
@@ -222,9 +231,20 @@ class Simple6DOFFlightModel(IFlightModel):
             self.forces.drag = Vector3.zero()
 
         # --- Thrust ---
-        # Thrust acts forward in body frame
-        # Simplified: thrust in velocity direction
-        thrust_magnitude = inputs.throttle * self.max_thrust
+        # Calculate thrust from propeller model if available, otherwise use simple model
+        if self.propeller and self.engine_power_hp > 0:
+            # Use propeller model for realistic thrust
+            thrust_magnitude = self.propeller.calculate_thrust(
+                power_hp=self.engine_power_hp,
+                rpm=self.engine_rpm,
+                airspeed_mps=airspeed,
+                air_density_kgm3=AIR_DENSITY_SEA_LEVEL,
+            )
+        else:
+            # Fallback: Simple thrust model based on throttle
+            thrust_magnitude = inputs.throttle * self.max_thrust
+
+        # Apply thrust in forward direction
         if airspeed > 0.1:
             velocity_normalized = self.state.velocity.normalized()
             self.forces.thrust = velocity_normalized * thrust_magnitude

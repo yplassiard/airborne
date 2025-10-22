@@ -12,9 +12,18 @@ aircraft:
   flight_model_config:
     wing_area_sqft: 174.0        # Wing area in square feet
     weight_lbs: 2450.0            # Empty weight + pilot + fuel
-    max_thrust_lbs: 180.0         # Maximum thrust from engine (HP converted)
+    max_thrust_lbs: 180.0         # Maximum thrust from engine (HP converted) - DEPRECATED, using propeller model now
     drag_coefficient: 0.027       # Cd0 - zero-lift drag coefficient
     lift_coefficient_slope: 0.09  # Cl_alpha - lift curve slope
+
+  # Propeller configuration
+  propeller:
+    type: "fixed_pitch"           # Fixed-pitch propeller (typical for C172)
+    diameter_m: 1.905             # 75 inches = 1.905 meters
+    pitch_ratio: 0.6              # Pitch/diameter ratio (0.6 = climb prop)
+    efficiency_static: 0.50       # Efficiency at v=0 (static thrust)
+    efficiency_cruise: 0.80       # Peak efficiency at cruise speed
+    cruise_advance_ratio: 0.6     # Advance ratio where efficiency peaks
 
   # Aircraft systems plugins
   plugins:
