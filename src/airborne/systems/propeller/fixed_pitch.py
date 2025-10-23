@@ -131,7 +131,9 @@ class FixedPitchPropeller(IPropeller):
             # At high speeds, use power-velocity relationship
 
             # Momentum theory component (dominates at low speed)
-            thrust_momentum = math.sqrt(efficiency * power_watts * air_density_kgm3 * self.disc_area)
+            thrust_momentum = math.sqrt(
+                efficiency * power_watts * air_density_kgm3 * self.disc_area
+            )
 
             # Power-velocity component (dominates at high speed)
             # T = (η × P) / (v + v_induced)
@@ -161,7 +163,9 @@ class FixedPitchPropeller(IPropeller):
                 blend = (advance_ratio - 0.2) / (0.6 - 0.2)
 
             # Simple dynamic thrust (with limiting)
-            thrust_dynamic = (efficiency * power_watts) / (airspeed_mps + 1.0)  # +1 to prevent division issues
+            thrust_dynamic = (efficiency * power_watts) / (
+                airspeed_mps + 1.0
+            )  # +1 to prevent division issues
 
             # Blend the two methods
             thrust = (1.0 - blend) * thrust_momentum + blend * thrust_dynamic

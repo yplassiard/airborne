@@ -443,7 +443,7 @@ class PerformanceDisplay:
                 sender="performance_display",
                 recipients=["*"],
                 topic=MessageTopic.TTS_SPEAK,
-                    data={"text": message_keys, "priority": priority, "interrupt": interrupt},
+                data={"text": message_keys, "priority": priority, "interrupt": interrupt},
                 priority=MessagePriority.HIGH if priority == "high" else MessagePriority.NORMAL,
             )
         )

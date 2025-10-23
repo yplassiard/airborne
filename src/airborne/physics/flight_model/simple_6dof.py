@@ -264,7 +264,7 @@ class Simple6DOFFlightModel(IFlightModel):
                 air_density_kgm3=AIR_DENSITY_SEA_LEVEL,
             )
             # Debug logging every 60 frames (~1 second at 60 FPS)
-            if hasattr(self, '_thrust_log_counter'):
+            if hasattr(self, "_thrust_log_counter"):
                 self._thrust_log_counter += 1
             else:
                 self._thrust_log_counter = 0
