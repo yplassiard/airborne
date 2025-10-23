@@ -221,8 +221,31 @@ class Simple6DOFFlightModel(IFlightModel):
         self.forces.lift = Vector3(0.0, lift_magnitude, 0.0)
 
         # --- Drag ---
-        # Drag opposes velocity
-        drag_magnitude = q * self.wing_area * self.drag_coefficient
+        # Total drag = parasite drag + induced drag
+        # Parasite drag: D_p = q × S × CD_0
+        drag_parasite = q * self.wing_area * self.drag_coefficient
+
+        # Induced drag: D_i = (CL²) / (π × AR × e) × q × S
+        # For C172: AR ≈ 7.4, e (Oswald efficiency) ≈ 0.7
+        aspect_ratio = 7.4
+        oswald_efficiency = 0.7
+
+        # Lift coefficient from angle of attack
+        angle_of_attack = self.state.get_pitch()
+        cl = self.lift_coefficient_slope * (angle_of_attack * RADIANS_TO_DEGREES)
+
+        # Induced drag coefficient
+        if aspect_ratio > 0 and oswald_efficiency > 0:
+            cd_induced = (cl * cl) / (math.pi * aspect_ratio * oswald_efficiency)
+        else:
+            cd_induced = 0.0
+
+        # Induced drag force
+        drag_induced = q * self.wing_area * cd_induced
+
+        # Total drag
+        drag_magnitude = drag_parasite + drag_induced
+
         if airspeed > 0.1:
             # Drag in opposite direction of velocity
             velocity_normalized = self.state.velocity.normalized()

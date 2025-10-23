@@ -13,7 +13,7 @@ aircraft:
     wing_area_sqft: 174.0        # Wing area in square feet
     weight_lbs: 2450.0            # Empty weight + pilot + fuel
     max_thrust_lbs: 180.0         # Maximum thrust from engine (HP converted) - DEPRECATED, using propeller model now
-    drag_coefficient: 0.027       # Cd0 - zero-lift drag coefficient
+    drag_coefficient: 0.042       # Cd0 - parasite drag (includes gear, struts, fuselage)
     lift_coefficient_slope: 0.09  # Cl_alpha - lift curve slope
 
   # Propeller configuration
