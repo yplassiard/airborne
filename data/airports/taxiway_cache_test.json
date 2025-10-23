@@ -1,0 +1,5373 @@
+{
+  "version": "1.0",
+  "generated_at": "2025-10-13 08:53:48 UTC",
+  "airports": {
+    "AGAR": {
+      "name": "Ulawa Airport",
+      "category": "small",
+      "position": {
+        "x": 161.979546547,
+        "y": 12.192,
+        "z": -9.86054358262
+      },
+      "runway_count": 1,
+      "longest_runway_ft": 2822.0,
+      "taxiways": {
+        "nodes": [
+          {
+            "id": "AGAR_RWY11",
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "type": "runway",
+            "name": "Runway 11"
+          },
+          {
+            "id": "AGAR_RWY29",
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "type": "runway",
+            "name": "Runway 29"
+          },
+          {
+            "id": "AGAR_APRON",
+            "position": {
+              "x": 0.001,
+              "y": 0.0,
+              "z": 0.001
+            },
+            "type": "parking",
+            "name": "Apron"
+          }
+        ],
+        "edges": [
+          {
+            "from": "AGAR_RWY11",
+            "to": "AGAR_APRON",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AGAR_RWY29",
+            "to": "AGAR_APRON",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AGAR_APRON",
+            "to": "AGAR_RWY11",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AGAR_APRON",
+            "to": "AGAR_RWY29",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          }
+        ]
+      },
+      "node_count": 3,
+      "edge_count": 4
+    },
+    "AGAT": {
+      "name": "Uru Harbour Airport",
+      "category": "small",
+      "position": {
+        "x": 161.011002,
+        "y": 0.0,
+        "z": -8.87333
+      },
+      "runway_count": 1,
+      "longest_runway_ft": 2769.0,
+      "taxiways": {
+        "nodes": [
+          {
+            "id": "AGAT_RWY13",
+            "position": {
+              "x": 0.0,
+              "y": 3.6576000000000004,
+              "z": 0.0
+            },
+            "type": "runway",
+            "name": "Runway 13"
+          },
+          {
+            "id": "AGAT_RWY31",
+            "position": {
+              "x": 0.0,
+              "y": 5.1816,
+              "z": 0.0
+            },
+            "type": "runway",
+            "name": "Runway 31"
+          },
+          {
+            "id": "AGAT_APRON",
+            "position": {
+              "x": 0.001,
+              "y": 4.4196,
+              "z": 0.001
+            },
+            "type": "parking",
+            "name": "Apron"
+          }
+        ],
+        "edges": [
+          {
+            "from": "AGAT_RWY13",
+            "to": "AGAT_APRON",
+            "distance_m": 156.97955485687206,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AGAT_RWY31",
+            "to": "AGAT_APRON",
+            "distance_m": 156.97955485687206,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AGAT_APRON",
+            "to": "AGAT_RWY13",
+            "distance_m": 156.97955485687206,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AGAT_APRON",
+            "to": "AGAT_RWY31",
+            "distance_m": 156.97955485687206,
+            "type": "taxiway",
+            "name": "A"
+          }
+        ]
+      },
+      "node_count": 3,
+      "edge_count": 4
+    },
+    "AGBT": {
+      "name": "Batuna Aerodrome",
+      "category": "small",
+      "position": {
+        "x": 158.119305556,
+        "y": 7.315200000000001,
+        "z": -8.56202777778
+      },
+      "runway_count": 1,
+      "longest_runway_ft": 2028.0,
+      "taxiways": {
+        "nodes": [
+          {
+            "id": "AGBT_RWY17",
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "type": "runway",
+            "name": "Runway 17"
+          },
+          {
+            "id": "AGBT_RWY35",
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "type": "runway",
+            "name": "Runway 35"
+          },
+          {
+            "id": "AGBT_APRON",
+            "position": {
+              "x": 0.001,
+              "y": 0.0,
+              "z": 0.001
+            },
+            "type": "parking",
+            "name": "Apron"
+          }
+        ],
+        "edges": [
+          {
+            "from": "AGBT_RWY17",
+            "to": "AGBT_APRON",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AGBT_RWY35",
+            "to": "AGBT_APRON",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AGBT_APRON",
+            "to": "AGBT_RWY17",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AGBT_APRON",
+            "to": "AGBT_RWY35",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          }
+        ]
+      },
+      "node_count": 3,
+      "edge_count": 4
+    },
+    "AGEV": {
+      "name": "Geva Airport",
+      "category": "small",
+      "position": {
+        "x": 156.5970001220703,
+        "y": 0.0,
+        "z": -7.575829982757568
+      },
+      "runway_count": 1,
+      "longest_runway_ft": 2297.0,
+      "taxiways": {
+        "nodes": [
+          {
+            "id": "AGEV_RWY15",
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "type": "runway",
+            "name": "Runway 15"
+          },
+          {
+            "id": "AGEV_RWY33",
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "type": "runway",
+            "name": "Runway 33"
+          },
+          {
+            "id": "AGEV_APRON",
+            "position": {
+              "x": 0.001,
+              "y": 0.0,
+              "z": 0.001
+            },
+            "type": "parking",
+            "name": "Apron"
+          }
+        ],
+        "edges": [
+          {
+            "from": "AGEV_RWY15",
+            "to": "AGEV_APRON",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AGEV_RWY33",
+            "to": "AGEV_APRON",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AGEV_APRON",
+            "to": "AGEV_RWY15",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AGEV_APRON",
+            "to": "AGEV_RWY33",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          }
+        ]
+      },
+      "node_count": 3,
+      "edge_count": 4
+    },
+    "AGGA": {
+      "name": "Gwaunaru'u Airport",
+      "category": "medium",
+      "position": {
+        "x": 160.682007,
+        "y": 1.524,
+        "z": -8.70257
+      },
+      "runway_count": 1,
+      "longest_runway_ft": 3100.0,
+      "taxiways": {
+        "nodes": [
+          {
+            "id": "AGGA_RWY18",
+            "position": {
+              "x": 0.0,
+              "y": 8.5344,
+              "z": 0.0
+            },
+            "type": "runway",
+            "name": "Runway 18"
+          },
+          {
+            "id": "AGGA_RWY36",
+            "position": {
+              "x": 0.0,
+              "y": 8.8392,
+              "z": 0.0
+            },
+            "type": "runway",
+            "name": "Runway 36"
+          },
+          {
+            "id": "AGGA_A1",
+            "position": {
+              "x": 1.2246467991473531e-19,
+              "y": 8.6106,
+              "z": 0.002
+            },
+            "type": "intersection",
+            "name": "Alpha 1"
+          },
+          {
+            "id": "AGGA_A2",
+            "position": {
+              "x": 1.2246467991473531e-19,
+              "y": 8.6868,
+              "z": 0.002
+            },
+            "type": "intersection",
+            "name": "Alpha 2"
+          },
+          {
+            "id": "AGGA_A3",
+            "position": {
+              "x": 1.2246467991473531e-19,
+              "y": 8.763,
+              "z": 0.002
+            },
+            "type": "intersection",
+            "name": "Alpha 3"
+          },
+          {
+            "id": "AGGA_T1",
+            "position": {
+              "x": 2.4492935982947063e-19,
+              "y": 8.6868,
+              "z": 0.004
+            },
+            "type": "gate",
+            "name": "Terminal 1"
+          }
+        ],
+        "edges": [
+          {
+            "from": "AGGA_RWY18",
+            "to": "AGGA_A1",
+            "distance_m": 222.0000130775672,
+            "type": "taxiway",
+            "name": "L1"
+          },
+          {
+            "from": "AGGA_RWY36",
+            "to": "AGGA_A3",
+            "distance_m": 222.0000130775672,
+            "type": "taxiway",
+            "name": "L2"
+          },
+          {
+            "from": "AGGA_A1",
+            "to": "AGGA_A2",
+            "distance_m": 0.07620000000000005,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AGGA_A1",
+            "to": "AGGA_RWY18",
+            "distance_m": 222.0000130775672,
+            "type": "taxiway",
+            "name": "L1"
+          },
+          {
+            "from": "AGGA_A2",
+            "to": "AGGA_A1",
+            "distance_m": 0.07620000000000005,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AGGA_A2",
+            "to": "AGGA_A3",
+            "distance_m": 0.07620000000000005,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AGGA_A2",
+            "to": "AGGA_T1",
+            "distance_m": 222.0,
+            "type": "taxiway",
+            "name": "L3"
+          },
+          {
+            "from": "AGGA_A3",
+            "to": "AGGA_A2",
+            "distance_m": 0.07620000000000005,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AGGA_A3",
+            "to": "AGGA_RWY36",
+            "distance_m": 222.0000130775672,
+            "type": "taxiway",
+            "name": "L2"
+          },
+          {
+            "from": "AGGA_T1",
+            "to": "AGGA_A2",
+            "distance_m": 222.0,
+            "type": "taxiway",
+            "name": "L3"
+          }
+        ]
+      },
+      "node_count": 6,
+      "edge_count": 10
+    },
+    "AGGB": {
+      "name": "Bellona/Anua Airport",
+      "category": "small",
+      "position": {
+        "x": 159.798333333,
+        "y": 18.288,
+        "z": -11.302222222200001
+      },
+      "runway_count": 1,
+      "longest_runway_ft": 2187.0,
+      "taxiways": {
+        "nodes": [
+          {
+            "id": "AGGB_RWY11",
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "type": "runway",
+            "name": "Runway 11"
+          },
+          {
+            "id": "AGGB_RWY29",
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "type": "runway",
+            "name": "Runway 29"
+          },
+          {
+            "id": "AGGB_APRON",
+            "position": {
+              "x": 0.001,
+              "y": 0.0,
+              "z": 0.001
+            },
+            "type": "parking",
+            "name": "Apron"
+          }
+        ],
+        "edges": [
+          {
+            "from": "AGGB_RWY11",
+            "to": "AGGB_APRON",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AGGB_RWY29",
+            "to": "AGGB_APRON",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AGGB_APRON",
+            "to": "AGGB_RWY11",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AGGB_APRON",
+            "to": "AGGB_RWY29",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          }
+        ]
+      },
+      "node_count": 3,
+      "edge_count": 4
+    },
+    "AGGC": {
+      "name": "Choiseul Bay Airport",
+      "category": "small",
+      "position": {
+        "x": 156.396111,
+        "y": 0.0,
+        "z": -6.711944
+      },
+      "runway_count": 1,
+      "longest_runway_ft": 2164.0,
+      "taxiways": {
+        "nodes": [
+          {
+            "id": "AGGC_RWY13",
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "type": "runway",
+            "name": "Runway 13"
+          },
+          {
+            "id": "AGGC_RWY31",
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "type": "runway",
+            "name": "Runway 31"
+          },
+          {
+            "id": "AGGC_APRON",
+            "position": {
+              "x": 0.001,
+              "y": 0.0,
+              "z": 0.001
+            },
+            "type": "parking",
+            "name": "Apron"
+          }
+        ],
+        "edges": [
+          {
+            "from": "AGGC_RWY13",
+            "to": "AGGC_APRON",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AGGC_RWY31",
+            "to": "AGGC_APRON",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AGGC_APRON",
+            "to": "AGGC_RWY13",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AGGC_APRON",
+            "to": "AGGC_RWY31",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          }
+        ]
+      },
+      "node_count": 3,
+      "edge_count": 4
+    },
+    "AGGE": {
+      "name": "Ballalae Airport",
+      "category": "medium",
+      "position": {
+        "x": 155.886656,
+        "y": 1.524,
+        "z": -6.990745
+      },
+      "runway_count": 1,
+      "longest_runway_ft": 5413.0,
+      "taxiways": {
+        "nodes": [
+          {
+            "id": "AGGE_RWY05",
+            "position": {
+              "x": 0.0,
+              "y": 0.9144000000000001,
+              "z": 0.0
+            },
+            "type": "runway",
+            "name": "Runway 05"
+          },
+          {
+            "id": "AGGE_RWY23",
+            "position": {
+              "x": 0.0,
+              "y": 1.8288000000000002,
+              "z": 0.0
+            },
+            "type": "runway",
+            "name": "Runway 23"
+          },
+          {
+            "id": "AGGE_A1",
+            "position": {
+              "x": 1.2246467991473531e-19,
+              "y": 1.143,
+              "z": 0.002
+            },
+            "type": "intersection",
+            "name": "Alpha 1"
+          },
+          {
+            "id": "AGGE_A2",
+            "position": {
+              "x": 1.2246467991473531e-19,
+              "y": 1.3716000000000002,
+              "z": 0.002
+            },
+            "type": "intersection",
+            "name": "Alpha 2"
+          },
+          {
+            "id": "AGGE_A3",
+            "position": {
+              "x": 1.2246467991473531e-19,
+              "y": 1.6002,
+              "z": 0.002
+            },
+            "type": "intersection",
+            "name": "Alpha 3"
+          },
+          {
+            "id": "AGGE_T1",
+            "position": {
+              "x": 2.4492935982947063e-19,
+              "y": 1.3716000000000002,
+              "z": 0.004
+            },
+            "type": "gate",
+            "name": "Terminal 1"
+          }
+        ],
+        "edges": [
+          {
+            "from": "AGGE_RWY05",
+            "to": "AGGE_A1",
+            "distance_m": 222.0001176980769,
+            "type": "taxiway",
+            "name": "L1"
+          },
+          {
+            "from": "AGGE_RWY23",
+            "to": "AGGE_A3",
+            "distance_m": 222.0001176980769,
+            "type": "taxiway",
+            "name": "L2"
+          },
+          {
+            "from": "AGGE_A1",
+            "to": "AGGE_A2",
+            "distance_m": 0.22860000000000014,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AGGE_A1",
+            "to": "AGGE_RWY05",
+            "distance_m": 222.0001176980769,
+            "type": "taxiway",
+            "name": "L1"
+          },
+          {
+            "from": "AGGE_A2",
+            "to": "AGGE_A1",
+            "distance_m": 0.22860000000000014,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AGGE_A2",
+            "to": "AGGE_A3",
+            "distance_m": 0.22859999999999991,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AGGE_A2",
+            "to": "AGGE_T1",
+            "distance_m": 222.0,
+            "type": "taxiway",
+            "name": "L3"
+          },
+          {
+            "from": "AGGE_A3",
+            "to": "AGGE_A2",
+            "distance_m": 0.22859999999999991,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AGGE_A3",
+            "to": "AGGE_RWY23",
+            "distance_m": 222.0001176980769,
+            "type": "taxiway",
+            "name": "L2"
+          },
+          {
+            "from": "AGGE_T1",
+            "to": "AGGE_A2",
+            "distance_m": 222.0,
+            "type": "taxiway",
+            "name": "L3"
+          }
+        ]
+      },
+      "node_count": 6,
+      "edge_count": 10
+    },
+    "AGGH": {
+      "name": "Honiara International Airport",
+      "category": "large",
+      "position": {
+        "x": 160.054993,
+        "y": 8.5344,
+        "z": -9.428
+      },
+      "runway_count": 1,
+      "longest_runway_ft": 7218.0,
+      "taxiways": {
+        "nodes": [
+          {
+            "id": "AGGH_RWY06",
+            "position": {
+              "x": 160.0449981689453,
+              "y": 8.5344,
+              "z": -9.431739807128906
+            },
+            "type": "runway",
+            "name": "Runway 06"
+          },
+          {
+            "id": "AGGH_RWY24",
+            "position": {
+              "x": 160.06399536132812,
+              "y": 4.2672,
+              "z": -9.424260139465332
+            },
+            "type": "runway",
+            "name": "Runway 24"
+          },
+          {
+            "id": "AGGH_W1A",
+            "position": {
+              "x": 160.04677359189392,
+              "y": 7.823200000000001,
+              "z": -9.429931285961521
+            },
+            "type": "intersection",
+            "name": "Whiskey 1 A"
+          },
+          {
+            "id": "AGGH_W2A",
+            "position": {
+              "x": 160.04538281611207,
+              "y": 7.823200000000001,
+              "z": -9.429369376071397
+            },
+            "type": "intersection",
+            "name": "Whiskey 2 A"
+          },
+          {
+            "id": "AGGH_W1B",
+            "position": {
+              "x": 160.0499397906244,
+              "y": 7.112000000000001,
+              "z": -9.428684674684257
+            },
+            "type": "intersection",
+            "name": "Whiskey 1 B"
+          },
+          {
+            "id": "AGGH_W2B",
+            "position": {
+              "x": 160.04854901484254,
+              "y": 7.112000000000001,
+              "z": -9.428122764794134
+            },
+            "type": "intersection",
+            "name": "Whiskey 2 B"
+          },
+          {
+            "id": "AGGH_W1C",
+            "position": {
+              "x": 160.05310598935486,
+              "y": 6.4008,
+              "z": -9.427438063406996
+            },
+            "type": "intersection",
+            "name": "Whiskey 1 C"
+          },
+          {
+            "id": "AGGH_W2C",
+            "position": {
+              "x": 160.051715213573,
+              "y": 6.4008,
+              "z": -9.426876153516872
+            },
+            "type": "intersection",
+            "name": "Whiskey 2 C"
+          },
+          {
+            "id": "AGGH_W1D",
+            "position": {
+              "x": 160.05627218808533,
+              "y": 5.6896,
+              "z": -9.426191452129734
+            },
+            "type": "intersection",
+            "name": "Whiskey 1 D"
+          },
+          {
+            "id": "AGGH_W2D",
+            "position": {
+              "x": 160.05488141230347,
+              "y": 5.6896,
+              "z": -9.42562954223961
+            },
+            "type": "intersection",
+            "name": "Whiskey 2 D"
+          },
+          {
+            "id": "AGGH_W1E",
+            "position": {
+              "x": 160.0594383868158,
+              "y": 4.9784,
+              "z": -9.42494484085247
+            },
+            "type": "intersection",
+            "name": "Whiskey 1 E"
+          },
+          {
+            "id": "AGGH_W2E",
+            "position": {
+              "x": 160.05804761103394,
+              "y": 4.9784,
+              "z": -9.424382930962347
+            },
+            "type": "intersection",
+            "name": "Whiskey 2 E"
+          },
+          {
+            "id": "AGGH_T1",
+            "position": {
+              "x": 160.0466946471334,
+              "y": 7.112000000000001,
+              "z": -9.427373551607301
+            },
+            "type": "gate",
+            "name": "Terminal 1"
+          },
+          {
+            "id": "AGGH_T2",
+            "position": {
+              "x": 160.05302704459433,
+              "y": 5.6896,
+              "z": -9.424880329052778
+            },
+            "type": "gate",
+            "name": "Terminal 2"
+          }
+        ],
+        "edges": [
+          {
+            "from": "AGGH_RWY06",
+            "to": "AGGH_W1A",
+            "distance_m": 279.45304989330697,
+            "type": "taxiway",
+            "name": "L1"
+          },
+          {
+            "from": "AGGH_RWY24",
+            "to": "AGGH_W1E",
+            "distance_m": 504.7517410842746,
+            "type": "taxiway",
+            "name": "L2"
+          },
+          {
+            "from": "AGGH_W1A",
+            "to": "AGGH_W1B",
+            "distance_m": 373.29391538955394,
+            "type": "taxiway",
+            "name": "W1"
+          },
+          {
+            "from": "AGGH_W1A",
+            "to": "AGGH_RWY06",
+            "distance_m": 279.45304989330697,
+            "type": "taxiway",
+            "name": "L1"
+          },
+          {
+            "from": "AGGH_W1A",
+            "to": "AGGH_W2A",
+            "distance_m": 164.56774436225322,
+            "type": "taxiway",
+            "name": "L3"
+          },
+          {
+            "from": "AGGH_W2A",
+            "to": "AGGH_W2B",
+            "distance_m": 373.2944398221544,
+            "type": "taxiway",
+            "name": "W2"
+          },
+          {
+            "from": "AGGH_W2A",
+            "to": "AGGH_W1A",
+            "distance_m": 164.56774436225322,
+            "type": "taxiway",
+            "name": "L3"
+          },
+          {
+            "from": "AGGH_W1B",
+            "to": "AGGH_W1A",
+            "distance_m": 373.29391538955394,
+            "type": "taxiway",
+            "name": "W1"
+          },
+          {
+            "from": "AGGH_W1B",
+            "to": "AGGH_W1C",
+            "distance_m": 373.2950788147421,
+            "type": "taxiway",
+            "name": "W1"
+          },
+          {
+            "from": "AGGH_W1B",
+            "to": "AGGH_W2B",
+            "distance_m": 164.56825357325948,
+            "type": "taxiway",
+            "name": "L4"
+          },
+          {
+            "from": "AGGH_W2B",
+            "to": "AGGH_W2A",
+            "distance_m": 373.2944398221544,
+            "type": "taxiway",
+            "name": "W2"
+          },
+          {
+            "from": "AGGH_W2B",
+            "to": "AGGH_W2C",
+            "distance_m": 373.29560317889457,
+            "type": "taxiway",
+            "name": "W2"
+          },
+          {
+            "from": "AGGH_W2B",
+            "to": "AGGH_W1B",
+            "distance_m": 164.56825357325948,
+            "type": "taxiway",
+            "name": "L4"
+          },
+          {
+            "from": "AGGH_W2B",
+            "to": "AGGH_T1",
+            "distance_m": 219.42469510387508,
+            "type": "taxiway",
+            "name": "G1"
+          },
+          {
+            "from": "AGGH_W1C",
+            "to": "AGGH_W1B",
+            "distance_m": 373.2950788147421,
+            "type": "taxiway",
+            "name": "W1"
+          },
+          {
+            "from": "AGGH_W1C",
+            "to": "AGGH_W1D",
+            "distance_m": 373.2962420881496,
+            "type": "taxiway",
+            "name": "W1"
+          },
+          {
+            "from": "AGGH_W1C",
+            "to": "AGGH_W2C",
+            "distance_m": 164.56876271781599,
+            "type": "taxiway",
+            "name": "L5"
+          },
+          {
+            "from": "AGGH_W2C",
+            "to": "AGGH_W2B",
+            "distance_m": 373.29560317889457,
+            "type": "taxiway",
+            "name": "W2"
+          },
+          {
+            "from": "AGGH_W2C",
+            "to": "AGGH_W2D",
+            "distance_m": 373.2967663838537,
+            "type": "taxiway",
+            "name": "W2"
+          },
+          {
+            "from": "AGGH_W2C",
+            "to": "AGGH_W1C",
+            "distance_m": 164.56876271781599,
+            "type": "taxiway",
+            "name": "L5"
+          },
+          {
+            "from": "AGGH_W1D",
+            "to": "AGGH_W1C",
+            "distance_m": 373.2962420881496,
+            "type": "taxiway",
+            "name": "W1"
+          },
+          {
+            "from": "AGGH_W1D",
+            "to": "AGGH_W1E",
+            "distance_m": 373.29740520977555,
+            "type": "taxiway",
+            "name": "W1"
+          },
+          {
+            "from": "AGGH_W1D",
+            "to": "AGGH_W2D",
+            "distance_m": 164.56927179592233,
+            "type": "taxiway",
+            "name": "L6"
+          },
+          {
+            "from": "AGGH_W2D",
+            "to": "AGGH_W2C",
+            "distance_m": 373.2967663838537,
+            "type": "taxiway",
+            "name": "W2"
+          },
+          {
+            "from": "AGGH_W2D",
+            "to": "AGGH_W2E",
+            "distance_m": 373.2979294370311,
+            "type": "taxiway",
+            "name": "W2"
+          },
+          {
+            "from": "AGGH_W2D",
+            "to": "AGGH_W1D",
+            "distance_m": 164.56927179592233,
+            "type": "taxiway",
+            "name": "L6"
+          },
+          {
+            "from": "AGGH_W2D",
+            "to": "AGGH_T2",
+            "distance_m": 219.42605264090682,
+            "type": "taxiway",
+            "name": "G2"
+          },
+          {
+            "from": "AGGH_W1E",
+            "to": "AGGH_W1D",
+            "distance_m": 373.29740520977555,
+            "type": "taxiway",
+            "name": "W1"
+          },
+          {
+            "from": "AGGH_W1E",
+            "to": "AGGH_RWY24",
+            "distance_m": 504.7517410842746,
+            "type": "taxiway",
+            "name": "L2"
+          },
+          {
+            "from": "AGGH_W1E",
+            "to": "AGGH_W2E",
+            "distance_m": 164.56978080757818,
+            "type": "taxiway",
+            "name": "L7"
+          },
+          {
+            "from": "AGGH_W2E",
+            "to": "AGGH_W2D",
+            "distance_m": 373.2979294370311,
+            "type": "taxiway",
+            "name": "W2"
+          },
+          {
+            "from": "AGGH_W2E",
+            "to": "AGGH_W1E",
+            "distance_m": 164.56978080757818,
+            "type": "taxiway",
+            "name": "L7"
+          },
+          {
+            "from": "AGGH_T1",
+            "to": "AGGH_W2B",
+            "distance_m": 219.42469510387508,
+            "type": "taxiway",
+            "name": "G1"
+          },
+          {
+            "from": "AGGH_T2",
+            "to": "AGGH_W2D",
+            "distance_m": 219.42605264090682,
+            "type": "taxiway",
+            "name": "G2"
+          }
+        ]
+      },
+      "node_count": 14,
+      "edge_count": 34
+    },
+    "AGGJ": {
+      "name": "Avu Avu Airport",
+      "category": "small",
+      "position": {
+        "x": 160.410556,
+        "y": 7.62,
+        "z": -9.868333
+      },
+      "runway_count": 1,
+      "longest_runway_ft": 2461.0,
+      "taxiways": {
+        "nodes": [
+          {
+            "id": "AGGJ_RWY14",
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "type": "runway",
+            "name": "Runway 14"
+          },
+          {
+            "id": "AGGJ_RWY32",
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "type": "runway",
+            "name": "Runway 32"
+          },
+          {
+            "id": "AGGJ_APRON",
+            "position": {
+              "x": 0.001,
+              "y": 0.0,
+              "z": 0.001
+            },
+            "type": "parking",
+            "name": "Apron"
+          }
+        ],
+        "edges": [
+          {
+            "from": "AGGJ_RWY14",
+            "to": "AGGJ_APRON",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AGGJ_RWY32",
+            "to": "AGGJ_APRON",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AGGJ_APRON",
+            "to": "AGGJ_RWY14",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AGGJ_APRON",
+            "to": "AGGJ_RWY32",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          }
+        ]
+      },
+      "node_count": 3,
+      "edge_count": 4
+    },
+    "AGGK": {
+      "name": "Ngorangora Airport",
+      "category": "medium",
+      "position": {
+        "x": 161.897994995,
+        "y": 16.4592,
+        "z": -10.449700355500001
+      },
+      "runway_count": 1,
+      "longest_runway_ft": 4377.0,
+      "taxiways": {
+        "nodes": [
+          {
+            "id": "AGGK_RWY10",
+            "position": {
+              "x": 0.0,
+              "y": 2.4384,
+              "z": 0.0
+            },
+            "type": "runway",
+            "name": "Runway 10"
+          },
+          {
+            "id": "AGGK_RWY28",
+            "position": {
+              "x": 0.0,
+              "y": 2.1336,
+              "z": 0.0
+            },
+            "type": "runway",
+            "name": "Runway 28"
+          },
+          {
+            "id": "AGGK_A1",
+            "position": {
+              "x": 1.2246467991473531e-19,
+              "y": 2.3622,
+              "z": 0.002
+            },
+            "type": "intersection",
+            "name": "Alpha 1"
+          },
+          {
+            "id": "AGGK_A2",
+            "position": {
+              "x": 1.2246467991473531e-19,
+              "y": 2.286,
+              "z": 0.002
+            },
+            "type": "intersection",
+            "name": "Alpha 2"
+          },
+          {
+            "id": "AGGK_A3",
+            "position": {
+              "x": 1.2246467991473531e-19,
+              "y": 2.2098,
+              "z": 0.002
+            },
+            "type": "intersection",
+            "name": "Alpha 3"
+          },
+          {
+            "id": "AGGK_T1",
+            "position": {
+              "x": 2.4492935982947063e-19,
+              "y": 2.286,
+              "z": 0.004
+            },
+            "type": "gate",
+            "name": "Terminal 1"
+          }
+        ],
+        "edges": [
+          {
+            "from": "AGGK_RWY10",
+            "to": "AGGK_A1",
+            "distance_m": 222.0000130775672,
+            "type": "taxiway",
+            "name": "L1"
+          },
+          {
+            "from": "AGGK_RWY28",
+            "to": "AGGK_A3",
+            "distance_m": 222.0000130775672,
+            "type": "taxiway",
+            "name": "L2"
+          },
+          {
+            "from": "AGGK_A1",
+            "to": "AGGK_A2",
+            "distance_m": 0.07620000000000005,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AGGK_A1",
+            "to": "AGGK_RWY10",
+            "distance_m": 222.0000130775672,
+            "type": "taxiway",
+            "name": "L1"
+          },
+          {
+            "from": "AGGK_A2",
+            "to": "AGGK_A1",
+            "distance_m": 0.07620000000000005,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AGGK_A2",
+            "to": "AGGK_A3",
+            "distance_m": 0.07620000000000005,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AGGK_A2",
+            "to": "AGGK_T1",
+            "distance_m": 222.0,
+            "type": "taxiway",
+            "name": "L3"
+          },
+          {
+            "from": "AGGK_A3",
+            "to": "AGGK_A2",
+            "distance_m": 0.07620000000000005,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AGGK_A3",
+            "to": "AGGK_RWY28",
+            "distance_m": 222.0000130775672,
+            "type": "taxiway",
+            "name": "L2"
+          },
+          {
+            "from": "AGGK_T1",
+            "to": "AGGK_A2",
+            "distance_m": 222.0,
+            "type": "taxiway",
+            "name": "L3"
+          }
+        ]
+      },
+      "node_count": 6,
+      "edge_count": 10
+    },
+    "AGGL": {
+      "name": "Santa Cruz/Graciosa Bay/Luova Airport",
+      "category": "small",
+      "position": {
+        "x": 165.794998,
+        "y": 5.486400000000001,
+        "z": -10.7203
+      },
+      "runway_count": 1,
+      "longest_runway_ft": 2999.0,
+      "taxiways": {
+        "nodes": [
+          {
+            "id": "AGGL_RWY05",
+            "position": {
+              "x": 0.0,
+              "y": 2.4384,
+              "z": 0.0
+            },
+            "type": "runway",
+            "name": "Runway 05"
+          },
+          {
+            "id": "AGGL_RWY23",
+            "position": {
+              "x": 0.0,
+              "y": 3.3528000000000002,
+              "z": 0.0
+            },
+            "type": "runway",
+            "name": "Runway 23"
+          },
+          {
+            "id": "AGGL_APRON",
+            "position": {
+              "x": 0.001,
+              "y": 2.8956,
+              "z": 0.001
+            },
+            "type": "parking",
+            "name": "Apron"
+          }
+        ],
+        "edges": [
+          {
+            "from": "AGGL_RWY05",
+            "to": "AGGL_APRON",
+            "distance_m": 156.97837122005598,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AGGL_RWY23",
+            "to": "AGGL_APRON",
+            "distance_m": 156.97837122005598,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AGGL_APRON",
+            "to": "AGGL_RWY05",
+            "distance_m": 156.97837122005598,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AGGL_APRON",
+            "to": "AGGL_RWY23",
+            "distance_m": 156.97837122005598,
+            "type": "taxiway",
+            "name": "A"
+          }
+        ]
+      },
+      "node_count": 3,
+      "edge_count": 4
+    },
+    "AGGM": {
+      "name": "Munda Airport",
+      "category": "medium",
+      "position": {
+        "x": 157.263,
+        "y": 3.048,
+        "z": -8.32797
+      },
+      "runway_count": 1,
+      "longest_runway_ft": 4593.0,
+      "taxiways": {
+        "nodes": [
+          {
+            "id": "AGGM_RWY07",
+            "position": {
+              "x": 157.2570037841797,
+              "y": 2.1336,
+              "z": -8.329179763793945
+            },
+            "type": "runway",
+            "name": "Runway 07"
+          },
+          {
+            "id": "AGGM_RWY25",
+            "position": {
+              "x": 157.2689971923828,
+              "y": 2.7432000000000003,
+              "z": -8.326760292053223
+            },
+            "type": "runway",
+            "name": "Runway 25"
+          },
+          {
+            "id": "AGGM_A1",
+            "position": {
+              "x": 157.25803955090248,
+              "y": 2.286,
+              "z": -8.328189851925712
+            },
+            "type": "intersection",
+            "name": "Alpha 1"
+          },
+          {
+            "id": "AGGM_A2",
+            "position": {
+              "x": 157.26103790295326,
+              "y": 2.4384,
+              "z": -8.327584983990532
+            },
+            "type": "intersection",
+            "name": "Alpha 2"
+          },
+          {
+            "id": "AGGM_A3",
+            "position": {
+              "x": 157.26403625500404,
+              "y": 2.5908,
+              "z": -8.326980116055351
+            },
+            "type": "intersection",
+            "name": "Alpha 3"
+          },
+          {
+            "id": "AGGM_T1",
+            "position": {
+              "x": 157.25907531762527,
+              "y": 2.4384,
+              "z": -8.32719994005748
+            },
+            "type": "gate",
+            "name": "Terminal 1"
+          }
+        ],
+        "edges": [
+          {
+            "from": "AGGM_RWY07",
+            "to": "AGGM_A1",
+            "distance_m": 158.1596290627114,
+            "type": "taxiway",
+            "name": "L1"
+          },
+          {
+            "from": "AGGM_RWY25",
+            "to": "AGGM_A3",
+            "distance_m": 545.4050498495326,
+            "type": "taxiway",
+            "name": "L2"
+          },
+          {
+            "from": "AGGM_A1",
+            "to": "AGGM_A2",
+            "distance_m": 336.0824038234772,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AGGM_A1",
+            "to": "AGGM_RWY07",
+            "distance_m": 158.1596290627114,
+            "type": "taxiway",
+            "name": "L1"
+          },
+          {
+            "from": "AGGM_A2",
+            "to": "AGGM_A1",
+            "distance_m": 336.0824038234772,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AGGM_A2",
+            "to": "AGGM_A3",
+            "distance_m": 336.0829024391205,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AGGM_A2",
+            "to": "AGGM_T1",
+            "distance_m": 219.74657807437382,
+            "type": "taxiway",
+            "name": "L3"
+          },
+          {
+            "from": "AGGM_A3",
+            "to": "AGGM_A2",
+            "distance_m": 336.0829024391205,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AGGM_A3",
+            "to": "AGGM_RWY25",
+            "distance_m": 545.4050498495326,
+            "type": "taxiway",
+            "name": "L2"
+          },
+          {
+            "from": "AGGM_T1",
+            "to": "AGGM_A2",
+            "distance_m": 219.74657807437382,
+            "type": "taxiway",
+            "name": "L3"
+          }
+        ]
+      },
+      "node_count": 6,
+      "edge_count": 10
+    },
+    "AGGN": {
+      "name": "Nusatupe Airport",
+      "category": "small",
+      "position": {
+        "x": 156.863998413,
+        "y": 3.9624,
+        "z": -8.09778022766
+      },
+      "runway_count": 1,
+      "longest_runway_ft": 2871.0,
+      "taxiways": {
+        "nodes": [
+          {
+            "id": "AGGN_RWY14",
+            "position": {
+              "x": 156.86204528808594,
+              "y": 2.7432000000000003,
+              "z": -8.09511661529541
+            },
+            "type": "runway",
+            "name": "Runway 14"
+          },
+          {
+            "id": "AGGN_RWY32",
+            "position": {
+              "x": 156.8662109375,
+              "y": 4.2672,
+              "z": -8.101866722106934
+            },
+            "type": "runway",
+            "name": "Runway 32"
+          },
+          {
+            "id": "AGGN_APRON",
+            "position": {
+              "x": 156.86512811279297,
+              "y": 3.5052000000000003,
+              "z": -8.097491668701172
+            },
+            "type": "parking",
+            "name": "Apron"
+          }
+        ],
+        "edges": [
+          {
+            "from": "AGGN_RWY14",
+            "to": "AGGN_APRON",
+            "distance_m": 429.273386750829,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AGGN_RWY32",
+            "to": "AGGN_APRON",
+            "distance_m": 499.99768073756513,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AGGN_APRON",
+            "to": "AGGN_RWY14",
+            "distance_m": 429.273386750829,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AGGN_APRON",
+            "to": "AGGN_RWY32",
+            "distance_m": 499.99768073756513,
+            "type": "taxiway",
+            "name": "A"
+          }
+        ]
+      },
+      "node_count": 3,
+      "edge_count": 4
+    },
+    "AGGO": {
+      "name": "Mono Airport",
+      "category": "medium",
+      "position": {
+        "x": 155.565002,
+        "y": 10.668000000000001,
+        "z": -7.41694
+      },
+      "runway_count": 1,
+      "longest_runway_ft": 3281.0,
+      "taxiways": {
+        "nodes": [
+          {
+            "id": "AGGO_RWY04",
+            "position": {
+              "x": 0.0,
+              "y": 10.668000000000001,
+              "z": 0.0
+            },
+            "type": "runway",
+            "name": "Runway 04"
+          },
+          {
+            "id": "AGGO_RWY22",
+            "position": {
+              "x": 0.0,
+              "y": 10.668000000000001,
+              "z": 0.0
+            },
+            "type": "runway",
+            "name": "Runway 22"
+          },
+          {
+            "id": "AGGO_A1",
+            "position": {
+              "x": 1.2246467991473531e-19,
+              "y": 10.668000000000001,
+              "z": 0.002
+            },
+            "type": "intersection",
+            "name": "Alpha 1"
+          },
+          {
+            "id": "AGGO_A2",
+            "position": {
+              "x": 1.2246467991473531e-19,
+              "y": 10.668000000000001,
+              "z": 0.002
+            },
+            "type": "intersection",
+            "name": "Alpha 2"
+          },
+          {
+            "id": "AGGO_A3",
+            "position": {
+              "x": 1.2246467991473531e-19,
+              "y": 10.668000000000001,
+              "z": 0.002
+            },
+            "type": "intersection",
+            "name": "Alpha 3"
+          },
+          {
+            "id": "AGGO_T1",
+            "position": {
+              "x": 2.4492935982947063e-19,
+              "y": 10.668000000000001,
+              "z": 0.004
+            },
+            "type": "gate",
+            "name": "Terminal 1"
+          }
+        ],
+        "edges": [
+          {
+            "from": "AGGO_RWY04",
+            "to": "AGGO_A1",
+            "distance_m": 222.0,
+            "type": "taxiway",
+            "name": "L1"
+          },
+          {
+            "from": "AGGO_RWY22",
+            "to": "AGGO_A3",
+            "distance_m": 222.0,
+            "type": "taxiway",
+            "name": "L2"
+          },
+          {
+            "from": "AGGO_A1",
+            "to": "AGGO_A2",
+            "distance_m": 0.0,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AGGO_A1",
+            "to": "AGGO_RWY04",
+            "distance_m": 222.0,
+            "type": "taxiway",
+            "name": "L1"
+          },
+          {
+            "from": "AGGO_A2",
+            "to": "AGGO_A1",
+            "distance_m": 0.0,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AGGO_A2",
+            "to": "AGGO_A3",
+            "distance_m": 0.0,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AGGO_A2",
+            "to": "AGGO_T1",
+            "distance_m": 222.0,
+            "type": "taxiway",
+            "name": "L3"
+          },
+          {
+            "from": "AGGO_A3",
+            "to": "AGGO_A2",
+            "distance_m": 0.0,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AGGO_A3",
+            "to": "AGGO_RWY22",
+            "distance_m": 222.0,
+            "type": "taxiway",
+            "name": "L2"
+          },
+          {
+            "from": "AGGO_T1",
+            "to": "AGGO_A2",
+            "distance_m": 222.0,
+            "type": "taxiway",
+            "name": "L3"
+          }
+        ]
+      },
+      "node_count": 6,
+      "edge_count": 10
+    },
+    "AGGP": {
+      "name": "Parasi Airport",
+      "category": "small",
+      "position": {
+        "x": 161.4250030517578,
+        "y": 0.0,
+        "z": -9.641670227050781
+      },
+      "runway_count": 1,
+      "longest_runway_ft": 2156.0,
+      "taxiways": {
+        "nodes": [
+          {
+            "id": "AGGP_RWY12",
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "type": "runway",
+            "name": "Runway 12"
+          },
+          {
+            "id": "AGGP_RWY30",
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "type": "runway",
+            "name": "Runway 30"
+          },
+          {
+            "id": "AGGP_APRON",
+            "position": {
+              "x": 0.001,
+              "y": 0.0,
+              "z": 0.001
+            },
+            "type": "parking",
+            "name": "Apron"
+          }
+        ],
+        "edges": [
+          {
+            "from": "AGGP_RWY12",
+            "to": "AGGP_APRON",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AGGP_RWY30",
+            "to": "AGGP_APRON",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AGGP_APRON",
+            "to": "AGGP_RWY12",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AGGP_APRON",
+            "to": "AGGP_RWY30",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          }
+        ]
+      },
+      "node_count": 3,
+      "edge_count": 4
+    },
+    "AGGR": {
+      "name": "Rennell/Tingoa Airport",
+      "category": "small",
+      "position": {
+        "x": 160.062778,
+        "y": 167.64000000000001,
+        "z": -11.55
+      },
+      "runway_count": 1,
+      "longest_runway_ft": 2206.0,
+      "taxiways": {
+        "nodes": [
+          {
+            "id": "AGGR_RWY12",
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "type": "runway",
+            "name": "Runway 12"
+          },
+          {
+            "id": "AGGR_RWY30",
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "type": "runway",
+            "name": "Runway 30"
+          },
+          {
+            "id": "AGGR_APRON",
+            "position": {
+              "x": 0.001,
+              "y": 0.0,
+              "z": 0.001
+            },
+            "type": "parking",
+            "name": "Apron"
+          }
+        ],
+        "edges": [
+          {
+            "from": "AGGR_RWY12",
+            "to": "AGGR_APRON",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AGGR_RWY30",
+            "to": "AGGR_APRON",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AGGR_APRON",
+            "to": "AGGR_RWY12",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AGGR_APRON",
+            "to": "AGGR_RWY30",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          }
+        ]
+      },
+      "node_count": 3,
+      "edge_count": 4
+    },
+    "AGGS": {
+      "name": "Sege Airport",
+      "category": "medium",
+      "position": {
+        "x": 157.876007,
+        "y": 0.0,
+        "z": -8.57889
+      },
+      "runway_count": 1,
+      "longest_runway_ft": 3002.0,
+      "taxiways": {
+        "nodes": [
+          {
+            "id": "AGGS_RWY10",
+            "position": {
+              "x": 0.0,
+              "y": 3.3528000000000002,
+              "z": 0.0
+            },
+            "type": "runway",
+            "name": "Runway 10"
+          },
+          {
+            "id": "AGGS_RWY28",
+            "position": {
+              "x": 0.0,
+              "y": 3.048,
+              "z": 0.0
+            },
+            "type": "runway",
+            "name": "Runway 28"
+          },
+          {
+            "id": "AGGS_A1",
+            "position": {
+              "x": 1.2246467991473531e-19,
+              "y": 3.2766,
+              "z": 0.002
+            },
+            "type": "intersection",
+            "name": "Alpha 1"
+          },
+          {
+            "id": "AGGS_A2",
+            "position": {
+              "x": 1.2246467991473531e-19,
+              "y": 3.2004,
+              "z": 0.002
+            },
+            "type": "intersection",
+            "name": "Alpha 2"
+          },
+          {
+            "id": "AGGS_A3",
+            "position": {
+              "x": 1.2246467991473531e-19,
+              "y": 3.1242,
+              "z": 0.002
+            },
+            "type": "intersection",
+            "name": "Alpha 3"
+          },
+          {
+            "id": "AGGS_T1",
+            "position": {
+              "x": 2.4492935982947063e-19,
+              "y": 3.2004,
+              "z": 0.004
+            },
+            "type": "gate",
+            "name": "Terminal 1"
+          }
+        ],
+        "edges": [
+          {
+            "from": "AGGS_RWY10",
+            "to": "AGGS_A1",
+            "distance_m": 222.0000130775672,
+            "type": "taxiway",
+            "name": "L1"
+          },
+          {
+            "from": "AGGS_RWY28",
+            "to": "AGGS_A3",
+            "distance_m": 222.0000130775672,
+            "type": "taxiway",
+            "name": "L2"
+          },
+          {
+            "from": "AGGS_A1",
+            "to": "AGGS_A2",
+            "distance_m": 0.07620000000000005,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AGGS_A1",
+            "to": "AGGS_RWY10",
+            "distance_m": 222.0000130775672,
+            "type": "taxiway",
+            "name": "L1"
+          },
+          {
+            "from": "AGGS_A2",
+            "to": "AGGS_A1",
+            "distance_m": 0.07620000000000005,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AGGS_A2",
+            "to": "AGGS_A3",
+            "distance_m": 0.07620000000000005,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AGGS_A2",
+            "to": "AGGS_T1",
+            "distance_m": 222.0,
+            "type": "taxiway",
+            "name": "L3"
+          },
+          {
+            "from": "AGGS_A3",
+            "to": "AGGS_A2",
+            "distance_m": 0.07620000000000005,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AGGS_A3",
+            "to": "AGGS_RWY28",
+            "distance_m": 222.0000130775672,
+            "type": "taxiway",
+            "name": "L2"
+          },
+          {
+            "from": "AGGS_T1",
+            "to": "AGGS_A2",
+            "distance_m": 222.0,
+            "type": "taxiway",
+            "name": "L3"
+          }
+        ]
+      },
+      "node_count": 6,
+      "edge_count": 10
+    },
+    "AGGT": {
+      "name": "Santa Ana Airport",
+      "category": "small",
+      "position": {
+        "x": 162.454108,
+        "y": 0.9144000000000001,
+        "z": -10.847994
+      },
+      "runway_count": 1,
+      "longest_runway_ft": 2655.0,
+      "taxiways": {
+        "nodes": [
+          {
+            "id": "AGGT_RWY11",
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "type": "runway",
+            "name": "Runway 11"
+          },
+          {
+            "id": "AGGT_RWY29",
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "type": "runway",
+            "name": "Runway 29"
+          },
+          {
+            "id": "AGGT_APRON",
+            "position": {
+              "x": 0.001,
+              "y": 0.0,
+              "z": 0.001
+            },
+            "type": "parking",
+            "name": "Apron"
+          }
+        ],
+        "edges": [
+          {
+            "from": "AGGT_RWY11",
+            "to": "AGGT_APRON",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AGGT_RWY29",
+            "to": "AGGT_APRON",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AGGT_APRON",
+            "to": "AGGT_RWY11",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AGGT_APRON",
+            "to": "AGGT_RWY29",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          }
+        ]
+      },
+      "node_count": 3,
+      "edge_count": 4
+    },
+    "AGGU": {
+      "name": "Marau Airport",
+      "category": "small",
+      "position": {
+        "x": 160.824997,
+        "y": 0.9144000000000001,
+        "z": -9.86167
+      },
+      "runway_count": 1,
+      "longest_runway_ft": 2001.0,
+      "taxiways": {
+        "nodes": [
+          {
+            "id": "AGGU_RWY05",
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "type": "runway",
+            "name": "Runway 05"
+          },
+          {
+            "id": "AGGU_RWY23",
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "type": "runway",
+            "name": "Runway 23"
+          },
+          {
+            "id": "AGGU_APRON",
+            "position": {
+              "x": 0.001,
+              "y": 0.0,
+              "z": 0.001
+            },
+            "type": "parking",
+            "name": "Apron"
+          }
+        ],
+        "edges": [
+          {
+            "from": "AGGU_RWY05",
+            "to": "AGGU_APRON",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AGGU_RWY23",
+            "to": "AGGU_APRON",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AGGU_APRON",
+            "to": "AGGU_RWY05",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AGGU_APRON",
+            "to": "AGGU_RWY23",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          }
+        ]
+      },
+      "node_count": 3,
+      "edge_count": 4
+    },
+    "AGGV": {
+      "name": "Suavanao Airport",
+      "category": "small",
+      "position": {
+        "x": 158.731003,
+        "y": 6.096,
+        "z": -7.58556
+      },
+      "runway_count": 1,
+      "longest_runway_ft": 2789.0,
+      "taxiways": {
+        "nodes": [
+          {
+            "id": "AGGV_RWY04",
+            "position": {
+              "x": 0.0,
+              "y": 6.096,
+              "z": 0.0
+            },
+            "type": "runway",
+            "name": "Runway 04"
+          },
+          {
+            "id": "AGGV_RWY22",
+            "position": {
+              "x": 0.0,
+              "y": 6.096,
+              "z": 0.0
+            },
+            "type": "runway",
+            "name": "Runway 22"
+          },
+          {
+            "id": "AGGV_APRON",
+            "position": {
+              "x": 0.001,
+              "y": 6.096,
+              "z": 0.001
+            },
+            "type": "parking",
+            "name": "Apron"
+          }
+        ],
+        "edges": [
+          {
+            "from": "AGGV_RWY04",
+            "to": "AGGV_APRON",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AGGV_RWY22",
+            "to": "AGGV_APRON",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AGGV_APRON",
+            "to": "AGGV_RWY04",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AGGV_APRON",
+            "to": "AGGV_RWY22",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          }
+        ]
+      },
+      "node_count": 3,
+      "edge_count": 4
+    },
+    "AGKG": {
+      "name": "Kaghau Airport",
+      "category": "small",
+      "position": {
+        "x": 157.585,
+        "y": 9.144,
+        "z": -7.3305
+      },
+      "runway_count": 1,
+      "longest_runway_ft": 2428.0,
+      "taxiways": {
+        "nodes": [
+          {
+            "id": "AGKG_RWY14",
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "type": "runway",
+            "name": "Runway 14"
+          },
+          {
+            "id": "AGKG_RWY32",
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "type": "runway",
+            "name": "Runway 32"
+          },
+          {
+            "id": "AGKG_APRON",
+            "position": {
+              "x": 0.001,
+              "y": 0.0,
+              "z": 0.001
+            },
+            "type": "parking",
+            "name": "Apron"
+          }
+        ],
+        "edges": [
+          {
+            "from": "AGKG_RWY14",
+            "to": "AGKG_APRON",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AGKG_RWY32",
+            "to": "AGKG_APRON",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AGKG_APRON",
+            "to": "AGKG_RWY14",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AGKG_APRON",
+            "to": "AGKG_RWY32",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          }
+        ]
+      },
+      "node_count": 3,
+      "edge_count": 4
+    },
+    "AGLM": {
+      "name": "Lomlom Airport",
+      "category": "medium",
+      "position": {
+        "x": 166.327322,
+        "y": 16.764,
+        "z": -10.296828
+      },
+      "runway_count": 1,
+      "longest_runway_ft": 3477.0,
+      "taxiways": {
+        "nodes": [
+          {
+            "id": "AGLM_RWY10",
+            "position": {
+              "x": 166.32257,
+              "y": 11.277600000000001,
+              "z": -10.29597
+            },
+            "type": "runway",
+            "name": "Runway 10"
+          },
+          {
+            "id": "AGLM_RWY28",
+            "position": {
+              "x": 166.33184,
+              "y": 11.8872,
+              "z": -10.29753
+            },
+            "type": "runway",
+            "name": "Runway 28"
+          },
+          {
+            "id": "AGLM_A1",
+            "position": {
+              "x": 166.322917884494,
+              "y": 11.43,
+              "z": -10.296707296355335
+            },
+            "type": "intersection",
+            "name": "Alpha 1"
+          },
+          {
+            "id": "AGLM_A2",
+            "position": {
+              "x": 166.32523538449396,
+              "y": 11.5824,
+              "z": -10.297097296355334
+            },
+            "type": "intersection",
+            "name": "Alpha 2"
+          },
+          {
+            "id": "AGLM_A3",
+            "position": {
+              "x": 166.32755288449397,
+              "y": 11.7348,
+              "z": -10.297487296355335
+            },
+            "type": "intersection",
+            "name": "Alpha 3"
+          },
+          {
+            "id": "AGLM_T1",
+            "position": {
+              "x": 166.32326576898794,
+              "y": 11.5824,
+              "z": -10.297444592710669
+            },
+            "type": "gate",
+            "name": "Terminal 1"
+          }
+        ],
+        "edges": [
+          {
+            "from": "AGLM_RWY10",
+            "to": "AGLM_A1",
+            "distance_m": 90.22907198297902,
+            "type": "taxiway",
+            "name": "L1"
+          },
+          {
+            "from": "AGLM_RWY28",
+            "to": "AGLM_A3",
+            "distance_m": 468.228914956577,
+            "type": "taxiway",
+            "name": "L2"
+          },
+          {
+            "from": "AGLM_A1",
+            "to": "AGLM_A2",
+            "distance_m": 256.7750397881725,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AGLM_A1",
+            "to": "AGLM_RWY10",
+            "distance_m": 90.22907198297902,
+            "type": "taxiway",
+            "name": "L1"
+          },
+          {
+            "from": "AGLM_A2",
+            "to": "AGLM_A1",
+            "distance_m": 256.7750397881725,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AGLM_A2",
+            "to": "AGLM_A3",
+            "distance_m": 256.7747312771526,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AGLM_A2",
+            "to": "AGLM_T1",
+            "distance_m": 218.53304278087728,
+            "type": "taxiway",
+            "name": "L3"
+          },
+          {
+            "from": "AGLM_A3",
+            "to": "AGLM_A2",
+            "distance_m": 256.7747312771526,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AGLM_A3",
+            "to": "AGLM_RWY28",
+            "distance_m": 468.228914956577,
+            "type": "taxiway",
+            "name": "L2"
+          },
+          {
+            "from": "AGLM_T1",
+            "to": "AGLM_A2",
+            "distance_m": 218.53304278087728,
+            "type": "taxiway",
+            "name": "L3"
+          }
+        ]
+      },
+      "node_count": 6,
+      "edge_count": 10
+    },
+    "AGNA": {
+      "name": "Nana Airport",
+      "category": "small",
+      "position": {
+        "x": 162.2049,
+        "y": 18.288,
+        "z": -10.6758
+      },
+      "runway_count": 1,
+      "longest_runway_ft": 2657.0,
+      "taxiways": {
+        "nodes": [
+          {
+            "id": "AGNA_RWY12",
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "type": "runway",
+            "name": "Runway 12"
+          },
+          {
+            "id": "AGNA_RWY30",
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "type": "runway",
+            "name": "Runway 30"
+          },
+          {
+            "id": "AGNA_APRON",
+            "position": {
+              "x": 0.001,
+              "y": 0.0,
+              "z": 0.001
+            },
+            "type": "parking",
+            "name": "Apron"
+          }
+        ],
+        "edges": [
+          {
+            "from": "AGNA_RWY12",
+            "to": "AGNA_APRON",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AGNA_RWY30",
+            "to": "AGNA_APRON",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AGNA_APRON",
+            "to": "AGNA_RWY12",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AGNA_APRON",
+            "to": "AGNA_RWY30",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          }
+        ]
+      },
+      "node_count": 3,
+      "edge_count": 4
+    },
+    "AGRC": {
+      "name": "Ringi Cove Airport",
+      "category": "small",
+      "position": {
+        "x": 157.14300537109375,
+        "y": 0.0,
+        "z": -8.12639045715332
+      },
+      "runway_count": 1,
+      "longest_runway_ft": 2461.0,
+      "taxiways": {
+        "nodes": [
+          {
+            "id": "AGRC_RWY01",
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "type": "runway",
+            "name": "Runway 01"
+          },
+          {
+            "id": "AGRC_RWY19",
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "type": "runway",
+            "name": "Runway 19"
+          },
+          {
+            "id": "AGRC_APRON",
+            "position": {
+              "x": 0.001,
+              "y": 0.0,
+              "z": 0.001
+            },
+            "type": "parking",
+            "name": "Apron"
+          }
+        ],
+        "edges": [
+          {
+            "from": "AGRC_RWY01",
+            "to": "AGRC_APRON",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AGRC_RWY19",
+            "to": "AGRC_APRON",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AGRC_APRON",
+            "to": "AGRC_RWY01",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AGRC_APRON",
+            "to": "AGRC_RWY19",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          }
+        ]
+      },
+      "node_count": 3,
+      "edge_count": 4
+    },
+    "AGRM": {
+      "name": "Ramata Airport",
+      "category": "small",
+      "position": {
+        "x": 157.64300537109375,
+        "y": 0.0,
+        "z": -8.168060302734375
+      },
+      "runway_count": 1,
+      "longest_runway_ft": 2500.0,
+      "taxiways": {
+        "nodes": [
+          {
+            "id": "AGRM_RWY14",
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "type": "runway",
+            "name": "Runway 14"
+          },
+          {
+            "id": "AGRM_RWY32",
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "type": "runway",
+            "name": "Runway 32"
+          },
+          {
+            "id": "AGRM_APRON",
+            "position": {
+              "x": 0.001,
+              "y": 0.0,
+              "z": 0.001
+            },
+            "type": "parking",
+            "name": "Apron"
+          }
+        ],
+        "edges": [
+          {
+            "from": "AGRM_RWY14",
+            "to": "AGRM_APRON",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AGRM_RWY32",
+            "to": "AGRM_APRON",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AGRM_APRON",
+            "to": "AGRM_RWY14",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AGRM_APRON",
+            "to": "AGRM_RWY32",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          }
+        ]
+      },
+      "node_count": 3,
+      "edge_count": 4
+    },
+    "ANYN": {
+      "name": "Nauru International Airport",
+      "category": "large",
+      "position": {
+        "x": 166.919006,
+        "y": 6.7056000000000004,
+        "z": -0.547458
+      },
+      "runway_count": 1,
+      "longest_runway_ft": 7054.0,
+      "taxiways": {
+        "nodes": [
+          {
+            "id": "ANYN_RWY12",
+            "position": {
+              "x": 166.91200256347656,
+              "y": 6.7056000000000004,
+              "z": -0.5411810278892517
+            },
+            "type": "runway",
+            "name": "Runway 12"
+          },
+          {
+            "id": "ANYN_RWY30",
+            "position": {
+              "x": 166.92599487304688,
+              "y": 6.096,
+              "z": -0.5537390112876892
+            },
+            "type": "runway",
+            "name": "Runway 30"
+          },
+          {
+            "id": "ANYN_W1A",
+            "position": {
+              "x": 166.91304886412058,
+              "y": 6.604000000000001,
+              "z": -0.5440465822346897
+            },
+            "type": "intersection",
+            "name": "Whiskey 1 A"
+          },
+          {
+            "id": "ANYN_W2A",
+            "position": {
+              "x": 166.9117631131695,
+              "y": 6.604000000000001,
+              "z": -0.5448191393470547
+            },
+            "type": "intersection",
+            "name": "Whiskey 2 A"
+          },
+          {
+            "id": "ANYN_W1B",
+            "position": {
+              "x": 166.91538091571562,
+              "y": 6.5024,
+              "z": -0.5461395794677627
+            },
+            "type": "intersection",
+            "name": "Whiskey 1 B"
+          },
+          {
+            "id": "ANYN_W2B",
+            "position": {
+              "x": 166.91409516476455,
+              "y": 6.5024,
+              "z": -0.5469121365801277
+            },
+            "type": "intersection",
+            "name": "Whiskey 2 B"
+          },
+          {
+            "id": "ANYN_W1C",
+            "position": {
+              "x": 166.91771296731068,
+              "y": 6.4008,
+              "z": -0.5482325767008356
+            },
+            "type": "intersection",
+            "name": "Whiskey 1 C"
+          },
+          {
+            "id": "ANYN_W2C",
+            "position": {
+              "x": 166.9164272163596,
+              "y": 6.4008,
+              "z": -0.5490051338132006
+            },
+            "type": "intersection",
+            "name": "Whiskey 2 C"
+          },
+          {
+            "id": "ANYN_W1D",
+            "position": {
+              "x": 166.92004501890574,
+              "y": 6.299200000000001,
+              "z": -0.5503255739339085
+            },
+            "type": "intersection",
+            "name": "Whiskey 1 D"
+          },
+          {
+            "id": "ANYN_W2D",
+            "position": {
+              "x": 166.91875926795467,
+              "y": 6.299200000000001,
+              "z": -0.5510981310462735
+            },
+            "type": "intersection",
+            "name": "Whiskey 2 D"
+          },
+          {
+            "id": "ANYN_W1E",
+            "position": {
+              "x": 166.92237707050077,
+              "y": 6.1975999999999996,
+              "z": -0.5524185711669815
+            },
+            "type": "intersection",
+            "name": "Whiskey 1 E"
+          },
+          {
+            "id": "ANYN_W2E",
+            "position": {
+              "x": 166.9210913195497,
+              "y": 6.1975999999999996,
+              "z": -0.5531911282793465
+            },
+            "type": "intersection",
+            "name": "Whiskey 2 E"
+          },
+          {
+            "id": "ANYN_T1",
+            "position": {
+              "x": 166.91238083016313,
+              "y": 6.5024,
+              "z": -0.5479422127299478
+            },
+            "type": "gate",
+            "name": "Terminal 1"
+          },
+          {
+            "id": "ANYN_T2",
+            "position": {
+              "x": 166.91704493335325,
+              "y": 6.299200000000001,
+              "z": -0.5521282071960936
+            },
+            "type": "gate",
+            "name": "Terminal 2"
+          }
+        ],
+        "edges": [
+          {
+            "from": "ANYN_RWY12",
+            "to": "ANYN_W1A",
+            "distance_m": 338.6145812667547,
+            "type": "taxiway",
+            "name": "L1"
+          },
+          {
+            "from": "ANYN_RWY30",
+            "to": "ANYN_W1E",
+            "distance_m": 427.47018957849605,
+            "type": "taxiway",
+            "name": "L2"
+          },
+          {
+            "from": "ANYN_W1A",
+            "to": "ANYN_W1B",
+            "distance_m": 347.8147526418158,
+            "type": "taxiway",
+            "name": "W1"
+          },
+          {
+            "from": "ANYN_W1A",
+            "to": "ANYN_RWY12",
+            "distance_m": 338.6145812667547,
+            "type": "taxiway",
+            "name": "L1"
+          },
+          {
+            "from": "ANYN_W1A",
+            "to": "ANYN_W2A",
+            "distance_m": 166.4944772823785,
+            "type": "taxiway",
+            "name": "L3"
+          },
+          {
+            "from": "ANYN_W2A",
+            "to": "ANYN_W2B",
+            "distance_m": 347.81472791252315,
+            "type": "taxiway",
+            "name": "W2"
+          },
+          {
+            "from": "ANYN_W2A",
+            "to": "ANYN_W1A",
+            "distance_m": 166.4944772823785,
+            "type": "taxiway",
+            "name": "L3"
+          },
+          {
+            "from": "ANYN_W1B",
+            "to": "ANYN_W1A",
+            "distance_m": 347.8147526418158,
+            "type": "taxiway",
+            "name": "W1"
+          },
+          {
+            "from": "ANYN_W1B",
+            "to": "ANYN_W1C",
+            "distance_m": 347.8146855669369,
+            "type": "taxiway",
+            "name": "W1"
+          },
+          {
+            "from": "ANYN_W1B",
+            "to": "ANYN_W2B",
+            "distance_m": 166.4944347386687,
+            "type": "taxiway",
+            "name": "L4"
+          },
+          {
+            "from": "ANYN_W2B",
+            "to": "ANYN_W2A",
+            "distance_m": 347.81472791252315,
+            "type": "taxiway",
+            "name": "W2"
+          },
+          {
+            "from": "ANYN_W2B",
+            "to": "ANYN_W2C",
+            "distance_m": 347.81466074276506,
+            "type": "taxiway",
+            "name": "W2"
+          },
+          {
+            "from": "ANYN_W2B",
+            "to": "ANYN_W1B",
+            "distance_m": 166.4944347386687,
+            "type": "taxiway",
+            "name": "L4"
+          },
+          {
+            "from": "ANYN_W2B",
+            "to": "ANYN_T1",
+            "distance_m": 221.9925551559051,
+            "type": "taxiway",
+            "name": "G1"
+          },
+          {
+            "from": "ANYN_W1C",
+            "to": "ANYN_W1B",
+            "distance_m": 347.8146855669369,
+            "type": "taxiway",
+            "name": "W1"
+          },
+          {
+            "from": "ANYN_W1C",
+            "to": "ANYN_W1D",
+            "distance_m": 347.81461823267347,
+            "type": "taxiway",
+            "name": "W1"
+          },
+          {
+            "from": "ANYN_W1C",
+            "to": "ANYN_W2C",
+            "distance_m": 166.49439203172818,
+            "type": "taxiway",
+            "name": "L5"
+          },
+          {
+            "from": "ANYN_W2C",
+            "to": "ANYN_W2B",
+            "distance_m": 347.81466074276506,
+            "type": "taxiway",
+            "name": "W2"
+          },
+          {
+            "from": "ANYN_W2C",
+            "to": "ANYN_W2D",
+            "distance_m": 347.81459331362254,
+            "type": "taxiway",
+            "name": "W2"
+          },
+          {
+            "from": "ANYN_W2C",
+            "to": "ANYN_W1C",
+            "distance_m": 166.49439203172818,
+            "type": "taxiway",
+            "name": "L5"
+          },
+          {
+            "from": "ANYN_W1D",
+            "to": "ANYN_W1C",
+            "distance_m": 347.81461823267347,
+            "type": "taxiway",
+            "name": "W1"
+          },
+          {
+            "from": "ANYN_W1D",
+            "to": "ANYN_W1E",
+            "distance_m": 347.814550639026,
+            "type": "taxiway",
+            "name": "W1"
+          },
+          {
+            "from": "ANYN_W1D",
+            "to": "ANYN_W2D",
+            "distance_m": 166.49434916155698,
+            "type": "taxiway",
+            "name": "L6"
+          },
+          {
+            "from": "ANYN_W2D",
+            "to": "ANYN_W2C",
+            "distance_m": 347.81459331362254,
+            "type": "taxiway",
+            "name": "W2"
+          },
+          {
+            "from": "ANYN_W2D",
+            "to": "ANYN_W2E",
+            "distance_m": 347.8145256250959,
+            "type": "taxiway",
+            "name": "W2"
+          },
+          {
+            "from": "ANYN_W2D",
+            "to": "ANYN_W1D",
+            "distance_m": 166.49434916155698,
+            "type": "taxiway",
+            "name": "L6"
+          },
+          {
+            "from": "ANYN_W2D",
+            "to": "ANYN_T2",
+            "distance_m": 221.99244086564215,
+            "type": "taxiway",
+            "name": "G2"
+          },
+          {
+            "from": "ANYN_W1E",
+            "to": "ANYN_W1D",
+            "distance_m": 347.814550639026,
+            "type": "taxiway",
+            "name": "W1"
+          },
+          {
+            "from": "ANYN_W1E",
+            "to": "ANYN_RWY30",
+            "distance_m": 427.47018957849605,
+            "type": "taxiway",
+            "name": "L2"
+          },
+          {
+            "from": "ANYN_W1E",
+            "to": "ANYN_W2E",
+            "distance_m": 166.49430612815522,
+            "type": "taxiway",
+            "name": "L7"
+          },
+          {
+            "from": "ANYN_W2E",
+            "to": "ANYN_W2D",
+            "distance_m": 347.8145256250959,
+            "type": "taxiway",
+            "name": "W2"
+          },
+          {
+            "from": "ANYN_W2E",
+            "to": "ANYN_W1E",
+            "distance_m": 166.49430612815522,
+            "type": "taxiway",
+            "name": "L7"
+          },
+          {
+            "from": "ANYN_T1",
+            "to": "ANYN_W2B",
+            "distance_m": 221.9925551559051,
+            "type": "taxiway",
+            "name": "G1"
+          },
+          {
+            "from": "ANYN_T2",
+            "to": "ANYN_W2D",
+            "distance_m": 221.99244086564215,
+            "type": "taxiway",
+            "name": "G2"
+          }
+        ]
+      },
+      "node_count": 14,
+      "edge_count": 34
+    },
+    "AYAA": {
+      "name": "Ama Airport",
+      "category": "small",
+      "position": {
+        "x": 141.67,
+        "y": 44.196000000000005,
+        "z": -4.10111111111
+      },
+      "runway_count": 1,
+      "longest_runway_ft": 2300.0,
+      "taxiways": {
+        "nodes": [
+          {
+            "id": "AYAA_RWY15",
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "type": "runway",
+            "name": "Runway 15"
+          },
+          {
+            "id": "AYAA_RWY33",
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "type": "runway",
+            "name": "Runway 33"
+          },
+          {
+            "id": "AYAA_APRON",
+            "position": {
+              "x": 0.001,
+              "y": 0.0,
+              "z": 0.001
+            },
+            "type": "parking",
+            "name": "Apron"
+          }
+        ],
+        "edges": [
+          {
+            "from": "AYAA_RWY15",
+            "to": "AYAA_APRON",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AYAA_RWY33",
+            "to": "AYAA_APRON",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AYAA_APRON",
+            "to": "AYAA_RWY15",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AYAA_APRON",
+            "to": "AYAA_RWY33",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          }
+        ]
+      },
+      "node_count": 3,
+      "edge_count": 4
+    },
+    "AYAF": {
+      "name": "Afore Airstrip",
+      "category": "small",
+      "position": {
+        "x": 148.390701,
+        "y": 762.0,
+        "z": -9.13867
+      },
+      "runway_count": 1,
+      "longest_runway_ft": 2073.0,
+      "taxiways": {
+        "nodes": [
+          {
+            "id": "AYAF_RWY03",
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "type": "runway",
+            "name": "Runway 03"
+          },
+          {
+            "id": "AYAF_RWY21",
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "type": "runway",
+            "name": "Runway 21"
+          },
+          {
+            "id": "AYAF_APRON",
+            "position": {
+              "x": 0.001,
+              "y": 0.0,
+              "z": 0.001
+            },
+            "type": "parking",
+            "name": "Apron"
+          }
+        ],
+        "edges": [
+          {
+            "from": "AYAF_RWY03",
+            "to": "AYAF_APRON",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AYAF_RWY21",
+            "to": "AYAF_APRON",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AYAF_APRON",
+            "to": "AYAF_RWY03",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AYAF_APRON",
+            "to": "AYAF_RWY21",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          }
+        ]
+      },
+      "node_count": 3,
+      "edge_count": 4
+    },
+    "AYAG": {
+      "name": "Agaun Airport",
+      "category": "small",
+      "position": {
+        "x": 149.389951,
+        "y": 975.36,
+        "z": -9.927715
+      },
+      "runway_count": 1,
+      "longest_runway_ft": 2981.0,
+      "taxiways": {
+        "nodes": [
+          {
+            "id": "AYAG_RWY06",
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "type": "runway",
+            "name": "Runway 06"
+          },
+          {
+            "id": "AYAG_RWY24",
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "type": "runway",
+            "name": "Runway 24"
+          },
+          {
+            "id": "AYAG_APRON",
+            "position": {
+              "x": 0.001,
+              "y": 0.0,
+              "z": 0.001
+            },
+            "type": "parking",
+            "name": "Apron"
+          }
+        ],
+        "edges": [
+          {
+            "from": "AYAG_RWY06",
+            "to": "AYAG_APRON",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AYAG_RWY24",
+            "to": "AYAG_APRON",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AYAG_APRON",
+            "to": "AYAG_RWY06",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AYAG_APRON",
+            "to": "AYAG_RWY24",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          }
+        ]
+      },
+      "node_count": 3,
+      "edge_count": 4
+    },
+    "AYAI": {
+      "name": "Aitape Airport",
+      "category": "small",
+      "position": {
+        "x": 142.346806,
+        "y": 3.048,
+        "z": -3.143611
+      },
+      "runway_count": 1,
+      "longest_runway_ft": 2769.0,
+      "taxiways": {
+        "nodes": [
+          {
+            "id": "AYAI_RWY16",
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "type": "runway",
+            "name": "Runway 16"
+          },
+          {
+            "id": "AYAI_RWY34",
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "type": "runway",
+            "name": "Runway 34"
+          },
+          {
+            "id": "AYAI_APRON",
+            "position": {
+              "x": 0.001,
+              "y": 0.0,
+              "z": 0.001
+            },
+            "type": "parking",
+            "name": "Apron"
+          }
+        ],
+        "edges": [
+          {
+            "from": "AYAI_RWY16",
+            "to": "AYAI_APRON",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AYAI_RWY34",
+            "to": "AYAI_APRON",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AYAI_APRON",
+            "to": "AYAI_RWY16",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AYAI_APRON",
+            "to": "AYAI_RWY34",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          }
+        ]
+      },
+      "node_count": 3,
+      "edge_count": 4
+    },
+    "AYAK": {
+      "name": "Aiambak Airport",
+      "category": "small",
+      "position": {
+        "x": 141.2675,
+        "y": 27.432000000000002,
+        "z": -7.342777777779999
+      },
+      "runway_count": 1,
+      "longest_runway_ft": 2526.0,
+      "taxiways": {
+        "nodes": [
+          {
+            "id": "AYAK_RWY13",
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "type": "runway",
+            "name": "Runway 13"
+          },
+          {
+            "id": "AYAK_RWY31",
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "type": "runway",
+            "name": "Runway 31"
+          },
+          {
+            "id": "AYAK_APRON",
+            "position": {
+              "x": 0.001,
+              "y": 0.0,
+              "z": 0.001
+            },
+            "type": "parking",
+            "name": "Apron"
+          }
+        ],
+        "edges": [
+          {
+            "from": "AYAK_RWY13",
+            "to": "AYAK_APRON",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AYAK_RWY31",
+            "to": "AYAK_APRON",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AYAK_APRON",
+            "to": "AYAK_RWY13",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AYAK_APRON",
+            "to": "AYAK_RWY31",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          }
+        ]
+      },
+      "node_count": 3,
+      "edge_count": 4
+    },
+    "AYAO": {
+      "name": "Aiome Airport",
+      "category": "medium",
+      "position": {
+        "x": 144.7307003,
+        "y": 106.68,
+        "z": -5.145699978
+      },
+      "runway_count": 1,
+      "longest_runway_ft": 3281.0,
+      "taxiways": {
+        "nodes": [
+          {
+            "id": "AYAO_RWY01",
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "type": "runway",
+            "name": "Runway 01"
+          },
+          {
+            "id": "AYAO_RWY19",
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "type": "runway",
+            "name": "Runway 19"
+          },
+          {
+            "id": "AYAO_A1",
+            "position": {
+              "x": 1.2246467991473531e-19,
+              "y": 0.0,
+              "z": 0.002
+            },
+            "type": "intersection",
+            "name": "Alpha 1"
+          },
+          {
+            "id": "AYAO_A2",
+            "position": {
+              "x": 1.2246467991473531e-19,
+              "y": 0.0,
+              "z": 0.002
+            },
+            "type": "intersection",
+            "name": "Alpha 2"
+          },
+          {
+            "id": "AYAO_A3",
+            "position": {
+              "x": 1.2246467991473531e-19,
+              "y": 0.0,
+              "z": 0.002
+            },
+            "type": "intersection",
+            "name": "Alpha 3"
+          },
+          {
+            "id": "AYAO_T1",
+            "position": {
+              "x": 2.4492935982947063e-19,
+              "y": 0.0,
+              "z": 0.004
+            },
+            "type": "gate",
+            "name": "Terminal 1"
+          }
+        ],
+        "edges": [
+          {
+            "from": "AYAO_RWY01",
+            "to": "AYAO_A1",
+            "distance_m": 222.0,
+            "type": "taxiway",
+            "name": "L1"
+          },
+          {
+            "from": "AYAO_RWY19",
+            "to": "AYAO_A3",
+            "distance_m": 222.0,
+            "type": "taxiway",
+            "name": "L2"
+          },
+          {
+            "from": "AYAO_A1",
+            "to": "AYAO_A2",
+            "distance_m": 0.0,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AYAO_A1",
+            "to": "AYAO_RWY01",
+            "distance_m": 222.0,
+            "type": "taxiway",
+            "name": "L1"
+          },
+          {
+            "from": "AYAO_A2",
+            "to": "AYAO_A1",
+            "distance_m": 0.0,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AYAO_A2",
+            "to": "AYAO_A3",
+            "distance_m": 0.0,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AYAO_A2",
+            "to": "AYAO_T1",
+            "distance_m": 222.0,
+            "type": "taxiway",
+            "name": "L3"
+          },
+          {
+            "from": "AYAO_A3",
+            "to": "AYAO_A2",
+            "distance_m": 0.0,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AYAO_A3",
+            "to": "AYAO_RWY19",
+            "distance_m": 222.0,
+            "type": "taxiway",
+            "name": "L2"
+          },
+          {
+            "from": "AYAO_T1",
+            "to": "AYAO_A2",
+            "distance_m": 222.0,
+            "type": "taxiway",
+            "name": "L3"
+          }
+        ]
+      },
+      "node_count": 6,
+      "edge_count": 10
+    },
+    "AYAQ": {
+      "name": "Kompiam Airport",
+      "category": "small",
+      "position": {
+        "x": 143.924722222,
+        "y": 1554.48,
+        "z": -5.38166666667
+      },
+      "runway_count": 1,
+      "longest_runway_ft": 2559.0,
+      "taxiways": {
+        "nodes": [
+          {
+            "id": "AYAQ_RWY05",
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "type": "runway",
+            "name": "Runway 05"
+          },
+          {
+            "id": "AYAQ_RWY23",
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "type": "runway",
+            "name": "Runway 23"
+          },
+          {
+            "id": "AYAQ_APRON",
+            "position": {
+              "x": 0.001,
+              "y": 0.0,
+              "z": 0.001
+            },
+            "type": "parking",
+            "name": "Apron"
+          }
+        ],
+        "edges": [
+          {
+            "from": "AYAQ_RWY05",
+            "to": "AYAQ_APRON",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AYAQ_RWY23",
+            "to": "AYAQ_APRON",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AYAQ_APRON",
+            "to": "AYAQ_RWY05",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AYAQ_APRON",
+            "to": "AYAQ_RWY23",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          }
+        ]
+      },
+      "node_count": 3,
+      "edge_count": 4
+    },
+    "AYAT": {
+      "name": "Ambunti Airport",
+      "category": "small",
+      "position": {
+        "x": 142.823166667,
+        "y": 15.24,
+        "z": -4.21566666667
+      },
+      "runway_count": 1,
+      "longest_runway_ft": 2461.0,
+      "taxiways": {
+        "nodes": [
+          {
+            "id": "AYAT_RWY14",
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "type": "runway",
+            "name": "Runway 14"
+          },
+          {
+            "id": "AYAT_RWY32",
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "type": "runway",
+            "name": "Runway 32"
+          },
+          {
+            "id": "AYAT_APRON",
+            "position": {
+              "x": 0.001,
+              "y": 0.0,
+              "z": 0.001
+            },
+            "type": "parking",
+            "name": "Apron"
+          }
+        ],
+        "edges": [
+          {
+            "from": "AYAT_RWY14",
+            "to": "AYAT_APRON",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AYAT_RWY32",
+            "to": "AYAT_APRON",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AYAT_APRON",
+            "to": "AYAT_RWY14",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AYAT_APRON",
+            "to": "AYAT_RWY32",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          }
+        ]
+      },
+      "node_count": 3,
+      "edge_count": 4
+    },
+    "AYAU": {
+      "name": "Arou Airstrip",
+      "category": "small",
+      "position": {
+        "x": 142.5137,
+        "y": 1472.184,
+        "z": -5.4951
+      },
+      "runway_count": 1,
+      "longest_runway_ft": 2001.0,
+      "taxiways": {
+        "nodes": [
+          {
+            "id": "AYAU_RWY14",
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "type": "runway",
+            "name": "Runway 14"
+          },
+          {
+            "id": "AYAU_RWY32",
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "type": "runway",
+            "name": "Runway 32"
+          },
+          {
+            "id": "AYAU_APRON",
+            "position": {
+              "x": 0.001,
+              "y": 0.0,
+              "z": 0.001
+            },
+            "type": "parking",
+            "name": "Apron"
+          }
+        ],
+        "edges": [
+          {
+            "from": "AYAU_RWY14",
+            "to": "AYAU_APRON",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AYAU_RWY32",
+            "to": "AYAU_APRON",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AYAU_APRON",
+            "to": "AYAU_RWY14",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AYAU_APRON",
+            "to": "AYAU_RWY32",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          }
+        ]
+      },
+      "node_count": 3,
+      "edge_count": 4
+    },
+    "AYAW": {
+      "name": "Awaba Airport",
+      "category": "small",
+      "position": {
+        "x": 142.752099,
+        "y": 9.7536,
+        "z": -8.013414
+      },
+      "runway_count": 1,
+      "longest_runway_ft": 2313.0,
+      "taxiways": {
+        "nodes": [
+          {
+            "id": "AYAW_RWY18",
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "type": "runway",
+            "name": "Runway 18"
+          },
+          {
+            "id": "AYAW_RWY36",
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "type": "runway",
+            "name": "Runway 36"
+          },
+          {
+            "id": "AYAW_APRON",
+            "position": {
+              "x": 0.001,
+              "y": 0.0,
+              "z": 0.001
+            },
+            "type": "parking",
+            "name": "Apron"
+          }
+        ],
+        "edges": [
+          {
+            "from": "AYAW_RWY18",
+            "to": "AYAW_APRON",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AYAW_RWY36",
+            "to": "AYAW_APRON",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AYAW_APRON",
+            "to": "AYAW_RWY18",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AYAW_APRON",
+            "to": "AYAW_RWY36",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          }
+        ]
+      },
+      "node_count": 3,
+      "edge_count": 4
+    },
+    "AYAY": {
+      "name": "Aiyura Airport",
+      "category": "medium",
+      "position": {
+        "x": 145.904166667,
+        "y": 1632.2040000000002,
+        "z": -6.33805555556
+      },
+      "runway_count": 1,
+      "longest_runway_ft": 4200.0,
+      "taxiways": {
+        "nodes": [
+          {
+            "id": "AYAY_RWY14",
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "type": "runway",
+            "name": "Runway 14"
+          },
+          {
+            "id": "AYAY_RWY32",
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "type": "runway",
+            "name": "Runway 32"
+          },
+          {
+            "id": "AYAY_A1",
+            "position": {
+              "x": 1.2246467991473531e-19,
+              "y": 0.0,
+              "z": 0.002
+            },
+            "type": "intersection",
+            "name": "Alpha 1"
+          },
+          {
+            "id": "AYAY_A2",
+            "position": {
+              "x": 1.2246467991473531e-19,
+              "y": 0.0,
+              "z": 0.002
+            },
+            "type": "intersection",
+            "name": "Alpha 2"
+          },
+          {
+            "id": "AYAY_A3",
+            "position": {
+              "x": 1.2246467991473531e-19,
+              "y": 0.0,
+              "z": 0.002
+            },
+            "type": "intersection",
+            "name": "Alpha 3"
+          },
+          {
+            "id": "AYAY_T1",
+            "position": {
+              "x": 2.4492935982947063e-19,
+              "y": 0.0,
+              "z": 0.004
+            },
+            "type": "gate",
+            "name": "Terminal 1"
+          }
+        ],
+        "edges": [
+          {
+            "from": "AYAY_RWY14",
+            "to": "AYAY_A1",
+            "distance_m": 222.0,
+            "type": "taxiway",
+            "name": "L1"
+          },
+          {
+            "from": "AYAY_RWY32",
+            "to": "AYAY_A3",
+            "distance_m": 222.0,
+            "type": "taxiway",
+            "name": "L2"
+          },
+          {
+            "from": "AYAY_A1",
+            "to": "AYAY_A2",
+            "distance_m": 0.0,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AYAY_A1",
+            "to": "AYAY_RWY14",
+            "distance_m": 222.0,
+            "type": "taxiway",
+            "name": "L1"
+          },
+          {
+            "from": "AYAY_A2",
+            "to": "AYAY_A1",
+            "distance_m": 0.0,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AYAY_A2",
+            "to": "AYAY_A3",
+            "distance_m": 0.0,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AYAY_A2",
+            "to": "AYAY_T1",
+            "distance_m": 222.0,
+            "type": "taxiway",
+            "name": "L3"
+          },
+          {
+            "from": "AYAY_A3",
+            "to": "AYAY_A2",
+            "distance_m": 0.0,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AYAY_A3",
+            "to": "AYAY_RWY32",
+            "distance_m": 222.0,
+            "type": "taxiway",
+            "name": "L2"
+          },
+          {
+            "from": "AYAY_T1",
+            "to": "AYAY_A2",
+            "distance_m": 222.0,
+            "type": "taxiway",
+            "name": "L3"
+          }
+        ]
+      },
+      "node_count": 6,
+      "edge_count": 10
+    },
+    "AYBA": {
+      "name": "Baimuru Airport",
+      "category": "small",
+      "position": {
+        "x": 144.821756,
+        "y": 8.2296,
+        "z": -7.496955
+      },
+      "runway_count": 1,
+      "longest_runway_ft": 2953.0,
+      "taxiways": {
+        "nodes": [
+          {
+            "id": "AYBA_RWY04",
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "type": "runway",
+            "name": "Runway 04"
+          },
+          {
+            "id": "AYBA_RWY22",
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "type": "runway",
+            "name": "Runway 22"
+          },
+          {
+            "id": "AYBA_APRON",
+            "position": {
+              "x": 0.001,
+              "y": 0.0,
+              "z": 0.001
+            },
+            "type": "parking",
+            "name": "Apron"
+          }
+        ],
+        "edges": [
+          {
+            "from": "AYBA_RWY04",
+            "to": "AYBA_APRON",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AYBA_RWY22",
+            "to": "AYBA_APRON",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AYBA_APRON",
+            "to": "AYBA_RWY04",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AYBA_APRON",
+            "to": "AYBA_RWY22",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          }
+        ]
+      },
+      "node_count": 3,
+      "edge_count": 4
+    },
+    "AYBH": {
+      "name": "Bensbach Airport",
+      "category": "small",
+      "position": {
+        "x": 141.259444444,
+        "y": 9.144,
+        "z": -8.85805555556
+      },
+      "runway_count": 1,
+      "longest_runway_ft": 2772.0,
+      "taxiways": {
+        "nodes": [
+          {
+            "id": "AYBH_RWY14",
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "type": "runway",
+            "name": "Runway 14"
+          },
+          {
+            "id": "AYBH_RWY32",
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "type": "runway",
+            "name": "Runway 32"
+          },
+          {
+            "id": "AYBH_APRON",
+            "position": {
+              "x": 0.001,
+              "y": 0.0,
+              "z": 0.001
+            },
+            "type": "parking",
+            "name": "Apron"
+          }
+        ],
+        "edges": [
+          {
+            "from": "AYBH_RWY14",
+            "to": "AYBH_APRON",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AYBH_RWY32",
+            "to": "AYBH_APRON",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AYBH_APRON",
+            "to": "AYBH_RWY14",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AYBH_APRON",
+            "to": "AYBH_RWY32",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          }
+        ]
+      },
+      "node_count": 3,
+      "edge_count": 4
+    },
+    "AYBI": {
+      "name": "Bewani Airport",
+      "category": "small",
+      "position": {
+        "x": 141.165277778,
+        "y": 167.64000000000001,
+        "z": -3.0216666666700003
+      },
+      "runway_count": 1,
+      "longest_runway_ft": 2500.0,
+      "taxiways": {
+        "nodes": [
+          {
+            "id": "AYBI_RWY14",
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "type": "runway",
+            "name": "Runway 14"
+          },
+          {
+            "id": "AYBI_RWY32",
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "type": "runway",
+            "name": "Runway 32"
+          },
+          {
+            "id": "AYBI_APRON",
+            "position": {
+              "x": 0.001,
+              "y": 0.0,
+              "z": 0.001
+            },
+            "type": "parking",
+            "name": "Apron"
+          }
+        ],
+        "edges": [
+          {
+            "from": "AYBI_RWY14",
+            "to": "AYBI_APRON",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AYBI_RWY32",
+            "to": "AYBI_APRON",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AYBI_APRON",
+            "to": "AYBI_RWY14",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AYBI_APRON",
+            "to": "AYBI_RWY32",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          }
+        ]
+      },
+      "node_count": 3,
+      "edge_count": 4
+    },
+    "AYBK": {
+      "name": "Buka Airport",
+      "category": "medium",
+      "position": {
+        "x": 154.672698,
+        "y": 3.3528000000000002,
+        "z": -5.422299
+      },
+      "runway_count": 1,
+      "longest_runway_ft": 5125.0,
+      "taxiways": {
+        "nodes": [
+          {
+            "id": "AYBK_RWY04",
+            "position": {
+              "x": 154.66700744628906,
+              "y": 3.3528000000000002,
+              "z": -5.4270100593566895
+            },
+            "type": "runway",
+            "name": "Runway 04"
+          },
+          {
+            "id": "AYBK_RWY22",
+            "position": {
+              "x": 154.67799377441406,
+              "y": 2.7432000000000003,
+              "z": -5.417510032653809
+            },
+            "type": "runway",
+            "name": "Runway 22"
+          },
+          {
+            "id": "AYBK_A1",
+            "position": {
+              "x": 154.66826773866936,
+              "y": 3.2004,
+              "z": -5.4232967914682515
+            },
+            "type": "intersection",
+            "name": "Alpha 1"
+          },
+          {
+            "id": "AYBK_A2",
+            "position": {
+              "x": 154.6710143207006,
+              "y": 3.048,
+              "z": -5.420921784792531
+            },
+            "type": "intersection",
+            "name": "Alpha 2"
+          },
+          {
+            "id": "AYBK_A3",
+            "position": {
+              "x": 154.67376090273186,
+              "y": 2.8956,
+              "z": -5.418546778116811
+            },
+            "type": "intersection",
+            "name": "Alpha 3"
+          },
+          {
+            "id": "AYBK_T1",
+            "position": {
+              "x": 154.66952803104965,
+              "y": 3.048,
+              "z": -5.4195835235798135
+            },
+            "type": "gate",
+            "name": "Terminal 1"
+          }
+        ],
+        "edges": [
+          {
+            "from": "AYBK_RWY04",
+            "to": "AYBK_A1",
+            "distance_m": 435.0647699284318,
+            "type": "taxiway",
+            "name": "L1"
+          },
+          {
+            "from": "AYBK_RWY22",
+            "to": "AYBK_A3",
+            "distance_m": 481.69787582689213,
+            "type": "taxiway",
+            "name": "L2"
+          },
+          {
+            "from": "AYBK_A1",
+            "to": "AYBK_A2",
+            "distance_m": 402.0133592916312,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AYBK_A1",
+            "to": "AYBK_RWY04",
+            "distance_m": 435.0647699284318,
+            "type": "taxiway",
+            "name": "L1"
+          },
+          {
+            "from": "AYBK_A2",
+            "to": "AYBK_A1",
+            "distance_m": 402.0133592916312,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AYBK_A2",
+            "to": "AYBK_A3",
+            "distance_m": 402.01426063027026,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AYBK_A2",
+            "to": "AYBK_T1",
+            "distance_m": 221.45234916105437,
+            "type": "taxiway",
+            "name": "L3"
+          },
+          {
+            "from": "AYBK_A3",
+            "to": "AYBK_A2",
+            "distance_m": 402.01426063027026,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AYBK_A3",
+            "to": "AYBK_RWY22",
+            "distance_m": 481.69787582689213,
+            "type": "taxiway",
+            "name": "L2"
+          },
+          {
+            "from": "AYBK_T1",
+            "to": "AYBK_A2",
+            "distance_m": 221.45234916105437,
+            "type": "taxiway",
+            "name": "L3"
+          }
+        ]
+      },
+      "node_count": 6,
+      "edge_count": 10
+    },
+    "AYBO": {
+      "name": "Bomai Airport",
+      "category": "small",
+      "position": {
+        "x": 144.637,
+        "y": 1005.84,
+        "z": -6.37316666667
+      },
+      "runway_count": 1,
+      "longest_runway_ft": 2395.0,
+      "taxiways": {
+        "nodes": [
+          {
+            "id": "AYBO_RWY01",
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "type": "runway",
+            "name": "Runway 01"
+          },
+          {
+            "id": "AYBO_RWY19",
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "type": "runway",
+            "name": "Runway 19"
+          },
+          {
+            "id": "AYBO_APRON",
+            "position": {
+              "x": 0.001,
+              "y": 0.0,
+              "z": 0.001
+            },
+            "type": "parking",
+            "name": "Apron"
+          }
+        ],
+        "edges": [
+          {
+            "from": "AYBO_RWY01",
+            "to": "AYBO_APRON",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AYBO_RWY19",
+            "to": "AYBO_APRON",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AYBO_APRON",
+            "to": "AYBO_RWY01",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AYBO_APRON",
+            "to": "AYBO_RWY19",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          }
+        ]
+      },
+      "node_count": 3,
+      "edge_count": 4
+    },
+    "AYBU": {
+      "name": "Bulolo Airport",
+      "category": "medium",
+      "position": {
+        "x": 146.649541855,
+        "y": 682.7520000000001,
+        "z": -7.216286671410001
+      },
+      "runway_count": 1,
+      "longest_runway_ft": 4373.0,
+      "taxiways": {
+        "nodes": [
+          {
+            "id": "AYBU_RWY15",
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "type": "runway",
+            "name": "Runway 15"
+          },
+          {
+            "id": "AYBU_RWY33",
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "type": "runway",
+            "name": "Runway 33"
+          },
+          {
+            "id": "AYBU_A1",
+            "position": {
+              "x": 1.2246467991473531e-19,
+              "y": 0.0,
+              "z": 0.002
+            },
+            "type": "intersection",
+            "name": "Alpha 1"
+          },
+          {
+            "id": "AYBU_A2",
+            "position": {
+              "x": 1.2246467991473531e-19,
+              "y": 0.0,
+              "z": 0.002
+            },
+            "type": "intersection",
+            "name": "Alpha 2"
+          },
+          {
+            "id": "AYBU_A3",
+            "position": {
+              "x": 1.2246467991473531e-19,
+              "y": 0.0,
+              "z": 0.002
+            },
+            "type": "intersection",
+            "name": "Alpha 3"
+          },
+          {
+            "id": "AYBU_T1",
+            "position": {
+              "x": 2.4492935982947063e-19,
+              "y": 0.0,
+              "z": 0.004
+            },
+            "type": "gate",
+            "name": "Terminal 1"
+          }
+        ],
+        "edges": [
+          {
+            "from": "AYBU_RWY15",
+            "to": "AYBU_A1",
+            "distance_m": 222.0,
+            "type": "taxiway",
+            "name": "L1"
+          },
+          {
+            "from": "AYBU_RWY33",
+            "to": "AYBU_A3",
+            "distance_m": 222.0,
+            "type": "taxiway",
+            "name": "L2"
+          },
+          {
+            "from": "AYBU_A1",
+            "to": "AYBU_A2",
+            "distance_m": 0.0,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AYBU_A1",
+            "to": "AYBU_RWY15",
+            "distance_m": 222.0,
+            "type": "taxiway",
+            "name": "L1"
+          },
+          {
+            "from": "AYBU_A2",
+            "to": "AYBU_A1",
+            "distance_m": 0.0,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AYBU_A2",
+            "to": "AYBU_A3",
+            "distance_m": 0.0,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AYBU_A2",
+            "to": "AYBU_T1",
+            "distance_m": 222.0,
+            "type": "taxiway",
+            "name": "L3"
+          },
+          {
+            "from": "AYBU_A3",
+            "to": "AYBU_A2",
+            "distance_m": 0.0,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AYBU_A3",
+            "to": "AYBU_RWY33",
+            "distance_m": 222.0,
+            "type": "taxiway",
+            "name": "L2"
+          },
+          {
+            "from": "AYBU_T1",
+            "to": "AYBU_A2",
+            "distance_m": 222.0,
+            "type": "taxiway",
+            "name": "L3"
+          }
+        ]
+      },
+      "node_count": 6,
+      "edge_count": 10
+    },
+    "AYCG": {
+      "name": "Cape Gloucester Airport",
+      "category": "small",
+      "position": {
+        "x": 148.422289,
+        "y": 23.7744,
+        "z": -5.455231
+      },
+      "runway_count": 1,
+      "longest_runway_ft": 3543.0,
+      "taxiways": {
+        "nodes": [
+          {
+            "id": "AYCG_RWY08",
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "type": "runway",
+            "name": "Runway 08"
+          },
+          {
+            "id": "AYCG_RWY26",
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "type": "runway",
+            "name": "Runway 26"
+          },
+          {
+            "id": "AYCG_APRON",
+            "position": {
+              "x": 0.001,
+              "y": 0.0,
+              "z": 0.001
+            },
+            "type": "parking",
+            "name": "Apron"
+          }
+        ],
+        "edges": [
+          {
+            "from": "AYCG_RWY08",
+            "to": "AYCG_APRON",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AYCG_RWY26",
+            "to": "AYCG_APRON",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AYCG_APRON",
+            "to": "AYCG_RWY08",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AYCG_APRON",
+            "to": "AYCG_RWY26",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          }
+        ]
+      },
+      "node_count": 3,
+      "edge_count": 4
+    },
+    "AYCH": {
+      "name": "Chimbu Airport",
+      "category": "medium",
+      "position": {
+        "x": 144.9709930419922,
+        "y": 1516.0752,
+        "z": -6.024290084838867
+      },
+      "runway_count": 1,
+      "longest_runway_ft": 3330.0,
+      "taxiways": {
+        "nodes": [
+          {
+            "id": "AYCH_RWY03",
+            "position": {
+              "x": 144.96800231933594,
+              "y": 1516.0752,
+              "z": -6.027550220489502
+            },
+            "type": "runway",
+            "name": "Runway 03"
+          },
+          {
+            "id": "AYCH_RWY21",
+            "position": {
+              "x": 144.9739990234375,
+              "y": 1516.0752,
+              "z": -6.020209789276123
+            },
+            "type": "runway",
+            "name": "Runway 21"
+          },
+          {
+            "id": "AYCH_A1",
+            "position": {
+              "x": 144.968337249421,
+              "y": 1516.0752,
+              "z": -6.024088911164063
+            },
+            "type": "intersection",
+            "name": "Alpha 1"
+          },
+          {
+            "id": "AYCH_A2",
+            "position": {
+              "x": 144.9698364254464,
+              "y": 1516.0752,
+              "z": -6.0222538033607185
+            },
+            "type": "intersection",
+            "name": "Alpha 2"
+          },
+          {
+            "id": "AYCH_A3",
+            "position": {
+              "x": 144.9713356014718,
+              "y": 1516.0752,
+              "z": -6.020418695557374
+            },
+            "type": "intersection",
+            "name": "Alpha 3"
+          },
+          {
+            "id": "AYCH_T1",
+            "position": {
+              "x": 144.9686721795061,
+              "y": 1516.0752,
+              "z": -6.020627601838624
+            },
+            "type": "gate",
+            "name": "Terminal 1"
+          }
+        ],
+        "edges": [
+          {
+            "from": "AYCH_RWY03",
+            "to": "AYCH_A1",
+            "distance_m": 385.98012291202565,
+            "type": "taxiway",
+            "name": "L1"
+          },
+          {
+            "from": "AYCH_RWY21",
+            "to": "AYCH_A3",
+            "distance_m": 294.9223450576578,
+            "type": "taxiway",
+            "name": "L2"
+          },
+          {
+            "from": "AYCH_A1",
+            "to": "AYCH_A2",
+            "distance_m": 262.44876990995317,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AYCH_A1",
+            "to": "AYCH_RWY03",
+            "distance_m": 385.98012291202565,
+            "type": "taxiway",
+            "name": "L1"
+          },
+          {
+            "from": "AYCH_A2",
+            "to": "AYCH_A1",
+            "distance_m": 262.44876990995317,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AYCH_A2",
+            "to": "AYCH_A3",
+            "distance_m": 262.4491225067672,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AYCH_A2",
+            "to": "AYCH_T1",
+            "distance_m": 221.58570092121954,
+            "type": "taxiway",
+            "name": "L3"
+          },
+          {
+            "from": "AYCH_A3",
+            "to": "AYCH_A2",
+            "distance_m": 262.4491225067672,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AYCH_A3",
+            "to": "AYCH_RWY21",
+            "distance_m": 294.9223450576578,
+            "type": "taxiway",
+            "name": "L2"
+          },
+          {
+            "from": "AYCH_T1",
+            "to": "AYCH_A2",
+            "distance_m": 221.58570092121954,
+            "type": "taxiway",
+            "name": "L3"
+          }
+        ]
+      },
+      "node_count": 6,
+      "edge_count": 10
+    },
+    "AYDB": {
+      "name": "Debepare Airport",
+      "category": "small",
+      "position": {
+        "x": 141.905555556,
+        "y": 109.72800000000001,
+        "z": -6.30861111111
+      },
+      "runway_count": 1,
+      "longest_runway_ft": 2585.0,
+      "taxiways": {
+        "nodes": [
+          {
+            "id": "AYDB_RWY12",
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "type": "runway",
+            "name": "Runway 12"
+          },
+          {
+            "id": "AYDB_RWY30",
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "type": "runway",
+            "name": "Runway 30"
+          },
+          {
+            "id": "AYDB_APRON",
+            "position": {
+              "x": 0.001,
+              "y": 0.0,
+              "z": 0.001
+            },
+            "type": "parking",
+            "name": "Apron"
+          }
+        ],
+        "edges": [
+          {
+            "from": "AYDB_RWY12",
+            "to": "AYDB_APRON",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AYDB_RWY30",
+            "to": "AYDB_APRON",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AYDB_APRON",
+            "to": "AYDB_RWY12",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AYDB_APRON",
+            "to": "AYDB_RWY30",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          }
+        ]
+      },
+      "node_count": 3,
+      "edge_count": 4
+    },
+    "AYDI": {
+      "name": "Bundi Airport",
+      "category": "small",
+      "position": {
+        "x": 145.2275,
+        "y": 1341.1200000000001,
+        "z": -5.742222222220001
+      },
+      "runway_count": 1,
+      "longest_runway_ft": 2198.0,
+      "taxiways": {
+        "nodes": [
+          {
+            "id": "AYDI_RWY15",
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "type": "runway",
+            "name": "Runway 15"
+          },
+          {
+            "id": "AYDI_RWY33",
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "type": "runway",
+            "name": "Runway 33"
+          },
+          {
+            "id": "AYDI_APRON",
+            "position": {
+              "x": 0.001,
+              "y": 0.0,
+              "z": 0.001
+            },
+            "type": "parking",
+            "name": "Apron"
+          }
+        ],
+        "edges": [
+          {
+            "from": "AYDI_RWY15",
+            "to": "AYDI_APRON",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AYDI_RWY33",
+            "to": "AYDI_APRON",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AYDI_APRON",
+            "to": "AYDI_RWY15",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AYDI_APRON",
+            "to": "AYDI_RWY33",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          }
+        ]
+      },
+      "node_count": 3,
+      "edge_count": 4
+    },
+    "AYDK": {
+      "name": "Munduku Airport",
+      "category": "small",
+      "position": {
+        "x": 143.4516,
+        "y": 30.48,
+        "z": -4.6204
+      },
+      "runway_count": 1,
+      "longest_runway_ft": 2800.0,
+      "taxiways": {
+        "nodes": [
+          {
+            "id": "AYDK_RWY10",
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "type": "runway",
+            "name": "Runway 10"
+          },
+          {
+            "id": "AYDK_RWY28",
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "type": "runway",
+            "name": "Runway 28"
+          },
+          {
+            "id": "AYDK_APRON",
+            "position": {
+              "x": 0.001,
+              "y": 0.0,
+              "z": 0.001
+            },
+            "type": "parking",
+            "name": "Apron"
+          }
+        ],
+        "edges": [
+          {
+            "from": "AYDK_RWY10",
+            "to": "AYDK_APRON",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AYDK_RWY28",
+            "to": "AYDK_APRON",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AYDK_APRON",
+            "to": "AYDK_RWY10",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AYDK_APRON",
+            "to": "AYDK_RWY28",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          }
+        ]
+      },
+      "node_count": 3,
+      "edge_count": 4
+    },
+    "AYDO": {
+      "name": "Doini Airport",
+      "category": "small",
+      "position": {
+        "x": 150.7218,
+        "y": 9.4488,
+        "z": -10.7009
+      },
+      "runway_count": 1,
+      "longest_runway_ft": 2051.0,
+      "taxiways": {
+        "nodes": [
+          {
+            "id": "AYDO_RWY10",
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "type": "runway",
+            "name": "Runway 10"
+          },
+          {
+            "id": "AYDO_RWY28",
+            "position": {
+              "x": 0.0,
+              "y": 0.0,
+              "z": 0.0
+            },
+            "type": "runway",
+            "name": "Runway 28"
+          },
+          {
+            "id": "AYDO_APRON",
+            "position": {
+              "x": 0.001,
+              "y": 0.0,
+              "z": 0.001
+            },
+            "type": "parking",
+            "name": "Apron"
+          }
+        ],
+        "edges": [
+          {
+            "from": "AYDO_RWY10",
+            "to": "AYDO_APRON",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AYDO_RWY28",
+            "to": "AYDO_APRON",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AYDO_APRON",
+            "to": "AYDO_RWY10",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          },
+          {
+            "from": "AYDO_APRON",
+            "to": "AYDO_RWY28",
+            "distance_m": 156.9777054204249,
+            "type": "taxiway",
+            "name": "A"
+          }
+        ]
+      },
+      "node_count": 3,
+      "edge_count": 4
+    }
+  },
+  "statistics": {
+    "total_processed": 50,
+    "by_category": {
+      "small": 36,
+      "medium": 12,
+      "large": 2,
+      "extra_large": 0
+    },
+    "skipped": {
+      "no_runways": 38,
+      "short_runways": 20
+    }
+  }
+}

@@ -55,9 +55,6 @@ dmypy.json
 .DS_Store
 
 # Project specific
-data/airports/*.csv
-data/terrain/cache/
-data/speech/**/*.wav
 *.log
 
 # Documentation builds
@@ -67,7 +64,6 @@ docs/.doctrees/
 # Temporary files
 *.tmp
 *.bak
-data/airports/taxiway_cache*.json
 # Kokoro TTS models (download via scripts/install_kokoro.sh)
 assets/models/*.onnx
 assets/models/*.bin

@@ -35,6 +35,17 @@ actions:
       - type: network
         command: "open_ground_services_menu"
 
+  # Performance Display (FMC/PFD)
+  MENU_PERFORMANCE_DISPLAY:
+    bindings:
+      - type: keyboard
+        key: F4
+      - type: joystick_button
+        button: 3
+        device: any
+      - type: network
+        command: "toggle_performance_display"
+
   # Menu Navigation - Up
   MENU_UP:
     bindings:
