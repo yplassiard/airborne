@@ -228,10 +228,19 @@ class AirBorne:
             # Extract flight model config from aircraft config
             flight_model_config = config.get("aircraft", {}).get("flight_model_config", {})
 
+            # Extract propeller config from physics section
+            physics_config = config.get("physics", {})
+            propeller_config = physics_config.get("propeller", {})
+
             # Update plugin context with flight model config
             self.plugin_context.config["physics"] = {
                 "flight_model": {"type": "simple_6dof", **flight_model_config}
             }
+
+            # Add propeller config if present
+            if propeller_config:
+                self.plugin_context.config["propeller"] = propeller_config
+                logger.info(f"Propeller config loaded: {propeller_config.get('type', 'unknown')}")
 
             # Extract audio config from aircraft config
             audio_config = config.get("aircraft", {}).get("audio", {})

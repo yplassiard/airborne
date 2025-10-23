@@ -240,6 +240,17 @@ class Simple6DOFFlightModel(IFlightModel):
                 airspeed_mps=airspeed,
                 air_density_kgm3=AIR_DENSITY_SEA_LEVEL,
             )
+            # Debug logging every 60 frames (~1 second at 60 FPS)
+            if hasattr(self, '_thrust_log_counter'):
+                self._thrust_log_counter += 1
+            else:
+                self._thrust_log_counter = 0
+
+            if self._thrust_log_counter % 60 == 0:
+                logger.debug(
+                    f"Propeller thrust: {thrust_magnitude:.1f}N from {self.engine_power_hp:.1f}HP "
+                    f"@ {self.engine_rpm:.0f}RPM, airspeed={airspeed:.1f}m/s"
+                )
         else:
             # Fallback: Simple thrust model based on throttle
             thrust_magnitude = inputs.throttle * self.max_thrust

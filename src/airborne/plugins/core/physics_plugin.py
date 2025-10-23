@@ -265,16 +265,18 @@ class PhysicsPlugin(IPlugin):
         elif message.topic == MessageTopic.ENGINE_STATE:
             # Update engine state for propeller thrust calculations
             data = message.data
+            # Accept both "horsepower" (from engine) and "power_hp" (alternative)
+            power_hp = data.get("horsepower") or data.get("power_hp", 0.0)
+            rpm = data.get("rpm", 0.0)
+
             if (
-                "power_hp" in data
-                and "rpm" in data
-                and self.flight_model
+                self.flight_model
                 and hasattr(self.flight_model, "engine_power_hp")
                 and hasattr(self.flight_model, "engine_rpm")
             ):
                 # Update flight model's engine power and RPM (Simple6DOF specific)
-                self.flight_model.engine_power_hp = float(data["power_hp"])  # type: ignore[attr-defined]
-                self.flight_model.engine_rpm = float(data["rpm"])  # type: ignore[attr-defined]
+                self.flight_model.engine_power_hp = float(power_hp)  # type: ignore[attr-defined]
+                self.flight_model.engine_rpm = float(rpm)  # type: ignore[attr-defined]
 
         elif message.topic == "weight_balance.updated":
             # Update aircraft mass from weight & balance system
