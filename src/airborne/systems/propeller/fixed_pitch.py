@@ -117,26 +117,58 @@ class FixedPitchPropeller(IPropeller):
 
         # Calculate thrust based on airspeed regime
         if airspeed_mps < 1.0:
-            # Static or very low speed: use thrust coefficient method
-            # More accurate than simple momentum theory
-            # T = C_T × ρ × n² × D⁴
-            # Where C_T (thrust coefficient) ≈ 0.08-0.12 for fixed-pitch props
-
-            # Calculate rotations per second
-            rps = rpm / 60.0
-
-            # Thrust coefficient varies with pitch and efficiency
-            # Higher pitch = higher C_T, higher efficiency = higher C_T
-            c_t = 0.06 + (self.pitch_ratio - 0.5) * 0.1 + efficiency * 0.04
-            c_t = max(0.04, min(0.15, c_t))  # Clamp to realistic range
-
-            # Calculate static thrust
-            thrust = c_t * air_density_kgm3 * (rps**2) * (self.diameter**4)
+            # Static thrust: use momentum theory
+            # T_static = sqrt(η × P × ρ × A)
+            # Where:
+            #   η = propeller efficiency at static conditions
+            #   P = power in Watts
+            #   ρ = air density (kg/m³)
+            #   A = propeller disc area (m²)
+            thrust = math.sqrt(efficiency * power_watts * air_density_kgm3 * self.disc_area)
         else:
-            # Dynamic thrust: use power-velocity relationship
-            # T = (η × P) / v
-            # As speed increases, thrust decreases for given power
-            thrust = (efficiency * power_watts) / airspeed_mps
+            # Dynamic thrust: Combined momentum and blade element theory
+            # At low speeds, use momentum theory with correction
+            # At high speeds, use power-velocity relationship
+
+            # Momentum theory component (dominates at low speed)
+            thrust_momentum = math.sqrt(efficiency * power_watts * air_density_kgm3 * self.disc_area)
+
+            # Power-velocity component (dominates at high speed)
+            # T = (η × P) / (v + v_induced)
+            # Approximate v_induced from momentum theory: v_i = sqrt(T / (2 × ρ × A))
+            # For simplicity, use a blended formula
+
+            # Blended formula that transitions smoothly
+            # At low v: thrust ≈ T_static
+            # At high v: thrust ≈ (η × P) / v
+
+            # Use empirical blend factor based on advance ratio
+            rps = rpm / 60.0
+            if rps > 0:
+                advance_ratio = airspeed_mps / (rps * self.diameter)
+            else:
+                advance_ratio = 0
+
+            # Blend between static and dynamic formulas
+            # At J < 0.2: mostly static formula
+            # At J > 0.6: mostly dynamic formula
+            if advance_ratio < 0.2:
+                blend = 0.1  # 90% static, 10% dynamic
+            elif advance_ratio > 0.6:
+                blend = 0.9  # 10% static, 90% dynamic
+            else:
+                # Linear interpolation
+                blend = (advance_ratio - 0.2) / (0.6 - 0.2)
+
+            # Simple dynamic thrust (with limiting)
+            thrust_dynamic = (efficiency * power_watts) / (airspeed_mps + 1.0)  # +1 to prevent division issues
+
+            # Blend the two methods
+            thrust = (1.0 - blend) * thrust_momentum + blend * thrust_dynamic
+
+            # Clamp to reasonable maximum (can't exceed static thrust by more than 20%)
+            max_thrust = thrust_momentum * 1.2
+            thrust = min(thrust, max_thrust)
 
         return thrust
 

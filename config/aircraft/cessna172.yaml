@@ -21,8 +21,8 @@ aircraft:
     type: "fixed_pitch"           # Fixed-pitch propeller (typical for C172)
     diameter_m: 1.905             # 75 inches = 1.905 meters
     pitch_ratio: 0.6              # Pitch/diameter ratio (0.6 = climb prop)
-    efficiency_static: 0.50       # Efficiency at v=0 (static thrust)
-    efficiency_cruise: 0.80       # Peak efficiency at cruise speed
+    efficiency_static: 0.72       # Efficiency at v=0 (tuned for realistic T/W ~0.10)
+    efficiency_cruise: 0.85       # Peak efficiency at cruise speed
     cruise_advance_ratio: 0.6     # Advance ratio where efficiency peaks
 
   # Aircraft systems plugins
