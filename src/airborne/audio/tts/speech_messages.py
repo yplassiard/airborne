@@ -165,12 +165,13 @@ class SpeechMessages:
         rounded = round(knots / 5) * 5
         rounded = max(0, min(300, rounded))
 
-        # Always use composable parts: "airspeed" + digits + "knots"
-        return (
-            [SpeechMessages.MSG_WORD_AIRSPEED]
-            + SpeechMessages._digits_to_keys(rounded)
-            + [SpeechMessages.MSG_WORD_KNOTS]
-        )
+        # Cockpit voice uses natural number pronunciation (e.g., "one hundred fifty")
+        # Use autogen files for numbers
+        return [
+            SpeechMessages.MSG_WORD_AIRSPEED,
+            f"cockpit/number_{rounded}_autogen",
+            SpeechMessages.MSG_WORD_KNOTS,
+        ]
 
     @staticmethod
     def altitude(feet: int) -> list[str]:

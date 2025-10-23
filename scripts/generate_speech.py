@@ -501,6 +501,64 @@ def sanitize_filename(text):
     )
 
 
+def number_to_words(num):
+    """Convert number to natural English words.
+
+    Args:
+        num: Number to convert (0-1000)
+
+    Returns:
+        String representation in words (e.g., 150 -> "one hundred fifty")
+    """
+    if num == 0:
+        return "zero"
+
+    if num < 0 or num > 1000:
+        return str(num)
+
+    # Special case for 1000
+    if num == 1000:
+        return "one thousand"
+
+    ones = ["", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine"]
+    teens = [
+        "ten",
+        "eleven",
+        "twelve",
+        "thirteen",
+        "fourteen",
+        "fifteen",
+        "sixteen",
+        "seventeen",
+        "eighteen",
+        "nineteen",
+    ]
+    tens = ["", "", "twenty", "thirty", "forty", "fifty", "sixty", "seventy", "eighty", "ninety"]
+
+    result = []
+
+    # Hundreds place
+    if num >= 100:
+        hundreds_digit = num // 100
+        result.append(ones[hundreds_digit])
+        result.append("hundred")
+        num = num % 100
+
+    # Tens and ones places
+    if num >= 20:
+        tens_digit = num // 10
+        result.append(tens[tens_digit])
+        num = num % 10
+        if num > 0:
+            result.append(ones[num])
+    elif num >= 10:
+        result.append(teens[num - 10])
+    elif num > 0:
+        result.append(ones[num])
+
+    return " ".join(result)
+
+
 def generate_voice_messages(voice_name, voice_config, messages, base_dir, force=False):
     """Generate all messages for a specific voice.
 
@@ -608,8 +666,8 @@ def generate_voice_messages(voice_name, voice_config, messages, base_dir, force=
                     items_to_generate.append((state, output_path))
                     generated += 1
 
-    # Generate numbers 0-100 for cockpit, pilot, and ground voices
-    if voice_name in ["cockpit", "pilot", "ground", "tower", "approach"]:
+    # Generate numbers 0-100 for pilot, ground, tower, approach voices (digit-based)
+    if voice_name in ["pilot", "ground", "tower", "approach"]:
         print(f"\n  Generating numbers 0-100 for {voice_name} voice...")
         for num in range(0, 101):
             output_path = output_dir / f"MSG_NUMBER_{num}.wav"
@@ -618,7 +676,21 @@ def generate_voice_messages(voice_name, voice_config, messages, base_dir, force=
             else:
                 items_to_generate.append((str(num), output_path))
                 generated += 1
-        print(f"  Added 101 MSG_NUMBER files to generation queue")
+        print("  Added 101 MSG_NUMBER files to generation queue")
+
+    # Generate numbers 0-1000 for cockpit voice (natural number pronunciation with _autogen suffix)
+    if voice_name == "cockpit":
+        print("\n  Generating numbers 0-1000 for cockpit voice (natural pronunciation)...")
+        for num in range(0, 1001):
+            output_path = output_dir / f"number_{num}_autogen.wav"
+            if output_path.exists() and not force:
+                skipped += 1
+            else:
+                # Convert number to natural speech (e.g., 150 -> "one hundred fifty")
+                text = number_to_words(num)
+                items_to_generate.append((text, output_path))
+                generated += 1
+        print("  Added 1001 number files (0-1000) with natural pronunciation to generation queue")
 
     # Batch generate all collected items
     if items_to_generate:
