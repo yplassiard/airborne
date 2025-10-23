@@ -302,7 +302,7 @@ build_linux() {
     log_info "Building Linux tarball..."
 
     # Build with PyInstaller (creates dist/airborne directory)
-    uv run pyinstaller airborne.spec --onedir
+    uv run pyinstaller airborne.spec
 
     if [ -d "dist/airborne" ]; then
         # Create tarball
@@ -337,7 +337,7 @@ build_windows() {
     fi
 
     # Build with PyInstaller
-    uv run pyinstaller airborne.spec --onedir
+    uv run pyinstaller airborne.spec
 
     if [ -d "dist/airborne" ]; then
         # Generate NSIS script
@@ -368,7 +368,7 @@ OutFile "AirBorne-Setup-${VERSIONMAJOR}.${VERSIONMINOR}.${VERSIONBUILD}.exe"
 !define MUI_UNICON "${NSISDIR}\Contrib\Graphics\Icons\modern-uninstall.ico"
 
 !insertmacro MUI_PAGE_WELCOME
-!insertmacro MUI_PAGE_LICENSE "../LICENSE"
+!insertmacro MUI_PAGE_LICENSE "LICENSE"
 !insertmacro MUI_PAGE_DIRECTORY
 !insertmacro MUI_PAGE_INSTFILES
 !insertmacro MUI_PAGE_FINISH
@@ -423,11 +423,11 @@ Section "Uninstall"
 SectionEnd
 NSIS_EOF
 
-        # Create LICENSE file if it doesn't exist
-        if [ ! -f "LICENSE" ]; then
-            echo "MIT License - See https://github.com/yourusername/airborne" > dist/LICENSE
-        else
+        # Create LICENSE file in dist directory
+        if [ -f "LICENSE" ]; then
             cp LICENSE dist/
+        else
+            echo "MIT License - See https://github.com/yourusername/airborne" > dist/LICENSE
         fi
 
         # Build installer
