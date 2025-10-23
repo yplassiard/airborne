@@ -7,53 +7,53 @@ Useful for selecting voices for different characters in the flight simulator.
 """
 
 import time
-import soundfile as sf
 from pathlib import Path
-from kokoro_onnx import Kokoro
 
+import soundfile as sf
+from kokoro_onnx import Kokoro
 
 # All available English voices
 FEMALE_VOICES = [
-    'af_alloy',
-    'af_aoede',
-    'af_bella',
-    'af_heart',
-    'af_jessica',
-    'af_kore',
-    'af_nicole',
-    'af_nova',
-    'af_river',
-    'af_sarah',
-    'af_sky',
+    "af_alloy",
+    "af_aoede",
+    "af_bella",
+    "af_heart",
+    "af_jessica",
+    "af_kore",
+    "af_nicole",
+    "af_nova",
+    "af_river",
+    "af_sarah",
+    "af_sky",
 ]
 
 MALE_VOICES = [
-    'am_adam',
-    'am_echo',
-    'am_eric',
-    'am_fenrir',
-    'am_liam',
-    'am_michael',
-    'am_onyx',
-    'am_puck',
+    "am_adam",
+    "am_echo",
+    "am_eric",
+    "am_fenrir",
+    "am_liam",
+    "am_michael",
+    "am_onyx",
+    "am_puck",
 ]
 
 # Sample texts for different use cases
 SAMPLE_TEXTS = {
-    'pilot': "Palo Alto Tower, Cessna one two three alpha bravo, ready for departure runway three one.",
-    'atc': "Cessna three alpha bravo, runway three one, wind three one zero at eight, cleared for takeoff.",
-    'atis': "Palo Alto Airport information Alpha. Wind three one zero at eight knots. Altimeter three zero one seven. Runway three one in use.",
-    'cockpit': "Airspeed eighty knots. Altitude two thousand feet. Heading three three zero.",
+    "pilot": "Palo Alto Tower, Cessna one two three alpha bravo, ready for departure runway three one.",
+    "atc": "Cessna three alpha bravo, runway three one, wind three one zero at eight, cleared for takeoff.",
+    "atis": "Palo Alto Airport information Alpha. Wind three one zero at eight knots. Altimeter three zero one seven. Runway three one in use.",
+    "cockpit": "Airspeed eighty knots. Altitude two thousand feet. Heading three three zero.",
 }
 
 
-def generate_voice_samples(output_dir: Path, sample_type: str = 'pilot'):
+def generate_voice_samples(output_dir: Path, sample_type: str = "pilot"):
     """Generate samples of all voices."""
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    print(f"\n{'='*60}")
-    print(f"Kokoro TTS Voice Sampler")
-    print(f"{'='*60}\n")
+    print(f"\n{'=' * 60}")
+    print("Kokoro TTS Voice Sampler")
+    print(f"{'=' * 60}\n")
 
     print(f"Sample type: {sample_type}")
     print(f"Text: '{SAMPLE_TEXTS[sample_type]}'\n")
@@ -62,8 +62,7 @@ def generate_voice_samples(output_dir: Path, sample_type: str = 'pilot'):
     print("Initializing Kokoro...")
     start = time.time()
     kokoro = Kokoro(
-        model_path="assets/models/kokoro-v1.0.onnx",
-        voices_path="assets/models/voices-v1.0.bin"
+        model_path="assets/models/kokoro-v1.0.onnx", voices_path="assets/models/voices-v1.0.bin"
     )
     print(f"✓ Initialized in {time.time() - start:.2f}s\n")
 
@@ -75,15 +74,17 @@ def generate_voice_samples(output_dir: Path, sample_type: str = 'pilot'):
     print(f"{'Female Voices':-^60}\n")
     for voice in FEMALE_VOICES:
         start = time.time()
-        samples, sample_rate = kokoro.create(text, voice=voice, lang='en-us')
+        samples, sample_rate = kokoro.create(text, voice=voice, lang="en-us")
         gen_time = time.time() - start
         audio_duration = len(samples) / sample_rate
 
         output_file = output_dir / f"{voice}.wav"
         sf.write(str(output_file), samples, sample_rate)
 
-        print(f"  {voice:12} - {gen_time:4.2f}s ({audio_duration:.1f}s audio, "
-              f"{audio_duration/gen_time:.1f}x realtime)")
+        print(
+            f"  {voice:12} - {gen_time:4.2f}s ({audio_duration:.1f}s audio, "
+            f"{audio_duration / gen_time:.1f}x realtime)"
+        )
 
         total_time += gen_time
         total_audio += audio_duration
@@ -92,15 +93,17 @@ def generate_voice_samples(output_dir: Path, sample_type: str = 'pilot'):
     print(f"\n{'Male Voices':-^60}\n")
     for voice in MALE_VOICES:
         start = time.time()
-        samples, sample_rate = kokoro.create(text, voice=voice, lang='en-us')
+        samples, sample_rate = kokoro.create(text, voice=voice, lang="en-us")
         gen_time = time.time() - start
         audio_duration = len(samples) / sample_rate
 
         output_file = output_dir / f"{voice}.wav"
         sf.write(str(output_file), samples, sample_rate)
 
-        print(f"  {voice:12} - {gen_time:4.2f}s ({audio_duration:.1f}s audio, "
-              f"{audio_duration/gen_time:.1f}x realtime)")
+        print(
+            f"  {voice:12} - {gen_time:4.2f}s ({audio_duration:.1f}s audio, "
+            f"{audio_duration / gen_time:.1f}x realtime)"
+        )
 
         total_time += gen_time
         total_audio += audio_duration
@@ -123,7 +126,7 @@ def main():
     import argparse
 
     parser = argparse.ArgumentParser(
-        description='Generate voice samples for all Kokoro voices',
+        description="Generate voice samples for all Kokoro voices",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Sample types:
@@ -141,21 +144,21 @@ Examples:
 
   # Custom output directory
   uv run python scripts/sample_voices.py --output /tmp/voice_samples
-        """
+        """,
     )
 
     parser.add_argument(
-        '--type',
-        choices=['pilot', 'atc', 'atis', 'cockpit'],
-        default='pilot',
-        help='Type of sample text to use (default: pilot)'
+        "--type",
+        choices=["pilot", "atc", "atis", "cockpit"],
+        default="pilot",
+        help="Type of sample text to use (default: pilot)",
     )
 
     parser.add_argument(
-        '--output',
+        "--output",
         type=Path,
-        default=Path('/tmp/kokoro_voice_samples'),
-        help='Output directory for samples (default: /tmp/kokoro_voice_samples)'
+        default=Path("/tmp/kokoro_voice_samples"),
+        help="Output directory for samples (default: /tmp/kokoro_voice_samples)",
     )
 
     args = parser.parse_args()
@@ -171,11 +174,12 @@ Examples:
     except Exception as e:
         print(f"\n✗ Error: {e}")
         import traceback
+
         traceback.print_exc()
         return 1
 
     return 0
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     exit(main())

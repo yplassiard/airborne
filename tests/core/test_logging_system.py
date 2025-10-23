@@ -138,8 +138,9 @@ class TestLoggingInitialization:
 
     def test_initialize_with_platform_dir(self) -> None:
         """Test initialization uses platform-specific directory."""
-        with tempfile.TemporaryDirectory() as tmpdir, patch(
-            "airborne.core.logging_system.get_platform_log_dir", return_value=Path(tmpdir)
+        with (
+            tempfile.TemporaryDirectory() as tmpdir,
+            patch("airborne.core.logging_system.get_platform_log_dir", return_value=Path(tmpdir)),
         ):
             initialize_logging(use_platform_dir=True)
 
@@ -172,8 +173,9 @@ class TestLoggingInitialization:
 
     def test_multiple_initialization_calls(self) -> None:
         """Test that multiple initialization calls don't cause errors."""
-        with tempfile.TemporaryDirectory() as tmpdir, patch(
-            "airborne.core.logging_system.get_platform_log_dir", return_value=Path(tmpdir)
+        with (
+            tempfile.TemporaryDirectory() as tmpdir,
+            patch("airborne.core.logging_system.get_platform_log_dir", return_value=Path(tmpdir)),
         ):
             initialize_logging(use_platform_dir=True)
             # Second call should work fine (though typically avoided)
@@ -190,8 +192,9 @@ class TestLoggerFunctionality:
 
     def test_get_logger_creates_logger(self) -> None:
         """Test that get_logger returns a valid logger."""
-        with tempfile.TemporaryDirectory() as tmpdir, patch(
-            "airborne.core.logging_system.get_platform_log_dir", return_value=Path(tmpdir)
+        with (
+            tempfile.TemporaryDirectory() as tmpdir,
+            patch("airborne.core.logging_system.get_platform_log_dir", return_value=Path(tmpdir)),
         ):
             initialize_logging(use_platform_dir=True)
 
@@ -203,8 +206,9 @@ class TestLoggerFunctionality:
 
     def test_get_logger_caches_loggers(self) -> None:
         """Test that loggers are cached and reused."""
-        with tempfile.TemporaryDirectory() as tmpdir, patch(
-            "airborne.core.logging_system.get_platform_log_dir", return_value=Path(tmpdir)
+        with (
+            tempfile.TemporaryDirectory() as tmpdir,
+            patch("airborne.core.logging_system.get_platform_log_dir", return_value=Path(tmpdir)),
         ):
             initialize_logging(use_platform_dir=True)
 
@@ -218,8 +222,9 @@ class TestLoggerFunctionality:
 
     def test_logger_writes_to_file(self) -> None:
         """Test that logger messages are written to log file."""
-        with tempfile.TemporaryDirectory() as tmpdir, patch(
-            "airborne.core.logging_system.get_platform_log_dir", return_value=Path(tmpdir)
+        with (
+            tempfile.TemporaryDirectory() as tmpdir,
+            patch("airborne.core.logging_system.get_platform_log_dir", return_value=Path(tmpdir)),
         ):
             initialize_logging(use_platform_dir=True)
 
@@ -251,8 +256,9 @@ class TestLogRotationIntegration:
 
     def test_startup_rotates_existing_log(self) -> None:
         """Test that initialization rotates existing log from previous session."""
-        with tempfile.TemporaryDirectory() as tmpdir, patch(
-            "airborne.core.logging_system.get_platform_log_dir", return_value=Path(tmpdir)
+        with (
+            tempfile.TemporaryDirectory() as tmpdir,
+            patch("airborne.core.logging_system.get_platform_log_dir", return_value=Path(tmpdir)),
         ):
             # First session - create a log
             initialize_logging(use_platform_dir=True)
@@ -283,8 +289,9 @@ class TestLogRotationIntegration:
 
     def test_multiple_sessions_keep_five_logs(self) -> None:
         """Test that only 5 most recent logs are kept across multiple sessions."""
-        with tempfile.TemporaryDirectory() as tmpdir, patch(
-            "airborne.core.logging_system.get_platform_log_dir", return_value=Path(tmpdir)
+        with (
+            tempfile.TemporaryDirectory() as tmpdir,
+            patch("airborne.core.logging_system.get_platform_log_dir", return_value=Path(tmpdir)),
         ):
             # Run 7 sessions
             for i in range(7):

@@ -162,16 +162,16 @@ aircraft:
       forward: 82.9                 # Forward CG limit (inches from datum)
       aft: 95.5                     # Aft CG limit (inches from datum)
     stations:
-      fuel_tanks:
-        - name: "main_tank"         # Combined fuel tanks for simplicity
-          arm: 95.0                 # Arm position (inches from datum)
+      fuel:
+        - name: "fuel_main"         # Combined fuel tanks (52 gal total)
+          arm: 95.0                 # Arm position (inches from datum, aft of CG)
           max_weight: 312.0         # Max fuel weight (52 gal × 6 lb/gal)
           initial_weight: 312.0     # Start with full tanks
       seats:
         - name: "seat_pilot"
           arm: 85.0                 # Front seat arm
           max_weight: 200.0         # Max pilot + baggage
-          initial_weight: 200.0     # Start with pilot
+          initial_weight: 200.0     # Start with pilot (200 lbs)
         - name: "seat_copilot"
           arm: 85.0                 # Front seat arm
           max_weight: 200.0         # Max copilot + baggage
@@ -189,6 +189,24 @@ aircraft:
           arm: 142.0                # Baggage area arm
           max_weight: 120.0         # Max baggage weight
           initial_weight: 0.0       # Start empty
+
+  # Performance configuration (from C172 POH)
+  performance:
+    reference_weight_lbs: 2550.0    # Max gross weight (reference for POH data)
+    wing_area_sqft: 174.0           # Wing area in square feet
+    max_power_hp: 180.0             # Maximum engine power
+    cl_max_clean: 1.4               # Maximum lift coefficient (clean configuration)
+    cl_max_landing: 2.0             # Maximum lift coefficient (full flaps)
+    vspeeds_reference:              # V-speeds at reference weight (2550 lbs)
+      V_S: 47                       # Stall speed clean (KIAS)
+      V_SO: 40                      # Stall speed landing config (KIAS)
+      V_R: 55                       # Rotation speed (KIAS)
+      V_X: 59                       # Best angle of climb (KIAS)
+      V_Y: 73                       # Best rate of climb (KIAS)
+    takeoff_reference:              # Takeoff performance at reference weight, sea level, ISA
+      ground_roll_ft: 960           # Ground roll distance (paved runway)
+      distance_50ft: 1685           # Distance to clear 50 ft obstacle
+      climb_rate_fpm: 730           # Rate of climb at sea level
 
   # Initial state
   initial_state:

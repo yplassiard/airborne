@@ -151,6 +151,9 @@ class PhysicsPlugin(IPlugin):
         # Subscribe to engine state (to get power and RPM for propeller calculations)
         context.message_queue.subscribe(MessageTopic.ENGINE_STATE, self.handle_message)
 
+        # Subscribe to weight & balance updates (to update aircraft mass)
+        context.message_queue.subscribe("weight_balance.updated", self.handle_message)
+
         logger.info("Physics plugin initialized")
 
     def update(self, dt: float) -> None:
@@ -213,6 +216,7 @@ class PhysicsPlugin(IPlugin):
             )
             self.context.message_queue.unsubscribe("parking_brake", self.handle_message)
             self.context.message_queue.unsubscribe(MessageTopic.ENGINE_STATE, self.handle_message)
+            self.context.message_queue.unsubscribe("weight_balance.updated", self.handle_message)
 
             # Unregister components
             if self.context.plugin_registry:
@@ -261,10 +265,34 @@ class PhysicsPlugin(IPlugin):
         elif message.topic == MessageTopic.ENGINE_STATE:
             # Update engine state for propeller thrust calculations
             data = message.data
-            if "power_hp" in data and "rpm" in data and hasattr(self.flight_model, "engine_power_hp"):
-                # Update flight model's engine power and RPM
-                self.flight_model.engine_power_hp = float(data["power_hp"])
-                self.flight_model.engine_rpm = float(data["rpm"])
+            if (
+                "power_hp" in data
+                and "rpm" in data
+                and self.flight_model
+                and hasattr(self.flight_model, "engine_power_hp")
+                and hasattr(self.flight_model, "engine_rpm")
+            ):
+                # Update flight model's engine power and RPM (Simple6DOF specific)
+                self.flight_model.engine_power_hp = float(data["power_hp"])  # type: ignore[attr-defined]
+                self.flight_model.engine_rpm = float(data["rpm"])  # type: ignore[attr-defined]
+
+        elif message.topic == "weight_balance.updated":
+            # Update aircraft mass from weight & balance system
+            data = message.data
+            if "total_weight_lbs" in data and self.flight_model:
+                # Convert pounds to kilograms
+                total_weight_lbs = float(data["total_weight_lbs"])
+                mass_kg = total_weight_lbs * 0.453592
+
+                # Update flight model mass
+                state = self.flight_model.get_state()
+                state.mass = mass_kg
+
+                # Update ground physics mass
+                if self.ground_physics:
+                    self.ground_physics.mass_kg = mass_kg
+
+                logger.debug(f"Mass updated: {total_weight_lbs:.0f} lbs ({mass_kg:.1f} kg)")
 
     def on_config_changed(self, config: dict[str, Any]) -> None:
         """Handle configuration changes.
