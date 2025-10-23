@@ -4,7 +4,8 @@ import pytest
 
 from airborne.core.messaging import Message, MessageQueue, MessageTopic
 from airborne.core.plugin import PluginContext
-from airborne.plugins.weight.weight_balance_plugin import WeightBalancePlugin, WeightStation
+from airborne.plugins.weight.weight_balance_plugin import WeightBalancePlugin
+from airborne.systems.weight_balance import LoadStation
 
 
 @pytest.fixture
@@ -110,10 +111,16 @@ def test_initial_cg_calculation(plugin):
 
 
 def test_weight_station_dataclass():
-    """Test WeightStation dataclass works correctly."""
-    station = WeightStation(name="test", weight=100.0, arm=50.0, max_weight=200.0)
+    """Test LoadStation dataclass works correctly."""
+    station = LoadStation(
+        name="test",
+        current_weight=100.0,
+        arm=50.0,
+        max_weight=200.0,
+        station_type="cargo",
+    )
     assert station.name == "test"
-    assert station.weight == 100.0
+    assert station.current_weight == 100.0
     assert station.arm == 50.0
     assert station.max_weight == 200.0
 

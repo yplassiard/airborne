@@ -4,7 +4,6 @@ This module calculates takeoff distances, climb rates, and other performance
 metrics based on weight, power, atmospheric conditions, and configuration.
 """
 
-import math
 from dataclasses import dataclass
 
 from airborne.core.logging_system import get_logger

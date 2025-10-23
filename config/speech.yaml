@@ -1121,3 +1121,136 @@ messages:
     text: Five hundred feet, climb established
     voice: cockpit
     filename: demo_altitude_500
+  # Performance Display (FMC) messages
+  MSG_FMC_OPENED:
+    text: performance display
+    voice: cockpit
+    filename: fmc_opened
+  MSG_FMC_CLOSED:
+    text: display closed
+    voice: cockpit
+    filename: fmc_closed
+  MSG_FMC_NOT_AVAILABLE:
+    text: performance display not available
+    voice: cockpit
+    filename: fmc_not_available
+  MSG_FMC_PAGE_1:
+    text: page one
+    voice: cockpit
+    filename: fmc_page_1
+  MSG_FMC_PAGE_2:
+    text: page two
+    voice: cockpit
+    filename: fmc_page_2
+  MSG_FMC_PAGE_3:
+    text: page three
+    voice: cockpit
+    filename: fmc_page_3
+  # Weight & Balance page messages
+  MSG_FMC_WB_TITLE:
+    text: weight and balance
+    voice: cockpit
+    filename: fmc_wb_title
+  MSG_FMC_WB_TOTAL_WEIGHT:
+    text: total weight
+    voice: cockpit
+    filename: fmc_wb_total_weight
+  MSG_FMC_WB_CG_POSITION:
+    text: center of gravity
+    voice: cockpit
+    filename: fmc_wb_cg_position
+  MSG_FMC_WB_WITHIN_LIMITS:
+    text: within limits
+    voice: cockpit
+    filename: fmc_wb_within_limits
+  MSG_FMC_WB_OUT_OF_LIMITS:
+    text: out of limits
+    voice: cockpit
+    filename: fmc_wb_out_of_limits
+  # V-speeds page messages
+  MSG_FMC_VS_TITLE:
+    text: v speeds
+    voice: cockpit
+    filename: fmc_vs_title
+  MSG_FMC_VS_WEIGHT:
+    text: aircraft weight
+    voice: cockpit
+    filename: fmc_vs_weight
+  MSG_FMC_VS_VSTALL:
+    text: v stall
+    voice: cockpit
+    filename: fmc_vs_vstall
+  MSG_FMC_VS_VR:
+    text: v r
+    voice: cockpit
+    filename: fmc_vs_vr
+  MSG_FMC_VS_VX:
+    text: v x
+    voice: cockpit
+    filename: fmc_vs_vx
+  MSG_FMC_VS_VY:
+    text: v y
+    voice: cockpit
+    filename: fmc_vs_vy
+  # Takeoff Performance page messages
+  MSG_FMC_TO_TITLE:
+    text: takeoff performance
+    voice: cockpit
+    filename: fmc_to_title
+  MSG_FMC_TO_WEIGHT:
+    text: takeoff weight
+    voice: cockpit
+    filename: fmc_to_weight
+  MSG_FMC_TO_GROUND_ROLL:
+    text: ground roll
+    voice: cockpit
+    filename: fmc_to_ground_roll
+  MSG_FMC_TO_DISTANCE_50:
+    text: distance to fifty feet
+    voice: cockpit
+    filename: fmc_to_distance_50
+  MSG_FMC_TO_CLIMB_RATE:
+    text: climb rate
+    voice: cockpit
+    filename: fmc_to_climb_rate
+  # Unit words for FMC
+  MSG_WORD_POUNDS:
+    text: pounds
+    voice: cockpit
+    filename: word_pounds
+  MSG_WORD_INCHES:
+    text: inches
+    voice: cockpit
+    filename: word_inches
+  MSG_WORD_FPM:
+    text: feet per minute
+    voice: cockpit
+    filename: word_fpm
+  MSG_WORD_HUNDRED:
+    text: hundred
+    voice: cockpit
+    filename: word_hundred
+  MSG_WORD_THOUSAND:
+    text: thousand
+    voice: cockpit
+    filename: word_thousand
+  MSG_WORD_KNOTS:
+    text: knots
+    voice: cockpit
+    filename: word_knots
+  MSG_WORD_FEET:
+    text: feet
+    voice: cockpit
+    filename: word_feet
+  MSG_WORD_COLON:
+    text: ":"
+    voice: cockpit
+    filename: word_colon
+  MSG_MENU_CLOSED:
+    text: menu closed
+    voice: cockpit
+    filename: menu_closed
+  MSG_INVALID_OPTION:
+    text: invalid option
+    voice: cockpit
+    filename: invalid_option

@@ -241,10 +241,17 @@ class AirBorne:
                     self.plugin_context.config["audio"] = {}
                 self.plugin_context.config["audio"]["aircraft"] = audio_config
 
-            # Extract aircraft characteristics (fixed_gear, etc.)
+            # Extract aircraft characteristics (fixed_gear, etc.) and performance config
             aircraft_info = config.get("aircraft", {})
             fixed_gear = aircraft_info.get("fixed_gear", False)
-            self.plugin_context.config["aircraft"] = {"fixed_gear": fixed_gear}
+            performance_config = aircraft_info.get("performance", {})
+            weight_balance_config = aircraft_info.get("weight_balance", {})
+
+            self.plugin_context.config["aircraft"] = {
+                "fixed_gear": fixed_gear,
+                "performance": performance_config,
+                "weight_balance": weight_balance_config,
+            }
             logger.info(f"Aircraft configuration: fixed_gear={fixed_gear}")
 
             # Load physics plugin
@@ -314,6 +321,15 @@ class AirBorne:
 
             self.weight_balance_plugin = WeightBalancePlugin()
             self.weight_balance_plugin.initialize(self.plugin_context)
+
+            # Load performance display plugin (FMC/PFD) - after weight & balance
+            logger.info("Loading performance display plugin...")
+            from airborne.plugins.performance.performance_display_plugin import (
+                PerformanceDisplayPlugin,
+            )
+
+            self.performance_display_plugin = PerformanceDisplayPlugin()
+            self.performance_display_plugin.initialize(self.plugin_context)
 
             # Build aircraft with systems
             builder = AircraftBuilder(self.plugin_loader, self.plugin_context)
@@ -388,6 +404,18 @@ class AirBorne:
             )
             self.input_handler_manager.register(panel_handler)
             logger.info("Registered control panel handler")
+
+        # Register performance display handler (F4 key, priority 50)
+        if hasattr(self, "performance_display_plugin") and self.performance_display_plugin:
+            from airborne.plugins.performance.performance_display_plugin import (
+                PerformanceDisplayInputHandler,
+            )
+
+            perf_handler = PerformanceDisplayInputHandler(
+                display=self.performance_display_plugin.display
+            )
+            self.input_handler_manager.register(perf_handler)
+            logger.info("Registered performance display handler (F4 key)")
 
         logger.info(
             f"Input handler registration complete: {self.input_handler_manager.get_handler_count()} handlers registered"

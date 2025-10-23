@@ -608,17 +608,17 @@ def generate_voice_messages(voice_name, voice_config, messages, base_dir, force=
                     items_to_generate.append((state, output_path))
                     generated += 1
 
-    # Generate numbers 0-1000 for cockpit and pilot voices
-    if voice_name in ["cockpit", "pilot"]:
-        print(f"\n  Generating numbers 0-1000 for {voice_name} voice...")
-        for num in range(0, 1001):
-            output_path = output_dir / f"number_{num}_autogen.wav"
+    # Generate numbers 0-100 for cockpit, pilot, and ground voices
+    if voice_name in ["cockpit", "pilot", "ground", "tower", "approach"]:
+        print(f"\n  Generating numbers 0-100 for {voice_name} voice...")
+        for num in range(0, 101):
+            output_path = output_dir / f"MSG_NUMBER_{num}.wav"
             if output_path.exists() and not force:
                 skipped += 1
             else:
                 items_to_generate.append((str(num), output_path))
                 generated += 1
-        print("  Added 1001 number files to generation queue")
+        print(f"  Added 101 MSG_NUMBER files to generation queue")
 
     # Batch generate all collected items
     if items_to_generate:

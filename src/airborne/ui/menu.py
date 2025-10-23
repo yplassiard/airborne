@@ -372,8 +372,8 @@ class Menu(ABC):
 
         option = enabled_options[self._selected_index]
         if option.message_key:
-            # Speak: "Number X: option"
-            message_keys = [f"MSG_NUMBER_{option.key}", "MSG_WORD_COLON", option.message_key]
+            # Speak: "Number X option"
+            message_keys = [f"MSG_NUMBER_{option.key}", option.message_key]
             self._speak(message_keys, interrupt=True)
 
     def _announce_invalid_option(self) -> None:
