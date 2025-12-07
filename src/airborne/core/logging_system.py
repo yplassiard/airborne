@@ -236,6 +236,9 @@ class MillisecondFormatter(logging.Formatter):
         """Format time with milliseconds using dot separator."""
         ct = self.converter(record.created)
         if datefmt:
+            # Remove %f from datefmt as strftime doesn't support it
+            # We add milliseconds manually below
+            datefmt = datefmt.replace('.%f', '').replace('%f', '')
             s = time.strftime(datefmt, ct)
         else:
             s = time.strftime("%Y-%m-%d %H:%M:%S", ct)

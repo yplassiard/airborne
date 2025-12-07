@@ -6,13 +6,26 @@ Automatically plays all 19 voices with a 1-second pause between each.
 Press Ctrl+C to stop at any time.
 """
 
+import os
+import platform
 import subprocess
+import sys
 import tempfile
 import time
 from pathlib import Path
 
 import soundfile as sf
 from kokoro_onnx import Kokoro
+
+# Auto-detect project root (handles running from scripts/ or project root)
+SCRIPT_DIR = Path(__file__).resolve().parent
+if SCRIPT_DIR.name == "scripts":
+    PROJECT_ROOT = SCRIPT_DIR.parent
+else:
+    PROJECT_ROOT = SCRIPT_DIR
+
+# Change to project root so relative paths work
+os.chdir(PROJECT_ROOT)
 
 # All available English voices
 VOICES = [
@@ -42,6 +55,32 @@ VOICES = [
 SAMPLE_TEXT = (
     "Palo Alto Tower, Cessna one two three alpha bravo, ready for departure runway three one."
 )
+
+
+def play_audio(audio_file):
+    """Play audio file using platform-appropriate player.
+    
+    Args:
+        audio_file: Path to audio file to play
+    """
+    system = platform.system()
+    
+    if system == "Darwin":  # macOS
+        subprocess.run(["afplay", str(audio_file)], check=True)
+    elif system == "Windows":
+        # Use Windows Media Player command line
+        subprocess.run(["powershell", "-c", f"(New-Object Media.SoundPlayer '{audio_file}').PlaySync()"], check=True)
+    else:  # Linux
+        # Try common Linux audio players
+        players = ["aplay", "paplay", "ffplay"]
+        for player in players:
+            try:
+                subprocess.run([player, str(audio_file)], check=True, stderr=subprocess.DEVNULL)
+                break
+            except FileNotFoundError:
+                continue
+        else:
+            print(f"Warning: No audio player found. Install aplay, paplay, or ffplay")
 
 
 def main():
@@ -75,8 +114,8 @@ def main():
                 temp_file = temp_path / f"{voice}.wav"
                 sf.write(str(temp_file), samples, sample_rate)
 
-                # Play with afplay
-                subprocess.run(["afplay", str(temp_file)], check=True)
+                # Play with platform-appropriate player
+                play_audio(temp_file)
 
                 # Brief pause before next voice
                 if i < len(VOICES):

@@ -1,0 +1,13 @@
+{
+  "start_time": "2025-12-07T13:48:35.923376",
+  "end_time": "",
+  "duration_sec": 0.0,
+  "target_altitude_ft": 500.0,
+  "level_flight_duration_sec": 60.0,
+  "success": false,
+  "failure_reason": "Connection refused - is Airborne running?",
+  "phases_completed": [],
+  "actions": [],
+  "telemetry": [],
+  "summary": {}
+}

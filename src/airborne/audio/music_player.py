@@ -47,7 +47,6 @@ class MusicPlayer:
         self._current_file: str | None = None
         self._is_looping: bool = False
         self._current_volume: float = 1.0  # Track current volume
-        self._base_volume: float = 1.0  # Volume set by play() or set_volume()
 
         # Fading state
         self._fading: bool = False
@@ -55,10 +54,6 @@ class MusicPlayer:
         self._fade_duration: float = 0.0
         self._fade_start_volume: float = 0.0
         self._fade_target_volume: float = 0.0
-
-        # Register for volume changes
-        self._volume_manager.register_callback("music", self._on_volume_change)
-        self._volume_manager.register_callback("master", self._on_volume_change)
 
     def play(
         self,
@@ -104,7 +99,6 @@ class MusicPlayer:
         self._current_source_id = source_id
         self._current_file = file_path
         self._is_looping = loop
-        self._base_volume = volume  # Track base volume for recalculation
         self._current_volume = start_volume if fade_in > 0 else final_volume
 
         # Start fade-in if requested
@@ -156,8 +150,6 @@ class MusicPlayer:
         Examples:
             >>> music.set_volume(0.5)
         """
-        self._base_volume = volume
-
         if self._current_source_id is None:
             return
 
@@ -245,34 +237,3 @@ class MusicPlayer:
         self._fade_duration = duration
         self._fade_start_volume = start_volume
         self._fade_target_volume = target_volume
-
-    def _on_volume_change(self, category: str, volume: float) -> None:
-        """Handle volume changes from VolumeManager.
-
-        Called when music or master volume changes. Recalculates and applies
-        the new volume to the currently playing music.
-
-        Args:
-            category: The category that changed ("music" or "master").
-            volume: The new final volume for the category.
-        """
-        if self._current_source_id is None:
-            return
-
-        # Skip if we're in the middle of a fade (fade manages its own volume)
-        if self._fading:
-            return
-
-        # Recalculate final volume using current base_volume
-        final_volume = self._volume_manager.get_final_volume("music") * self._base_volume
-        self._current_volume = final_volume
-
-        # Apply to FMOD channel
-        channel = self._audio_engine.get_channel(self._current_source_id)
-        if channel:
-            channel.volume = final_volume
-            logger.debug(
-                "Volume changed: category=%s, final_volume=%.3f",
-                category,
-                final_volume,
-            )

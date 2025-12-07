@@ -70,27 +70,8 @@ menu:
   settings:
     title: "Paramètres"
     voice_settings: "Paramètres vocaux"
-    audio_settings: "Paramètres audio"
     language: "Langue"
     language_current: "Langue: {language}"
-
-# Audio settings menu
-audio:
-  title: "Paramètres audio"
-  input_device: "Périphérique d'entrée: {device}"
-  default_device: "Par défaut"
-  volume_settings: "Réglages du volume"
-  save_and_back: "Enregistrer et retour"
-  volume:
-    master: "Volume principal: {percent}%"
-    music: "Volume musique: {percent}%"
-    engine: "Volume moteur: {percent}%"
-    environment: "Volume environnement: {percent}%"
-    ui: "Volume interface: {percent}%"
-    cockpit: "Volume cockpit: {percent}%"
-    atc: "Volume ATC: {percent}%"
-    pilot: "Volume pilote: {percent}%"
-    cue: "Volume indices: {percent}%"
 
 # Flight plan menu
 flight_plan:
@@ -309,20 +290,20 @@ controls:
   mixture_lean: "pauvre"
   mixture_rich: "riche"
   carburetor_heat_lever: "Réchauffage carburateur"
-  carburetor_heat_cold: "froid"
-  carburetor_heat_hot: "chaud"
+  carburetor_cold: "froid"
+  carburetor_hot: "chaud"
   throttle_lever: "Manette des gaz"
   primer_pump: "Pompe d'amorçage"
 
   # Fuel controls
   fuel_selector_valve: "Sélecteur carburant"
-  fuel_selector_off: "fermé"
-  fuel_selector_left: "réservoir gauche"
-  fuel_selector_right: "réservoir droit"
-  fuel_selector_both: "les deux réservoirs"
+  fuel_off: "fermé"
+  fuel_left: "réservoir gauche"
+  fuel_right: "réservoir droit"
+  fuel_both: "les deux réservoirs"
   fuel_shutoff_valve: "Vanne carburant"
-  fuel_shutoff_closed: "fermée"
-  fuel_shutoff_open: "ouverte"
+  fuel_closed: "fermée"
+  fuel_open: "ouverte"
   fuel_pump_switch: "Pompe carburant"
 
   # Flight controls
@@ -333,9 +314,9 @@ controls:
   flaps_30: "30 degrés"
   flaps_full: "pleins"
   elevator_trim_wheel: "Trim de profondeur"
-  elevator_trim_nose_down: "piqué"
-  elevator_trim_neutral: "neutre"
-  elevator_trim_nose_up: "cabré"
+  trim_nose_down: "piqué"
+  trim_neutral: "neutre"
+  trim_nose_up: "cabré"
   parking_brake_lever: "Frein de parking"
   parking_brake_released: "relâché"
   parking_brake_set: "serré"
@@ -619,8 +600,6 @@ atc:
   request_taxi: "demandons le roulage"
   taxi_to_runway: "roulez vers la piste"
   taxi_via: "via"
-  taxi: "roulez"
-  runway: "piste"
   hold_short: "maintenez avant"
   contact_tower: "contactez la tour"
   ready_for_departure: "prêts au départ"
@@ -629,34 +608,17 @@ atc:
   contact_departure: "contactez le départ"
   radio_check: "test radio"
   loud_and_clear: "fort et clair"
-  reading_you_five_by_five: "cinq sur cinq"
   readback_correct: "collationnement correct"
   # Pilot responses
   wilco: "bien compris"
   roger: "reçu"
   affirm: "affirmatif"
   negative: "négatif"
-  # Readbacks
-  readback_startup: "mise en route approuvée, rappellerons prêts"
-  will_advise_ready: "rappellerons prêts"
   # Context phrases
   with_information: "avec l'information"
   passengers_on_board: "passagers à bord"
-  soul_on_board: "personne à bord"
-  souls_on_board: "personnes à bord"
   at: "à"
   on: "sur"
-  wind: "vent"
-  altimeter: "calage altimétrique"
-  advise_ready_taxi: "rappelez prêts à rouler"
-  cleared_for_takeoff: "autorisé au décollage"
-  cleared_to_land: "autorisé à l'atterrissage"
-  radar_contact: "contact radar établi"
-  climb_and_maintain: "montez et maintenez"
-  contact_ground: "contactez le sol"
-  fly_runway_heading: "maintenez le cap de piste"
-  go_around: "remise de gaz"
-  standby: "attendez"
 
 # Text input widget
 widget:

@@ -10,7 +10,6 @@ Typical usage:
     plugin_dir = get_plugin_dir()
 """
 
-import os
 import sys
 from pathlib import Path
 
@@ -176,77 +175,3 @@ def get_lib_path(lib_file: str) -> Path:
         '/private/var/.../Contents/Frameworks/lib/fmod/libfmod.dylib'  # From bundle
     """
     return get_resource_path(f"lib/{lib_file}")
-
-
-def get_platform_lib_dir() -> Path:
-    """Get the platform-specific library directory.
-
-    Returns the appropriate library directory based on the current platform:
-    - macOS: lib/macos
-    - Linux: lib/linux
-    - Windows: lib/windows
-
-    Returns:
-        Path to the platform-specific library directory.
-
-    Examples:
-        >>> str(get_platform_lib_dir())  # On macOS
-        '/Users/user/dev/airborne/lib/macos'
-    """
-    if sys.platform == "darwin":
-        platform_dir = "macos"
-    elif sys.platform == "win32":
-        platform_dir = "windows"
-    else:
-        platform_dir = "linux"
-
-    return get_resource_path(f"lib/{platform_dir}")
-
-
-def setup_library_paths() -> None:
-    """Set up platform-specific library paths for native libraries.
-
-    This function must be called BEFORE importing any modules that use
-    native libraries (like pyfmodex). It preloads required native libraries
-    and sets up environment variables.
-
-    On macOS: Preloads libfmod.dylib using ctypes (DYLD_LIBRARY_PATH doesn't
-              work at runtime due to SIP)
-    On Linux: Sets LD_LIBRARY_PATH
-    On Windows: Adds to PATH
-
-    Examples:
-        # At the very start of main.py, before other imports:
-        from airborne.core.resource_path import setup_library_paths
-        setup_library_paths()
-    """
-    import ctypes
-
-    lib_dir = get_platform_lib_dir()
-
-    if not lib_dir.exists():
-        return
-
-    lib_dir_str = str(lib_dir)
-
-    if sys.platform == "darwin":
-        # macOS: Preload libfmod.dylib directly using ctypes
-        # DYLD_LIBRARY_PATH changes don't work at runtime due to SIP
-        fmod_path = lib_dir / "libfmod.dylib"
-        if fmod_path.exists():
-            try:
-                ctypes.CDLL(str(fmod_path))
-            except OSError:
-                pass  # Will fail later with more context
-    elif sys.platform == "win32":
-        # Windows: Add to PATH
-        current = os.environ.get("PATH", "")
-        if lib_dir_str not in current:
-            os.environ["PATH"] = f"{lib_dir_str};{current}" if current else lib_dir_str
-    else:
-        # Linux: LD_LIBRARY_PATH
-        current = os.environ.get("LD_LIBRARY_PATH", "")
-        if lib_dir_str not in current:
-            os.environ["LD_LIBRARY_PATH"] = (
-                f"{lib_dir_str}:{current}" if current else lib_dir_str
-            )

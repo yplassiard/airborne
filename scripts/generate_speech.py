@@ -15,12 +15,23 @@ Usage:
 """
 
 import argparse
+import os
 import platform
 import subprocess
 import sys
 from pathlib import Path
 
 import yaml
+
+# Auto-detect project root (handles running from scripts/ or project root)
+SCRIPT_DIR = Path(__file__).resolve().parent
+if SCRIPT_DIR.name == "scripts":
+    PROJECT_ROOT = SCRIPT_DIR.parent
+else:
+    PROJECT_ROOT = SCRIPT_DIR
+
+# Change to project root so relative paths work
+os.chdir(PROJECT_ROOT)
 
 
 def detect_platform():
@@ -783,10 +794,11 @@ def generate_voice_messages(voice_name, voice_config, messages, base_dir, force=
     return generated
 
 
-def generate_atc_messages(language, base_dir, force=False):
+def generate_atc_messages(config, language, base_dir, force=False):
     """Generate ATC messages from atc_en.yaml.
 
     Args:
+        config: Full speech configuration dict with voices
         language: Language code (e.g., "en")
         base_dir: Base output directory (e.g., data/speech/en)
         force: If True, regenerate existing files
@@ -802,23 +814,25 @@ def generate_atc_messages(language, base_dir, force=False):
         print(f"\nNo ATC messages found in {atc_config_file}")
         return 0
 
-    print("\nATC Messages (Evan @ 180 WPM):")
+    # Get ATC messages voice config from speech.yaml or use tower as fallback
+    if "atc_messages" in config["voices"]:
+        voice_config = config["voices"]["atc_messages"]
+        voice_name = "atc_messages"
+    else:
+        # Fallback to tower voice if atc_messages not configured
+        voice_config = config["voices"].get("tower", config["voices"]["ground"])
+        voice_name = "tower"
+
+    print(f"\nATC Messages ({voice_config['voice_name']} @ {voice_config['rate']} WPM):")
     print(f"  Output: {base_dir}")
     print(f"  Found {len(messages)} ATC messages")
-
-    # Use Evan voice at 180 WPM for ATC
-    voice_config = {
-        "engine": "say",
-        "voice_name": "Evan",
-        "rate": 180,
-    }
 
     generated = 0
     skipped = 0
 
     for filename_base, text in sorted(messages.items()):
         print(f"  {filename_base}: '{text}'")
-        if generate_speech_file(filename_base, text, voice_config, base_dir, force):
+        if generate_speech_file(filename_base, text, voice_config, base_dir, force=force):
             generated += 1
         else:
             skipped += 1
@@ -933,7 +947,7 @@ def main():
         total_generated += generated
 
     # Generate ATC messages (flat structure in base_dir)
-    atc_generated = generate_atc_messages(args.language, base_dir, force=args.clean)
+    atc_generated = generate_atc_messages(config, args.language, base_dir, force=args.clean)
     total_generated += atc_generated
 
     print(f"\n{'=' * 80}")

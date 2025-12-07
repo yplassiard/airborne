@@ -219,12 +219,11 @@ class AudioRecorder:
 
             for i in range(num_drivers):
                 info = self._system.get_record_driver_info(i)
-                # info is a Structobject with named attributes:
-                # name, guid, system_rate, speaker_mode, speaker_mode_channels, state
-                name = getattr(info, "name", f"Device {i}")
-                guid = str(getattr(info, "guid", ""))
-                rate = getattr(info, "system_rate", SAMPLE_RATE)
-                channels = getattr(info, "speaker_mode_channels", CHANNELS)
+                # info is a tuple: (name, guid, systemrate, speakermode, channels, state)
+                name = info[0] if len(info) > 0 else f"Device {i}"
+                guid = str(info[1]) if len(info) > 1 else ""
+                rate = info[2] if len(info) > 2 else SAMPLE_RATE
+                channels = info[4] if len(info) > 4 else CHANNELS
 
                 devices.append(
                     RecordingDevice(

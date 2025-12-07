@@ -9,12 +9,6 @@ Typical usage:
     uv run python -m airborne.main --from-airport KPAO --to-airport KSFO
 """
 
-# IMPORTANT: Set up library paths BEFORE any imports that might use native libraries
-# This must happen before pyfmodex or any module that imports it
-from airborne.core.resource_path import setup_library_paths
-
-setup_library_paths()
-
 import argparse
 import sys
 from pathlib import Path
@@ -668,8 +662,18 @@ class AirBorne:
                     priority=MessagePriority.NORMAL,
                 )
             )
-        # ATC Menu controls - handled by InputContextManager directly via message queue
-        # (no need to re-publish here, would cause duplicate toggle)
+        # ATC Menu controls (toggle_atc_menu from context system)
+        elif event.action in ("atc_menu", "toggle_atc_menu"):
+            # Send to radio plugin
+            self.message_queue.publish(
+                Message(
+                    sender="main",
+                    recipients=["radio_plugin"],
+                    topic="input.atc_menu",
+                    data={"action": "toggle"},
+                    priority=MessagePriority.HIGH,
+                )
+            )
         elif event.action == "atc_acknowledge":
             self.message_queue.publish(
                 Message(
@@ -749,10 +753,31 @@ class AirBorne:
                     priority=MessagePriority.HIGH,
                 )
             )
-        # Checklist menu controls - handled by InputContextManager directly
-        # (no need to re-publish here, would cause duplicate toggle)
-        # Ground services menu controls - handled by InputContextManager directly
-        # (no need to re-publish here, would cause duplicate toggle)
+        # Checklist menu controls (toggle_checklist_menu from context system)
+        elif event.action in ("checklist_menu", "toggle_checklist_menu"):
+            # Send to checklist plugin
+            self.message_queue.publish(
+                Message(
+                    sender="main",
+                    recipients=["checklist_plugin"],
+                    topic="input.checklist_menu",
+                    data={"action": "toggle"},
+                    priority=MessagePriority.HIGH,
+                )
+            )
+        # Ground services menu controls (toggle_ground_services_menu from context system)
+        elif event.action in ("ground_services_menu", "toggle_ground_services_menu"):
+            # Send to ground services plugin
+            logger.info("F3 pressed - publishing ground_services_menu message")
+            self.message_queue.publish(
+                Message(
+                    sender="main",
+                    recipients=["ground_services_plugin"],
+                    topic="input.ground_services_menu",
+                    data={"action": "toggle"},
+                    priority=MessagePriority.HIGH,
+                )
+            )
 
     def run(self) -> None:
         """Run the main game loop."""

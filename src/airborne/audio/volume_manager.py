@@ -24,7 +24,6 @@ Typical usage example:
     final_volume = vol_mgr.get_final_volume("music")  # 0.4 (0.8 * 0.5)
 """
 
-from collections.abc import Callable
 from typing import Literal
 
 # Volume categories
@@ -69,8 +68,6 @@ class VolumeManager:
             "pilot": 1.0,
             "cue": 1.0,
         }
-        # Callbacks for volume changes: category -> list of callbacks
-        self._callbacks: dict[str, list[Callable[[str, float], None]]] = {}
 
     def set_master_volume(self, volume: float) -> None:
         """Set the master volume level.
@@ -82,7 +79,6 @@ class VolumeManager:
             >>> vol_mgr.set_master_volume(0.8)
         """
         self._master_volume = max(0.0, min(1.0, volume))
-        self._notify_callbacks("master", self._master_volume)
 
     def get_master_volume(self) -> float:
         """Get the current master volume level.
@@ -107,7 +103,6 @@ class VolumeManager:
             >>> vol_mgr.set_category_volume("music", 0.5)
         """
         self._category_volumes[category] = max(0.0, min(1.0, volume))
-        self._notify_callbacks(category, self.get_final_volume(category))
 
     def get_category_volume(self, category: VolumeCategory) -> float:
         """Get volume for a specific category.
@@ -144,47 +139,3 @@ class VolumeManager:
         """
         category_vol = self.get_category_volume(category)
         return self._master_volume * category_vol
-
-    def register_callback(
-        self, category: str, callback: Callable[[str, float], None]
-    ) -> None:
-        """Register a callback for volume changes.
-
-        The callback will be called when the specified category volume changes,
-        with the category name and new final volume as arguments.
-
-        Args:
-            category: Category to listen to (e.g., "music", "master").
-            callback: Function called with (category, final_volume).
-
-        Examples:
-            >>> def on_volume_change(category, volume):
-            ...     print(f"{category} volume: {volume}")
-            >>> vol_mgr.register_callback("music", on_volume_change)
-        """
-        if category not in self._callbacks:
-            self._callbacks[category] = []
-        self._callbacks[category].append(callback)
-
-    def unregister_callback(
-        self, category: str, callback: Callable[[str, float], None]
-    ) -> None:
-        """Unregister a volume change callback.
-
-        Args:
-            category: Category the callback was registered for.
-            callback: The callback to unregister.
-        """
-        if category in self._callbacks and callback in self._callbacks[category]:
-            self._callbacks[category].remove(callback)
-
-    def _notify_callbacks(self, category: str, volume: float) -> None:
-        """Notify registered callbacks of a volume change.
-
-        Args:
-            category: Category that changed.
-            volume: New volume value.
-        """
-        if category in self._callbacks:
-            for callback in self._callbacks[category]:
-                callback(category, volume)

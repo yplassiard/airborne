@@ -40,7 +40,6 @@ from airborne.audio.audio_facade import AudioFacade
 from airborne.audio.tts_service import TTSPriority
 from airborne.core.resource_path import get_resource_path
 from airborne.settings import get_tts_settings
-from airborne.settings.audio_settings import VOLUME_CATEGORIES, get_audio_settings
 from airborne.ui.menus.main_menu import MainMenu
 
 logger = logging.getLogger(__name__)
@@ -200,14 +199,6 @@ class MenuRunner:
             tts_client=None,  # No longer used - TTSService handles TTS
             play_audio=self._play_audio,
         )
-        # Set audio facade and FMOD system for audio settings menu
-        if self._audio:
-            self._main_menu.set_audio_facade(self._audio)
-        if self._fmod_engine:
-            # Get the FMOD system from the engine
-            fmod_system = getattr(self._fmod_engine, "_system", None)
-            if fmod_system:
-                self._main_menu.set_fmod_system(fmod_system)
         self._main_menu.open(is_startup=True)
 
         # Start menu music
@@ -234,36 +225,10 @@ class MenuRunner:
             self._audio = AudioFacade(self._fmod_engine)
             logger.info("AudioFacade initialized")
 
-            # Load and apply saved volume settings
-            self._apply_saved_volume_settings()
-
         except Exception as e:
             logger.error("Failed to initialize audio: %s", e)
             self._fmod_engine = None
             self._audio = None
-
-    def _apply_saved_volume_settings(self) -> None:
-        """Load saved volume settings and apply to VolumeManager."""
-        if not self._audio:
-            return
-
-        try:
-            settings = get_audio_settings()
-
-            # Apply master volume
-            master_vol = settings.get_volume("master")
-            self._audio.volumes.set_master_volume(master_vol)
-
-            # Apply category volumes
-            for category in VOLUME_CATEGORIES:
-                if category != "master":
-                    vol = settings.get_volume(category)
-                    self._audio.volumes.set_category_volume(category, vol)
-
-            logger.info("Applied saved volume settings")
-
-        except Exception as e:
-            logger.warning("Failed to apply saved volume settings: %s", e)
 
     def _start_menu_music(self) -> None:
         """Start playing random menu music at 0.7 volume with fade-in."""

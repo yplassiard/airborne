@@ -25,7 +25,6 @@ import yaml
 from airborne.core.i18n import t
 from airborne.core.resource_path import get_resource_path
 from airborne.scenario.scenario import EngineState, SpawnLocation
-from airborne.ui.menus.audio_settings_menu import AudioSettingsMenu
 from airborne.ui.menus.base_menu import AudioMenu, MenuItem
 from airborne.ui.menus.voice_settings import VoiceSettingsMenu
 
@@ -773,20 +772,16 @@ class SelectionSubMenu(AudioMenu):
 class SettingsMenu(AudioMenu):
     """Settings submenu.
 
-    Contains Voice Settings, Audio Settings, Language, and other configuration.
+    Contains Voice Settings, Language, and other configuration.
     """
 
     def __init__(self, parent: AudioMenu | None = None) -> None:
         """Initialize settings menu."""
         super().__init__(t("menu.settings.title"), parent)
         self._voice_settings_menu: VoiceSettingsMenu | None = None
-        self._audio_settings_menu: AudioSettingsMenu | None = None
         self._language_menu: LanguageMenu | None = None
         self._on_ui_voice_change: Callable[[str, int], None] | None = None
         self._on_language_change: Callable[[str], None] | None = None
-        # Audio facade and FMOD system for audio settings
-        self._audio_facade: Any = None
-        self._fmod_system: Any = None
 
     def set_on_ui_voice_change(self, callback: Callable[[str, int], None]) -> None:
         """Set callback for when UI voice settings change.
@@ -813,26 +808,6 @@ class SettingsMenu(AudioMenu):
         if self._language_menu:
             self._language_menu.set_on_language_change(callback)
 
-    def set_audio_facade(self, facade: Any) -> None:
-        """Set the audio facade for real-time audio settings updates.
-
-        Args:
-            facade: AudioFacade instance.
-        """
-        self._audio_facade = facade
-        if self._audio_settings_menu:
-            self._audio_settings_menu.set_audio_facade(facade)
-
-    def set_fmod_system(self, system: Any) -> None:
-        """Set the FMOD system for audio device enumeration.
-
-        Args:
-            system: FMOD System instance.
-        """
-        self._fmod_system = system
-        if self._audio_settings_menu:
-            self._audio_settings_menu.set_fmod_system(system)
-
     def open(self) -> None:
         """Open the menu with updated title."""
         self.title = t("menu.settings.title")
@@ -844,12 +819,6 @@ class SettingsMenu(AudioMenu):
             self._voice_settings_menu = VoiceSettingsMenu(self)
             if self._on_ui_voice_change:
                 self._voice_settings_menu.set_on_ui_voice_change(self._on_ui_voice_change)
-        if not self._audio_settings_menu:
-            self._audio_settings_menu = AudioSettingsMenu(self)
-            if self._audio_facade:
-                self._audio_settings_menu.set_audio_facade(self._audio_facade)
-            if self._fmod_system:
-                self._audio_settings_menu.set_fmod_system(self._fmod_system)
         if not self._language_menu:
             self._language_menu = LanguageMenu(self)
             if self._on_ui_voice_change:
@@ -862,11 +831,6 @@ class SettingsMenu(AudioMenu):
                 "voice_settings",
                 t("menu.settings.voice_settings"),
                 submenu=self._voice_settings_menu,
-            ),
-            MenuItem(
-                "audio_settings",
-                t("menu.settings.audio_settings"),
-                submenu=self._audio_settings_menu,
             ),
             MenuItem(
                 "language",
@@ -1015,10 +979,6 @@ class MainMenu(AudioMenu):
         self._on_ui_voice_change: Callable[[str, int], None] | None = None
         self._on_language_change: Callable[[str], None] | None = None
 
-        # Audio facade and FMOD system for audio settings
-        self._audio_facade: Any = None
-        self._fmod_system: Any = None
-
     def set_on_ui_voice_change(self, callback: Callable[[str, int], None]) -> None:
         """Set callback for when UI voice settings change.
 
@@ -1040,26 +1000,6 @@ class MainMenu(AudioMenu):
         # Propagate to existing settings menu
         if self._settings_menu:
             self._settings_menu.set_on_language_change(callback)
-
-    def set_audio_facade(self, facade: Any) -> None:
-        """Set the audio facade for real-time audio settings updates.
-
-        Args:
-            facade: AudioFacade instance.
-        """
-        self._audio_facade = facade
-        if self._settings_menu:
-            self._settings_menu.set_audio_facade(facade)
-
-    def set_fmod_system(self, system: Any) -> None:
-        """Set the FMOD system for audio device enumeration.
-
-        Args:
-            system: FMOD System instance.
-        """
-        self._fmod_system = system
-        if self._settings_menu:
-            self._settings_menu.set_fmod_system(system)
 
     def set_callbacks(
         self,
@@ -1110,10 +1050,6 @@ class MainMenu(AudioMenu):
                 self._settings_menu.set_on_ui_voice_change(self._on_ui_voice_change)
             if self._on_language_change:
                 self._settings_menu.set_on_language_change(self._on_language_change)
-            if self._audio_facade:
-                self._settings_menu.set_audio_facade(self._audio_facade)
-            if self._fmod_system:
-                self._settings_menu.set_fmod_system(self._fmod_system)
 
         # Check if ready to fly (aircraft and airport selected)
         ready_to_fly = self._flight_settings_menu.is_ready_to_fly()

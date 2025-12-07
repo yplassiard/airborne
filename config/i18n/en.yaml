@@ -70,27 +70,8 @@ menu:
   settings:
     title: "Settings"
     voice_settings: "Voice Settings"
-    audio_settings: "Audio Settings"
     language: "Language"
     language_current: "Language: {language}"
-
-# Audio settings menu
-audio:
-  title: "Audio Settings"
-  input_device: "Input Device: {device}"
-  default_device: "Default"
-  volume_settings: "Volume Settings"
-  save_and_back: "Save and go back"
-  volume:
-    master: "Master Volume: {percent}%"
-    music: "Music Volume: {percent}%"
-    engine: "Engine Volume: {percent}%"
-    environment: "Environment Volume: {percent}%"
-    ui: "UI Volume: {percent}%"
-    cockpit: "Cockpit Volume: {percent}%"
-    atc: "ATC Volume: {percent}%"
-    pilot: "Pilot Volume: {percent}%"
-    cue: "Cue Volume: {percent}%"
 
 # Flight plan menu
 flight_plan:
@@ -309,20 +290,20 @@ controls:
   mixture_lean: "lean"
   mixture_rich: "rich"
   carburetor_heat_lever: "Carburetor Heat"
-  carburetor_heat_cold: "cold"
-  carburetor_heat_hot: "hot"
+  carburetor_cold: "cold"
+  carburetor_hot: "hot"
   throttle_lever: "Throttle"
   primer_pump: "Primer"
 
   # Fuel controls
   fuel_selector_valve: "Fuel Selector"
-  fuel_selector_off: "off"
-  fuel_selector_left: "left tank"
-  fuel_selector_right: "right tank"
-  fuel_selector_both: "both tanks"
+  fuel_off: "off"
+  fuel_left: "left tank"
+  fuel_right: "right tank"
+  fuel_both: "both tanks"
   fuel_shutoff_valve: "Fuel Shutoff"
-  fuel_shutoff_closed: "closed"
-  fuel_shutoff_open: "open"
+  fuel_closed: "closed"
+  fuel_open: "open"
   fuel_pump_switch: "Fuel Pump"
 
   # Flight controls
@@ -333,9 +314,9 @@ controls:
   flaps_30: "30 degrees"
   flaps_full: "full"
   elevator_trim_wheel: "Elevator Trim"
-  elevator_trim_nose_down: "nose down"
-  elevator_trim_neutral: "neutral"
-  elevator_trim_nose_up: "nose up"
+  trim_nose_down: "nose down"
+  trim_neutral: "neutral"
+  trim_nose_up: "nose up"
   parking_brake_lever: "Parking Brake"
   parking_brake_released: "released"
   parking_brake_set: "set"
@@ -638,24 +619,6 @@ atc:
   passengers_on_board: "passengers on board"
   at: "at"
   on: "on"
-  taxi: "taxi"
-  runway: "runway"
-  wind: "wind"
-  reading_you_five_by_five: "reading you five by five"
-  readback_startup: "startup approved, will advise ready"
-  will_advise_ready: "will advise ready"
-  soul_on_board: "soul on board"
-  souls_on_board: "souls on board"
-  altimeter: "altimeter"
-  advise_ready_taxi: "advise when ready to taxi"
-  cleared_for_takeoff: "cleared for takeoff"
-  cleared_to_land: "cleared to land"
-  radar_contact: "radar contact"
-  climb_and_maintain: "climb and maintain"
-  contact_ground: "contact ground"
-  fly_runway_heading: "fly runway heading"
-  go_around: "go around"
-  standby: "standby"
 
 # Text input widget
 widget:

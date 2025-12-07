@@ -1,0 +1,189 @@
+# AirBorne Speech Configuration
+# Defines voice settings for all TTS-generated audio
+
+# TTS Engine Options:
+# - kokoro: High-quality ONNX TTS (recommended, requires installation)
+# - say: macOS native TTS (macOS only)
+# - pyttsx3: Cross-platform TTS (fallback for Windows/Linux)
+
+# Voices Configuration
+voices:
+  # Pilot voice - used for radio communications, checklist responses
+  pilot:
+    engine: kokoro
+    voice_name: af_bella  # Clear, professional female voice
+    language: en-us
+    rate: 160  # Words per minute
+    output_dir: data/speech/pilot/en
+
+  # Cockpit voice - used for instrument readouts, warnings, system announcements
+  cockpit:
+    engine: kokoro
+    voice_name: af_sarah  # Professional, consistent female voice
+    language: en-us
+    rate: 140  # Slower for clarity
+    output_dir: data/speech/en
+
+  # ATC Ground - ground control communications
+  ground:
+    engine: kokoro
+    voice_name: am_adam  # Professional male voice
+    language: en-us
+    rate: 155
+    output_dir: data/speech/atc/en
+
+  # ATC Tower - tower control communications
+  tower:
+    engine: kokoro
+    voice_name: am_michael  # Warm, trustworthy male voice
+    language: en-us
+    rate: 155
+    output_dir: data/speech/atc/en
+
+  # ATC Approach/Departure - approach and departure control
+  approach:
+    engine: kokoro
+    voice_name: am_adam  # Professional male voice
+    language: en-us
+    rate: 160
+    output_dir: data/speech/atc/en
+
+  # ATIS - Automated Terminal Information Service
+  atis:
+    engine: kokoro
+    voice_name: af_sarah  # Robotic consistency
+    language: en-us
+    rate: 150
+    output_dir: data/speech/atc/en
+
+  # ATC Messages - General ATC communications and messages
+  atc_messages:
+    engine: kokoro
+    voice_name: am_adam  # Professional male voice for general ATC
+    language: en-us
+    rate: 180  # Slightly faster for ATC efficiency
+    output_dir: data/speech/en
+
+# Pre-defined messages for each voice type
+messages:
+  # Pilot messages
+  MSG_READY_FOR_DEPARTURE:
+    text: "Ready for departure"
+    voice: pilot
+    filename: ready_for_departure
+
+  MSG_ROGER:
+    text: "Roger"
+    voice: pilot
+    filename: roger
+
+  MSG_WILCO:
+    text: "Wilco"
+    voice: pilot
+    filename: wilco
+
+  MSG_AFFIRM:
+    text: "Affirm"
+    voice: pilot
+    filename: affirm
+
+  MSG_NEGATIVE:
+    text: "Negative"
+    voice: pilot
+    filename: negative
+
+  # Cockpit instrument callouts
+  MSG_ALTITUDE:
+    text: "Altitude"
+    voice: cockpit
+    filename: altitude
+
+  MSG_AIRSPEED:
+    text: "Airspeed"
+    voice: cockpit
+    filename: airspeed
+
+  MSG_HEADING:
+    text: "Heading"
+    voice: cockpit
+    filename: heading
+
+  MSG_VERTICAL_SPEED:
+    text: "Vertical speed"
+    voice: cockpit
+    filename: vertical_speed
+
+  MSG_FUEL:
+    text: "Fuel"
+    voice: cockpit
+    filename: fuel
+
+  MSG_RPM:
+    text: "R P M"
+    voice: cockpit
+    filename: rpm
+
+  MSG_OIL_PRESSURE:
+    text: "Oil pressure"
+    voice: cockpit
+    filename: oil_pressure
+
+  MSG_OIL_TEMPERATURE:
+    text: "Oil temperature"
+    voice: cockpit
+    filename: oil_temperature
+
+  # Warning messages
+  MSG_WARNING_STALL:
+    text: "Warning, stall"
+    voice: cockpit
+    filename: warning_stall
+
+  MSG_WARNING_LOW_FUEL:
+    text: "Warning, low fuel"
+    voice: cockpit
+    filename: warning_low_fuel
+
+  MSG_WARNING_OVERSPEED:
+    text: "Warning, overspeed"
+    voice: cockpit
+    filename: warning_overspeed
+
+# Fallback configuration for pyttsx3 (Windows native TTS)
+# Uncomment this section if you prefer to use Windows TTS instead of Kokoro
+#voices:
+#  pilot:
+#    engine: pyttsx3
+#    voice_name: "David"  # Windows default male voice
+#    rate: 160
+#    output_dir: data/speech/pilot/en
+#
+#  cockpit:
+#    engine: pyttsx3
+#    voice_name: "Zira"  # Windows default female voice
+#    rate: 140
+#    output_dir: data/speech/en
+#
+#  ground:
+#    engine: pyttsx3
+#    voice_name: "David"
+#    rate: 155
+#    output_dir: data/speech/atc/en
+#
+#  tower:
+#    engine: pyttsx3
+#    voice_name: "Mark"
+#    rate: 155
+#    output_dir: data/speech/atc/en
+#
+#  approach:
+#    engine: pyttsx3
+#    voice_name: "David"
+#    rate: 160
+#    output_dir: data/speech/atc/en
+#
+#  atis:
+#    engine: pyttsx3
+#    voice_name: "Zira"
+#    rate: 150
+#    output_dir: data/speech/atc/en

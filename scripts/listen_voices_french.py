@@ -1,16 +1,31 @@
 #!/usr/bin/env python3
 """
-Kokoro TTS French Voice Listener
+Kokoro TTS - French Voice Listener
 
-Listen to all 19 voices speaking French aviation phrases.
+Écoute automatique de toutes les voix françaises disponibles.
+Appuyez sur Ctrl+C pour arrêter.
 """
 
+import os
+import platform
 import subprocess
+import sys
 import tempfile
+import time
 from pathlib import Path
 
 import soundfile as sf
 from kokoro_onnx import Kokoro
+
+# Auto-detect project root (handles running from scripts/ or project root)
+SCRIPT_DIR = Path(__file__).resolve().parent
+if SCRIPT_DIR.name == "scripts":
+    PROJECT_ROOT = SCRIPT_DIR.parent
+else:
+    PROJECT_ROOT = SCRIPT_DIR
+
+# Change to project root so relative paths work
+os.chdir(PROJECT_ROOT)
 
 # All available voices
 VOICES = [
@@ -37,12 +52,41 @@ VOICES = [
     ("am_puck", "Male - Playful"),
 ]
 
-# French aviation sample text
-SAMPLE_TEXT = "Tour de contrôle Palo Alto, Cessna un deux trois alpha bravo, prêt pour le départ piste trois un."
+# Texte de test en français aviation
+SAMPLE_TEXT = (
+    "Tour de contrôle Palo Alto, Cessna un deux trois alpha bravo, "
+    "prêt pour le départ piste trois un."
+)
+
+
+def play_audio(audio_file):
+    """Joue un fichier audio avec le lecteur approprié à la plateforme."""
+    system = platform.system()
+    
+    try:
+        if system == "Darwin":  # macOS
+            subprocess.run(["afplay", str(audio_file)], check=True)
+        elif system == "Windows":
+            # Use Windows Media Player via PowerShell
+            subprocess.run(
+                ["powershell", "-c", f"(New-Object Media.SoundPlayer '{audio_file}').PlaySync()"],
+                check=True
+            )
+        else:  # Linux
+            players = ["aplay", "paplay", "ffplay"]
+            for player in players:
+                try:
+                    subprocess.run([player, str(audio_file)], check=True, stderr=subprocess.DEVNULL)
+                    return
+                except FileNotFoundError:
+                    continue
+            print(f"Avertissement : Aucun lecteur audio trouvé. Fichier : {audio_file}")
+    except Exception as e:
+        print(f"Avertissement : Impossible de lire l'audio : {e}")
 
 
 def main():
-    """Main entry point."""
+    """Écoute toutes les voix françaises."""
     print("\n" + "=" * 70)
     print("Kokoro TTS - French Voice Listener")
     print("=" * 70)
@@ -52,12 +96,17 @@ def main():
 
     # Initialize Kokoro
     print("Initialisation de Kokoro...")
-    kokoro = Kokoro(
-        model_path="assets/models/kokoro-v1.0.onnx", voices_path="assets/models/voices-v1.0.bin"
-    )
-    print("✓ Prêt!\n")
+    try:
+        kokoro = Kokoro(
+            model_path="assets/models/kokoro-v1.0.onnx",
+            voices_path="assets/models/voices-v1.0.bin"
+        )
+        print("✓ Prêt!\n")
+    except Exception as e:
+        print(f"✗ Erreur d'initialisation : {e}")
+        return 1
 
-    # Create temp directory for audio files
+    # Create temporary directory
     with tempfile.TemporaryDirectory() as temp_dir:
         temp_path = Path(temp_dir)
 
@@ -66,25 +115,26 @@ def main():
                 print(f"[{i}/{len(VOICES)}] 🔊 {voice:12} - {description}")
 
                 # Generate French audio
-                samples, sample_rate = kokoro.create(
-                    SAMPLE_TEXT,
-                    voice=voice,
-                    lang="fr-fr",  # French!
-                )
+                try:
+                    samples, sample_rate = kokoro.create(
+                        SAMPLE_TEXT, 
+                        voice=voice, 
+                        lang="fr-fr"
+                    )
+                except Exception as e:
+                    print(f"✗ Erreur: {e}\n")
+                    continue
 
                 # Save to temp file
-                temp_file = temp_path / f"{voice}.wav"
+                temp_file = temp_path / f"{voice}_fr.wav"
                 sf.write(str(temp_file), samples, sample_rate)
 
-                # Play with afplay
-                subprocess.run(["afplay", str(temp_file)], check=True)
+                # Play audio using cross-platform function
+                play_audio(temp_file)
 
-                # Brief pause before next voice
+                # Small pause between voices
                 if i < len(VOICES):
-                    import time
-
                     time.sleep(1)
-
             print("\n" + "=" * 70)
             print(f"✓ Toutes les {len(VOICES)} voix françaises jouées!")
             print("=" * 70 + "\n")
