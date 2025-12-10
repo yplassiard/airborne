@@ -630,6 +630,250 @@ class AirportDatabase:
         """
         return GATEWAY_FREQ_MAP.get(freq_type.upper(), FrequencyType.OTHER)
 
+    def get_runway_at_position(
+        self, latitude: float, longitude: float, tolerance_m: float = 50.0
+    ) -> tuple[Runway, str] | None:
+        """Check if position is on a runway and return runway info.
+
+        Args:
+            latitude: Position latitude in degrees
+            longitude: Position longitude in degrees
+            tolerance_m: Distance tolerance from runway centerline (meters)
+
+        Returns:
+            Tuple of (Runway, runway_end_ident) if on a runway, None otherwise.
+            runway_end_ident is the identifier of the nearest runway end (e.g., "09" or "27")
+
+        Examples:
+            >>> result = db.get_runway_at_position(37.615223, -122.389977)
+            >>> if result:
+            ...     runway, end_id = result
+            ...     print(f"On runway {runway.runway_id}, end {end_id}")
+        """
+        # Search all loaded airports
+        for icao, runways in self.runways.items():
+            for runway in runways:
+                result = self._check_position_on_runway(
+                    latitude, longitude, runway, tolerance_m
+                )
+                if result:
+                    return result
+
+        return None
+
+    def _check_position_on_runway(
+        self, latitude: float, longitude: float, runway: Runway, tolerance_m: float
+    ) -> tuple[Runway, str] | None:
+        """Check if position is on a specific runway.
+
+        Uses a simplified rectangular bounding box check with rotation.
+
+        Args:
+            latitude: Position latitude
+            longitude: Position longitude
+            runway: Runway to check
+            tolerance_m: Tolerance from centerline
+
+        Returns:
+            Tuple of (Runway, runway_end_ident) if on runway, None otherwise
+        """
+        # Calculate runway center point
+        center_lat = (runway.le_latitude + runway.he_latitude) / 2
+        center_lon = (runway.le_longitude + runway.he_longitude) / 2
+
+        # Convert lat/lon to approximate meters from runway center
+        lat_diff_m = (latitude - center_lat) * 110540  # ~110.54 km per degree latitude
+        lon_diff_m = (longitude - center_lon) * 111320 * math.cos(math.radians(center_lat))
+
+        # Runway heading (use LE heading)
+        heading_rad = math.radians(runway.le_heading_deg)
+
+        # Rotate position into runway coordinate system
+        # x_rwy = along runway, y_rwy = perpendicular to runway
+        cos_h = math.cos(heading_rad)
+        sin_h = math.sin(heading_rad)
+
+        # Rotate the offset into runway-aligned coordinates
+        x_rwy = lat_diff_m * cos_h + lon_diff_m * sin_h  # Along runway
+        y_rwy = -lat_diff_m * sin_h + lon_diff_m * cos_h  # Perpendicular
+
+        # Runway dimensions
+        length_m = runway.length_ft * 0.3048
+        width_m = runway.width_ft * 0.3048
+
+        # Check if position is within runway bounds
+        half_length = length_m / 2 + tolerance_m
+        half_width = width_m / 2 + tolerance_m
+
+        if abs(x_rwy) <= half_length and abs(y_rwy) <= half_width:
+            # Determine which end is closer
+            dist_to_le = self._calculate_distance_m(
+                latitude, longitude, runway.le_latitude, runway.le_longitude
+            )
+            dist_to_he = self._calculate_distance_m(
+                latitude, longitude, runway.he_latitude, runway.he_longitude
+            )
+
+            nearest_end = runway.le_ident if dist_to_le < dist_to_he else runway.he_ident
+            return (runway, nearest_end)
+
+        return None
+
+    def get_nearest_runway(
+        self, latitude: float, longitude: float, max_distance_nm: float = 5.0
+    ) -> tuple[Runway, str, float] | None:
+        """Get the nearest runway to a position.
+
+        Args:
+            latitude: Position latitude in degrees
+            longitude: Position longitude in degrees
+            max_distance_nm: Maximum search distance in nautical miles
+
+        Returns:
+            Tuple of (Runway, runway_end_ident, distance_nm) if found, None otherwise
+
+        Examples:
+            >>> result = db.get_nearest_runway(37.615223, -122.389977)
+            >>> if result:
+            ...     runway, end_id, dist = result
+            ...     print(f"Nearest: {runway.runway_id} at {dist:.1f}nm")
+        """
+        nearest = None
+        nearest_distance = float("inf")
+        nearest_end = ""
+
+        max_distance_m = max_distance_nm * 1852  # Convert nm to meters
+
+        for icao, runways in self.runways.items():
+            for runway in runways:
+                # Check distance to both runway ends
+                dist_le = self._calculate_distance_m(
+                    latitude, longitude, runway.le_latitude, runway.le_longitude
+                )
+                dist_he = self._calculate_distance_m(
+                    latitude, longitude, runway.he_latitude, runway.he_longitude
+                )
+
+                # Use the closer end
+                if dist_le < dist_he:
+                    dist = dist_le
+                    end = runway.le_ident
+                else:
+                    dist = dist_he
+                    end = runway.he_ident
+
+                if dist < nearest_distance and dist <= max_distance_m:
+                    nearest_distance = dist
+                    nearest = runway
+                    nearest_end = end
+
+        if nearest:
+            return (nearest, nearest_end, nearest_distance / 1852)  # Convert to nm
+
+        return None
+
+    def get_runway_alignment(
+        self, latitude: float, longitude: float, heading_deg: float, runway: Runway
+    ) -> dict:
+        """Calculate alignment deviation from a runway.
+
+        Args:
+            latitude: Aircraft latitude
+            longitude: Aircraft longitude
+            heading_deg: Aircraft heading in degrees
+            runway: Target runway
+
+        Returns:
+            Dictionary with alignment data:
+            - lateral_deviation_m: Distance from centerline (positive = right)
+            - heading_deviation_deg: Heading error (positive = right of course)
+            - distance_to_threshold_m: Distance to nearest threshold
+            - on_glideslope: Whether on 3° glideslope (within tolerance)
+            - glideslope_deviation_deg: Deviation from 3° glideslope
+
+        Examples:
+            >>> alignment = db.get_runway_alignment(37.62, -122.39, 280, runway)
+            >>> print(f"Lateral: {alignment['lateral_deviation_m']:.0f}m")
+        """
+        # Determine which runway end we're approaching based on heading
+        heading_to_le = runway.le_heading_deg
+        heading_to_he = runway.he_heading_deg
+
+        # Normalize heading difference
+        diff_le = abs((heading_deg - heading_to_le + 180) % 360 - 180)
+        diff_he = abs((heading_deg - heading_to_he + 180) % 360 - 180)
+
+        # Use the end we're facing
+        if diff_le < diff_he:
+            target_lat = runway.le_latitude
+            target_lon = runway.le_longitude
+            runway_heading = runway.le_heading_deg
+            threshold_elev = runway.le_elevation_ft
+        else:
+            target_lat = runway.he_latitude
+            target_lon = runway.he_longitude
+            runway_heading = runway.he_heading_deg
+            threshold_elev = runway.he_elevation_ft
+
+        # Calculate distance to threshold
+        distance_to_threshold = self._calculate_distance_m(
+            latitude, longitude, target_lat, target_lon
+        )
+
+        # Calculate lateral deviation
+        # Bearing from threshold to aircraft
+        bearing_to_aircraft = self._calculate_bearing(
+            target_lat, target_lon, latitude, longitude
+        )
+
+        # Angular difference from runway heading
+        angle_diff = bearing_to_aircraft - runway_heading
+        angle_diff_rad = math.radians(angle_diff)
+
+        # Lateral deviation = distance * sin(angle_diff)
+        lateral_deviation = distance_to_threshold * math.sin(angle_diff_rad)
+
+        # Heading deviation
+        heading_deviation = heading_deg - runway_heading
+        # Normalize to -180 to 180
+        while heading_deviation > 180:
+            heading_deviation -= 360
+        while heading_deviation < -180:
+            heading_deviation += 360
+
+        return {
+            "lateral_deviation_m": lateral_deviation,
+            "heading_deviation_deg": heading_deviation,
+            "distance_to_threshold_m": distance_to_threshold,
+            "runway_heading_deg": runway_heading,
+            "threshold_elevation_ft": threshold_elev,
+        }
+
+    @staticmethod
+    def _calculate_bearing(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
+        """Calculate bearing from point 1 to point 2.
+
+        Args:
+            lat1, lon1: Start point in degrees
+            lat2, lon2: End point in degrees
+
+        Returns:
+            Bearing in degrees (0-360)
+        """
+        lat1_rad = math.radians(lat1)
+        lat2_rad = math.radians(lat2)
+        dlon_rad = math.radians(lon2 - lon1)
+
+        x = math.sin(dlon_rad) * math.cos(lat2_rad)
+        y = math.cos(lat1_rad) * math.sin(lat2_rad) - math.sin(lat1_rad) * math.cos(
+            lat2_rad
+        ) * math.cos(dlon_rad)
+
+        bearing_rad = math.atan2(x, y)
+        bearing_deg = math.degrees(bearing_rad)
+
+        return (bearing_deg + 360) % 360
+
     # Backwards compatibility alias
     def load_from_csv(self, data_dir: str | Path) -> None:
         """Legacy method for CSV loading - no longer supported.

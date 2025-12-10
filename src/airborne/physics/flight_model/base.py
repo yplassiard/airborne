@@ -69,6 +69,10 @@ class AircraftState:
         mass: Current mass including fuel (kg).
         fuel: Fuel remaining (kg).
         on_ground: Whether aircraft is on the ground.
+        terrain_elevation_m: Terrain elevation at current position (MSL).
+        agl_altitude_m: Altitude above ground level.
+        latitude: Current latitude in degrees.
+        longitude: Current longitude in degrees.
     """
 
     position: Vector3 = field(default_factory=Vector3.zero)
@@ -79,6 +83,12 @@ class AircraftState:
     mass: float = 1000.0
     fuel: float = 100.0
     on_ground: bool = False
+
+    # Terrain-aware altitude tracking
+    terrain_elevation_m: float = 0.0  # Terrain elevation at current position (MSL)
+    agl_altitude_m: float = 0.0  # Altitude above ground level
+    latitude: float = 0.0  # Current latitude in degrees
+    longitude: float = 0.0  # Current longitude in degrees
 
     # Trim positions (-1.0 to 1.0)
     pitch_trim: float = 0.0  # Elevator trim (-1.0 = nose down, 1.0 = nose up)
@@ -111,12 +121,20 @@ class AircraftState:
         self._airspeed_dirty = True
 
     def get_altitude(self) -> float:
-        """Get altitude (Y component of position).
+        """Get altitude MSL (Y component of position).
 
         Returns:
-            Altitude in meters.
+            Altitude in meters (MSL).
         """
         return self.position.y
+
+    def get_agl(self) -> float:
+        """Get altitude above ground level.
+
+        Returns:
+            Altitude in meters (AGL).
+        """
+        return self.agl_altitude_m
 
     def get_heading(self) -> float:
         """Get heading (yaw angle).

@@ -31,6 +31,7 @@ from airborne.physics.vectors import Vector3
 
 if TYPE_CHECKING:
     from airborne.systems.propeller.base import IPropeller
+    from airborne.terrain.elevation_service import ElevationService
 
 logger = get_logger(__name__)
 
@@ -82,6 +83,11 @@ class Simple6DOFFlightModel(IFlightModel):
         self.cl_flap_delta = 0.5  # CL increase per unit flap deflection (0-1)
         self.cl_max_flaps = 2.1  # Maximum CL with full flaps
 
+        # Wing geometry for glide ratio calculation
+        self.wing_span = 11.0  # m (default for C172)
+        self.aspect_ratio = 7.4  # Wing aspect ratio (b²/S)
+        self.oswald_efficiency = 0.7  # Oswald efficiency factor
+
         # Stability and damping coefficients (configurable)
         self.pitch_damping_coefficient = (
             -25.0
@@ -93,6 +99,9 @@ class Simple6DOFFlightModel(IFlightModel):
         self.propeller: IPropeller | None = None
         self.engine_power_hp = 0.0  # Current engine power (from ENGINE_STATE)
         self.engine_rpm = 0.0  # Current engine RPM (from ENGINE_STATE)
+
+        # Terrain elevation service (optional - if present, uses terrain for ground detection)
+        self.elevation_service: ElevationService | None = None
 
         # Current state
         self.state = AircraftState()
@@ -117,6 +126,7 @@ class Simple6DOFFlightModel(IFlightModel):
         self.drag_parasite_n = 0.0
         self.drag_induced_n = 0.0
         self.lift_coefficient = 0.0
+        self.drag_coefficient_total = 0.0
         self.angle_of_attack_deg = 0.0
 
     def initialize(self, config: dict) -> None:
@@ -164,6 +174,15 @@ class Simple6DOFFlightModel(IFlightModel):
         self.stall_aoa_deg = config.get("stall_aoa_deg", 17.0)  # Stall AOA in degrees
         self.cl_flap_delta = config.get("cl_flap_delta", 0.5)  # CL increase per unit flap (0-1)
         self.cl_max_flaps = config.get("cl_max_flaps", 2.1)  # Max CL with full flaps
+
+        # Wing geometry for glide ratio
+        self.wing_span = config.get("wing_span_m", 11.0)  # Default for C172
+        self.aspect_ratio = config.get("aspect_ratio", None)  # Will calculate if not provided
+        self.oswald_efficiency = config.get("oswald_efficiency", 0.7)
+
+        # Calculate aspect ratio from geometry if not provided
+        if self.aspect_ratio is None:
+            self.aspect_ratio = self.get_aspect_ratio()
 
         # Initialize state
         self.state.mass = self.empty_mass + self.max_fuel
@@ -218,19 +237,36 @@ class Simple6DOFFlightModel(IFlightModel):
         # Update rotation based on inputs (simplified)
         self._update_rotation(dt, inputs)
 
-        # Ground collision check (simple altitude check)
-        if self.state.position.y <= 0.0:
-            self.state.position.y = 0.0
+        # Ground collision check (terrain-aware)
+        # Get terrain elevation at current position
+        terrain_elevation = 0.0
+        if self.elevation_service:
+            try:
+                terrain_elevation = self.elevation_service.get_elevation(
+                    self.state.latitude, self.state.longitude
+                )
+            except Exception:
+                terrain_elevation = 0.0  # Fallback to sea level
+
+        # Update terrain state
+        self.state.terrain_elevation_m = terrain_elevation
+        self.state.agl_altitude_m = self.state.position.y - terrain_elevation
+
+        # Ground contact check using terrain elevation
+        if self.state.position.y <= terrain_elevation:
+            self.state.position.y = terrain_elevation
             # Only clamp downward velocity (don't prevent upward velocity for takeoff)
             # Allow aircraft to build upward velocity when lift > weight
             if self.state.velocity.y < 0.0:
                 self.state.velocity.y = 0.0
             self.state.on_ground = True
+            self.state.agl_altitude_m = 0.0
 
             # DIAGNOSTIC: Log when we hit ground
             if not hasattr(self, "_ground_hit_logged"):
                 logger.info(
-                    f"[FLIGHT_MODEL] Aircraft hit ground: position.y={self.state.position.y:.2f}m, setting on_ground=True"
+                    f"[FLIGHT_MODEL] Aircraft hit ground: position.y={self.state.position.y:.2f}m, "
+                    f"terrain={terrain_elevation:.2f}m, setting on_ground=True"
                 )
                 self._ground_hit_logged = True
         else:
@@ -347,25 +383,24 @@ class Simple6DOFFlightModel(IFlightModel):
         """
         aoa_deg = angle_of_attack_rad * RADIANS_TO_DEGREES
 
-        # Cessna 172 drag parameters
-        cd_parasite = 0.027  # Parasite drag coefficient (clean config)
-        aspect_ratio = 7.4  # Wing aspect ratio (b²/S)
-        oswald_efficiency = 0.7  # Oswald efficiency factor
+        # Use aircraft-specific parameters
+        cd_parasite = self.drag_coefficient
 
         # Induced drag: CD_i = CL² / (π * e * AR)
-        cd_induced = (cl * cl) / (math.pi * oswald_efficiency * aspect_ratio)
+        cd_induced = (cl * cl) / (math.pi * self.oswald_efficiency * self.aspect_ratio)
 
         # Stall drag: Additional drag above stall AOA
-        stall_aoa_deg = 17.0
-        if abs(aoa_deg) > stall_aoa_deg:
+        cd_stall = 0.0
+        if abs(aoa_deg) > self.stall_aoa_deg:
             # Drag increases dramatically in stall
-            stall_excess = abs(aoa_deg) - stall_aoa_deg
+            stall_excess = abs(aoa_deg) - self.stall_aoa_deg
             # Use 1 - exp(-x) for smooth onset of stall drag
             cd_stall = 0.5 * (1.0 - math.exp(-0.1 * stall_excess))
-        else:
-            cd_stall = 0.0
 
         total_cd = cd_parasite + cd_induced + cd_stall
+
+        # Store for glide ratio calculation
+        self.drag_coefficient_total = total_cd
 
         return total_cd
 
@@ -430,12 +465,9 @@ class Simple6DOFFlightModel(IFlightModel):
         drag_magnitude = q * self.wing_area * cd
 
         # Store components for telemetry (break down for analysis)
-        cd_parasite = 0.027
-        aspect_ratio = 7.4
-        oswald_efficiency = 0.7
-        cd_induced = (cl * cl) / (math.pi * aspect_ratio * oswald_efficiency)
+        cd_induced = (cl * cl) / (math.pi * self.aspect_ratio * self.oswald_efficiency)
 
-        self.drag_parasite_n = q * self.wing_area * cd_parasite
+        self.drag_parasite_n = q * self.wing_area * self.drag_coefficient
         self.drag_induced_n = q * self.wing_area * cd_induced
         self.lift_coefficient = cl
         self.angle_of_attack_deg = angle_of_attack * RADIANS_TO_DEGREES
@@ -752,6 +784,15 @@ class Simple6DOFFlightModel(IFlightModel):
         # Accumulate external forces
         self.external_force = self.external_force + force
 
+    def set_elevation_service(self, elevation_service: "ElevationService") -> None:
+        """Set the terrain elevation service for ground detection.
+
+        Args:
+            elevation_service: ElevationService for terrain queries.
+        """
+        self.elevation_service = elevation_service
+        logger.info("Flight model: terrain elevation service connected")
+
     def get_forces(self) -> FlightForces:
         """Get current forces.
 
@@ -767,3 +808,102 @@ class Simple6DOFFlightModel(IFlightModel):
             Update counter (for performance monitoring).
         """
         return self._updates
+
+    def get_aspect_ratio(self) -> float:
+        """Calculate wing aspect ratio from geometry.
+
+        Aspect ratio = span² / wing_area
+
+        For GA aircraft like C172, typical values are 7-8.
+        Higher aspect ratio = better glide ratio but less maneuverable.
+
+        Returns:
+            Wing aspect ratio.
+        """
+        if self.wing_area > 0:
+            return self.wing_span**2 / self.wing_area
+        return 7.4  # Fallback default (C172)
+
+    def get_glide_ratio(self) -> float:
+        """Get current glide ratio (L/D) based on current flight conditions.
+
+        The glide ratio is the ratio of lift to drag, which determines
+        how far the aircraft can glide per unit of altitude lost.
+
+        For a Cessna 172: best glide is approximately 9:1 at 65 KIAS.
+        For a Piper Cherokee: approximately 10:1.
+
+        Returns:
+            Current glide ratio (L/D). Returns 0 if drag is zero.
+        """
+        if self.drag_coefficient_total > 0.001:
+            return self.lift_coefficient / self.drag_coefficient_total
+        return 0.0
+
+    def get_best_glide_ratio(self) -> float:
+        """Calculate best (maximum) glide ratio for this aircraft.
+
+        Best L/D occurs at the CL where induced drag equals parasite drag.
+        For a parabolic drag polar: L/D_max = 1 / (2 * sqrt(Cd0 * π * e * AR))
+
+        Typical values:
+        - Cessna 172: 9:1
+        - Piper Cherokee: 10:1
+        - Mooney M20: 12:1
+        - Sailplane: 40:1 to 60:1
+
+        Returns:
+            Best glide ratio (L/D_max).
+        """
+        cd0 = self.drag_coefficient
+
+        # L/D_max formula for parabolic drag polar
+        k = 1.0 / (math.pi * self.oswald_efficiency * self.aspect_ratio)
+        ld_max = 1.0 / (2.0 * math.sqrt(cd0 * k))
+
+        return ld_max
+
+    def get_best_glide_cl(self) -> float:
+        """Calculate CL for best glide ratio.
+
+        This is the lift coefficient at which the aircraft achieves
+        maximum glide distance per altitude lost.
+
+        Returns:
+            Lift coefficient at best L/D.
+        """
+        cd0 = self.drag_coefficient
+
+        # CL for best L/D: CL = sqrt(Cd0 * π * e * AR)
+        cl_best = math.sqrt(cd0 * math.pi * self.oswald_efficiency * self.aspect_ratio)
+
+        return cl_best
+
+    def get_best_glide_speed_mps(self) -> float:
+        """Calculate best glide speed in meters per second.
+
+        Best glide speed is the airspeed at which the aircraft achieves
+        maximum glide ratio. It varies with aircraft weight.
+
+        V_bg = sqrt(2 * W / (ρ * S * CL_best))
+
+        Returns:
+            Best glide speed in m/s.
+        """
+        cl_best = self.get_best_glide_cl()
+
+        if cl_best > 0 and self.wing_area > 0:
+            v_bg = math.sqrt(
+                (2.0 * self.state.mass * GRAVITY)
+                / (AIR_DENSITY_SEA_LEVEL * self.wing_area * cl_best)
+            )
+            return v_bg
+        return 0.0
+
+    def get_best_glide_speed_kts(self) -> float:
+        """Calculate best glide speed in knots.
+
+        Returns:
+            Best glide speed in knots.
+        """
+        return self.get_best_glide_speed_mps() * 1.94384

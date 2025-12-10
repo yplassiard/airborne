@@ -115,6 +115,33 @@ aircraft:
       speed_kts: 135            # 250 km/h at 75%
       fuel_gph: 10.0
 
+  # Landing limits and surface compatibility
+  landing_limits:
+    max_sink_rate_fpm: 550          # DR400 has more delicate gear than C172
+    hard_landing_fpm: 350           # Sink rate triggering hard landing warning
+    max_crosswind_kts: 12           # Maximum demonstrated crosswind component
+    max_tailwind_kts: 8             # Maximum tailwind for landing
+    approach_speed_min_kts: 65      # Minimum approach speed (1.3 × V_SO)
+    approach_speed_max_kts: 85      # Maximum approach speed before long landing
+    max_pitch_touchdown_deg: 10     # Maximum pitch at touchdown
+    max_bank_touchdown_deg: 5       # Maximum bank at touchdown
+
+  # Surface compatibility - DR400 is primarily for paved runways
+  surface_compatibility:
+    allowed_surfaces:               # Surfaces where normal operation is allowed
+      - asphalt
+      - concrete
+    restricted_surfaces:            # Surfaces with increased risk/damage
+      - grass                       # DR400 can handle dry, firm grass carefully
+      - turf
+    prohibited_surfaces:            # Surfaces that will cause damage/crash
+      - gravel                      # Propeller and gear damage likely
+      - dirt
+      - sand
+      - water
+    grass_min_length_ft: 2500       # Needs longer grass runway than C172
+    soft_field_penalty: 1.5         # Higher penalty for soft fields
+
   # Checklists reference
   checklists:
     en: "dr400_180"

@@ -246,6 +246,33 @@ aircraft:
       distance_50ft: 1685           # Distance to clear 50 ft obstacle
       climb_rate_fpm: 730           # Rate of climb at sea level
 
+  # Landing limits and surface compatibility
+  landing_limits:
+    max_sink_rate_fpm: 600          # Maximum touchdown sink rate before damage
+    hard_landing_fpm: 400           # Sink rate triggering hard landing warning
+    max_crosswind_kts: 15           # Maximum demonstrated crosswind component
+    max_tailwind_kts: 10            # Maximum tailwind for landing
+    approach_speed_min_kts: 60      # Minimum approach speed (1.3 × V_SO)
+    approach_speed_max_kts: 80      # Maximum approach speed before long landing
+    max_pitch_touchdown_deg: 12     # Maximum pitch at touchdown (tail strike)
+    max_bank_touchdown_deg: 5       # Maximum bank at touchdown
+
+  # Surface compatibility - what surfaces this aircraft can operate on
+  surface_compatibility:
+    allowed_surfaces:               # Surfaces where normal operation is allowed
+      - asphalt
+      - concrete
+      - grass                       # C172 can handle well-maintained grass
+      - turf
+    restricted_surfaces:            # Surfaces with increased risk/damage
+      - gravel                      # Risk of propeller damage, reduced braking
+      - dirt                        # Soft field technique required
+    prohibited_surfaces:            # Surfaces that will cause damage/crash
+      - sand                        # Nose gear will dig in
+      - water                       # Not a seaplane
+    grass_min_length_ft: 2000       # Minimum grass runway length (longer than paved)
+    soft_field_penalty: 1.3         # Multiply takeoff/landing distance on soft fields
+
   # Initial state
   initial_state:
     position:
