@@ -152,9 +152,12 @@ class PhysicsPlugin(IPlugin):
         aircraft_mass_kg = (
             flight_model_config.get("weight_lbs", 2450.0) * 0.453592
         )  # Convert lbs to kg
+        # Max brake force sized for ~0.35g deceleration (realistic for light aircraft)
+        # a = F/m, so F = m*a = mass_kg * 0.35 * 9.81 ≈ 3.4 * mass_kg
+        max_brake_force = aircraft_mass_kg * 3.4
         self.ground_physics = GroundPhysics(
             mass_kg=aircraft_mass_kg,
-            max_brake_force_n=15000.0,  # Cessna 172 brake force
+            max_brake_force_n=max_brake_force,  # ~0.35g deceleration
             max_steering_angle_deg=60.0,  # Nosewheel steering angle
         )
         logger.info(f"Ground physics initialized with mass={aircraft_mass_kg:.1f} kg")
@@ -256,6 +259,12 @@ class PhysicsPlugin(IPlugin):
         if self._auto_trim_enabled and not state.on_ground:
             self._apply_auto_trim(dt, state)
 
+        # Update flight model's trim state (critical for trim moment calculation)
+        # The flight model uses state.pitch_trim and state.rudder_trim for
+        # aerodynamic moment calculations, so we must sync these before update
+        self.flight_model.state.pitch_trim = self._pitch_trim
+        self.flight_model.state.rudder_trim = self._rudder_trim
+
         # NOW update flight model with control inputs AND ground forces
         self.flight_model.update(dt, self.control_inputs)
 
@@ -346,18 +355,17 @@ class PhysicsPlugin(IPlugin):
             yaw_input = float(data.get("yaw", 0.0))
 
             # Get trim values and store for telemetry
+            # Note: Trim is stored separately and applied to flight model state,
+            # NOT added to control inputs. Trim creates a separate aerodynamic
+            # moment (via trim tab) - it doesn't change elevator deflection.
+            # This allows the pilot to release the controls and let trim hold attitude.
             self._pitch_trim = float(data.get("pitch_trim", 0.0))
             self._rudder_trim = float(data.get("rudder_trim", 0.0))
 
-            # Apply trim: trim adds to the control input
-            # This means trim relieves the need to hold a control deflection
-            self.control_inputs.pitch = pitch_input + self._pitch_trim
+            # Set control inputs (no trim added - trim moment is calculated separately)
+            self.control_inputs.pitch = pitch_input
             self.control_inputs.roll = roll_input
-            self.control_inputs.yaw = yaw_input + self._rudder_trim
-
-            # Clamp to valid range
-            self.control_inputs.pitch = max(-1.0, min(1.0, self.control_inputs.pitch))
-            self.control_inputs.yaw = max(-1.0, min(1.0, self.control_inputs.yaw))
+            self.control_inputs.yaw = yaw_input
 
             # Other controls (no trim)
             if "throttle" in data:
