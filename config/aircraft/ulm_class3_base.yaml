@@ -1,0 +1,271 @@
+# ULM Class 3 (Multiaxis) Base Configuration
+# Base configuration for French ULM Class 3 ultralight aircraft
+# These are 3-axis control aircraft similar to conventional airplanes
+#
+# ULM Class 3 characteristics:
+# - Maximum takeoff weight: 450 kg (single seat) or 472.5 kg (two seat)
+# - Stall speed: ≤ 65 km/h (35 kt) in landing configuration
+# - 3-axis control (pitch, roll, yaw)
+# - Typically powered by Rotax engines
+
+aircraft:
+  name: "ULM Class 3 Base"
+  icao_code: "ULAC"  # Generic ultralight code
+  manufacturer: "Generic"
+  category: "ultralight"
+  class: "class3_multiaxis"
+  fixed_gear: true
+
+  # Flight model configuration - ULM-specific
+  flight_model: "ULM6DOF"
+  flight_model_config:
+    wing_area_sqft: 130.0       # ~12 m² typical ULM wing
+    weight_lbs: 750.0           # ~340 kg typical empty weight
+    max_thrust_lbs: 100.0       # Fallback thrust
+    drag_coefficient: 0.040     # Higher drag (struts, wires, open cockpit)
+
+    # ULM aerodynamic coefficients (high-lift STOL design)
+    cl_0: 0.35                  # Higher zero-AOA lift (cambered airfoil)
+    cl_alpha: 0.11              # Lift curve slope per degree
+    cl_max: 1.8                 # High max CL for STOL
+    stall_aoa_deg: 15.0         # Earlier stall than GA
+    cl_flap_delta: 0.6          # Strong flap effect
+    cl_max_flaps: 2.5           # Very high CL with flaps
+
+    # Slat effects (if equipped)
+    has_slats: false            # Override in specific aircraft
+    cl_slat_bonus: 0.4
+    stall_aoa_slat_bonus: 8.0
+    slat_deploy_aoa_deg: 8.0
+
+    # Flaperon configuration (if equipped)
+    has_flaperons: false        # Override in specific aircraft
+
+    # ULM stability and damping (lighter = less damped)
+    pitch_damping_coefficient: -15.0
+    roll_damping_coefficient: -5.0
+    yaw_damping_coefficient: -4.0
+
+    # ULM inertia values (much lower than GA)
+    pitch_inertia: 300.0        # kg⋅m²
+    roll_inertia: 200.0
+    yaw_inertia: 400.0
+
+    # Control effectiveness (higher for light aircraft)
+    elevator_effectiveness: 0.6
+    aileron_effectiveness: 0.25
+    rudder_effectiveness: 0.15
+
+  # Flap configuration - typical ULM (simple 2-position)
+  flaps:
+    positions:
+      - name: "UP"
+        degrees: 0
+        normalized: 0.0
+      - name: "FULL"
+        degrees: 30
+        normalized: 1.0
+    default_position: 0
+    max_speed_kts: 65           # Lower Vfe for ULM
+    transition_time_sec: 2.0
+
+  # Propeller configuration - typical ULM
+  propeller:
+    type: "fixed_pitch"
+    diameter_m: 1.68            # 66 inches typical
+    pitch_ratio: 0.55           # Climb prop for STOL
+    efficiency_static: 0.70
+    efficiency_cruise: 0.82
+    cruise_advance_ratio: 0.55
+    static_thrust_multiplier: 5.0
+
+  # Aircraft systems plugins
+  plugins:
+    # Rotax engine - typical 912 ULS
+    - plugin: "rotax_engine_plugin"
+      instance_id: "engine"
+      config:
+        model: "912uls"
+        max_power_hp: 100
+        max_rpm: 5800
+        idle_rpm: 1400
+        reduction_ratio: 2.43
+
+    # Simple electrical system - 12V
+    - plugin: "simple_electrical_system"
+      instance_id: "electrical"
+      config:
+        battery_voltage: 12.6
+        battery_capacity_ah: 12.0    # Smaller battery
+        alternator_voltage: 14.0
+        alternator_amps: 20.0        # Smaller alternator
+
+    # Simple fuel system - wing tanks
+    - plugin: "simple_fuel_system"
+      instance_id: "fuel"
+      config:
+        left_tank_capacity: 13.2     # 50 liters total (~13.2 US gal)
+        right_tank_capacity: 13.2
+        unusable_fuel: 1.0
+        fuel_selector: "both"
+
+  # Electrical system configuration
+  electrical:
+    implementation: "simple_12v"
+    battery:
+      voltage_nominal: 12.6
+      capacity_ah: 12.0
+      internal_resistance: 0.08
+    alternator:
+      max_amps: 20.0
+      voltage_regulated: 14.0
+      rpm_threshold: 1800        # Engine RPM (before reduction)
+    loads:
+      master_relay:
+        amps: 0.1
+        essential: true
+        min_voltage: 10.0
+      starter_motor:
+        amps: 80.0              # Rotax starter
+        essential: true
+        min_voltage: 11.5
+      fuel_pump:
+        amps: 2.0
+        essential: false
+        min_voltage: 10.0
+      avionics:
+        amps: 5.0               # Basic avionics
+        essential: false
+        min_voltage: 11.5
+      nav_lights:
+        amps: 1.0
+        essential: false
+        min_voltage: 10.0
+      strobe:
+        amps: 1.5
+        essential: false
+        min_voltage: 10.0
+      landing_light:
+        amps: 4.0
+        essential: false
+        min_voltage: 10.0
+
+  # Fuel system configuration
+  fuel:
+    implementation: "simple_gravity"
+    fuel_type: "mogas_91"       # ULM can use regular gasoline
+    lbs_per_gallon: 6.0
+    tanks:
+      left:
+        capacity_total: 14.5    # 55 liters total
+        capacity_usable: 13.2   # 50 liters usable
+        initial_quantity: 13.2
+        fuel_type: "mogas_91"
+        position: [-3.0, 0.0, -4.0]
+      right:
+        capacity_total: 14.5
+        capacity_usable: 13.2
+        initial_quantity: 13.2
+        fuel_type: "mogas_91"
+        position: [-3.0, 0.0, 4.0]
+    selector_positions: [OFF, LEFT, RIGHT, BOTH]
+
+  # Weight and balance - ULM limits
+  weight_balance:
+    empty_weight: 750.0         # ~340 kg typical
+    empty_moment: 56250.0
+    max_gross_weight: 1040.0    # ~472.5 kg (ULM 2-seat limit)
+    cg_limits:
+      forward: 70.0
+      aft: 85.0
+    stations:
+      fuel:
+        - name: "fuel_main"
+          arm: 75.0
+          max_weight: 160.0     # ~27 gal max
+          initial_weight: 159.0
+      seats:
+        - name: "seat_pilot"
+          arm: 72.0
+          max_weight: 220.0
+          initial_weight: 170.0
+        - name: "seat_passenger"
+          arm: 72.0
+          max_weight: 220.0
+          initial_weight: 0.0
+      cargo:
+        - name: "cargo"
+          arm: 95.0
+          max_weight: 44.0      # 20 kg max
+          initial_weight: 0.0
+
+  # Performance configuration - ULM typical
+  performance:
+    reference_weight_lbs: 1040.0
+    wing_area_sqft: 130.0
+    max_power_hp: 100.0
+    cl_max_clean: 1.8
+    cl_max_landing: 2.5
+    vspeeds_reference:
+      V_S: 32                   # Stall speed clean (KIAS) - ULM limit 35 kt
+      V_SO: 28                  # Stall speed landing
+      V_R: 35                   # Rotation speed
+      V_X: 40                   # Best angle of climb
+      V_Y: 50                   # Best rate of climb
+    takeoff_reference:
+      ground_roll_ft: 300       # STOL performance
+      distance_50ft: 600
+      climb_rate_fpm: 800
+
+  # Ground physics - ULM specific
+  ground_physics:
+    type: "ulm"
+    mass_kg: 340.0
+    max_brake_force_n: 3000.0
+    max_steering_angle_deg: 45.0
+    wing_span_m: 8.0
+    wing_area_m2: 12.0
+    weathervane_sensitivity: 0.3
+    gust_sensitivity: 0.5
+    taildragger:
+      is_taildragger: false
+      tailwheel_locked: false
+      prop_clearance_m: 0.25
+      cg_height_m: 0.9
+      wheelbase_m: 3.5
+
+  # Audio configuration - generic ULM sounds
+  audio:
+    engine_sounds:
+      start: "assets/sounds/aircraft/ulm/rotax_start.wav"
+      idle: "assets/sounds/aircraft/ulm/rotax_idle.wav"
+      shutdown: "assets/sounds/aircraft/ulm/rotax_shutdown.wav"
+      pitch_idle: 1.0
+      pitch_full: 1.7           # Rotax has less pitch change
+    click_sounds:
+      switch_on: "assets/sounds/aircraft/click_switch_on.mp3"
+      switch_off: "assets/sounds/aircraft/click_switch_off.mp3"
+      button: "assets/sounds/aircraft/click_button.mp3"
+      knob: "assets/sounds/aircraft/click_knob.mp3"
+    system_sounds:
+      stall_warning: "assets/sounds/aircraft/ulm/stall_warning.wav"
+
+  # Initial state
+  initial_state:
+    position:
+      latitude: 44.8283         # Bordeaux area (France)
+      longitude: -0.7151
+      altitude_ft: 0
+    fuel:
+      left_tank_gallons: 13.2
+      right_tank_gallons: 13.2
+    electrical:
+      battery_master: false
+      alternator_switch: false
+    engine:
+      running: false
+      mixture: 1.0              # Rotax runs full rich
+      throttle: 0.0
+    controls:
+      parking_brake: true
+      gear_down: true

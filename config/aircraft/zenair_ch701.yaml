@@ -1,0 +1,294 @@
+# Zenair CH701 STOL Configuration
+# The CH701 is a Canadian-designed STOL ultralight famous for its
+# exceptional short takeoff and landing performance.
+#
+# Key features:
+# - Full-span leading-edge slats (automatic, aerodynamic)
+# - Full-span flaperons (combined flap/aileron)
+# - High-lift STOL airfoil (Riblett GA30-712)
+# - Extremely short takeoff roll (~50m)
+# - Low stall speed (~30 kt)
+#
+# Available as taildragger or tricycle gear
+
+# Inherit from ULM Class 3 base
+_base: ulm_class3_base.yaml
+
+aircraft:
+  name: "Zenair CH701 STOL"
+  icao_code: "C701"
+  manufacturer: "Zenair"
+  category: "ultralight"
+  class: "class3_multiaxis"
+  fixed_gear: true
+
+  # Flight model - ULM with slats and flaperons
+  flight_model: "ULM6DOF"
+  flight_model_config:
+    # CH701 specific dimensions
+    wing_area_sqft: 122.0       # 11.33 m² wing area
+    weight_lbs: 580.0           # 263 kg empty weight
+    max_thrust_lbs: 90.0
+    drag_coefficient: 0.045     # Higher drag (slats, struts)
+
+    # CH701 STOL aerodynamics (Riblett GA30-712 airfoil)
+    cl_0: 0.40                  # Very high zero-lift CL
+    cl_alpha: 0.12              # Steep lift curve
+    cl_max: 2.0                 # Exceptional clean CL (with slats)
+    stall_aoa_deg: 14.0         # Lower stall AOA
+    cl_flap_delta: 0.7          # Strong flaperon effect
+    cl_max_flaps: 2.8           # Extremely high CL (full flap + slats)
+
+    # CH701 automatic leading-edge slats
+    has_slats: true
+    cl_slat_bonus: 0.5          # Significant CL increase
+    stall_aoa_slat_bonus: 10.0  # 10° stall AOA extension!
+    slat_deploy_aoa_deg: 6.0    # Deploy early for STOL
+
+    # CH701 full-span flaperons
+    has_flaperons: true
+
+    # CH701 stability (very light, very responsive)
+    pitch_damping_coefficient: -12.0   # Less damped
+    roll_damping_coefficient: -4.0
+    yaw_damping_coefficient: -3.5
+
+    # CH701 inertia (very light aircraft)
+    pitch_inertia: 180.0        # kg⋅m²
+    roll_inertia: 120.0
+    yaw_inertia: 250.0
+
+    # CH701 control effectiveness (full-span surfaces)
+    elevator_effectiveness: 0.65
+    aileron_effectiveness: 0.30  # Full-span flaperons
+    rudder_effectiveness: 0.18
+
+  # Flaperon configuration - CH701 full-span
+  flaps:
+    positions:
+      - name: "UP"
+        degrees: 0
+        normalized: 0.0
+      - name: "15"
+        degrees: 15
+        normalized: 0.375
+      - name: "30"
+        degrees: 30
+        normalized: 0.75
+      - name: "FULL"
+        degrees: 40
+        normalized: 1.0
+    default_position: 0
+    max_speed_kts: 55           # Very low Vfe (STOL)
+    transition_time_sec: 2.0
+
+  # CH701 flaperon system configuration
+  flaperons:
+    max_flap_deflection_deg: 40.0
+    max_aileron_deflection_deg: 18.0
+    differential_ratio: 1.2     # Less differential (full span)
+    flap_rate_per_second: 0.4
+    min_roll_authority_at_full_flap: 0.6  # Good roll even with flaps
+    cl_per_flap_unit: 0.7
+
+  # CH701 slat system configuration
+  slats:
+    type: "automatic"
+    deploy_aoa_start_deg: 6.0   # Early deployment
+    deploy_aoa_full_deg: 12.0   # Full deploy before stall
+    max_cl_bonus: 0.5
+    max_stall_extension_deg: 10.0
+    deploy_rate: 2.5            # Aerodynamic deployment
+    retract_rate: 2.0
+    min_deploy_airspeed_mps: 8.0
+    max_drag_penalty: 0.025
+
+  # Propeller - CH701 typical (small diameter for clearance)
+  propeller:
+    type: "fixed_pitch"
+    diameter_m: 1.52            # 60 inches (ground clearance)
+    pitch_ratio: 0.50           # Climb prop (STOL)
+    efficiency_static: 0.68
+    efficiency_cruise: 0.78     # Lower cruise efficiency (climb prop)
+    cruise_advance_ratio: 0.50
+    static_thrust_multiplier: 5.5
+
+  # Engine - Rotax 912 ULS standard
+  plugins:
+    - plugin: "rotax_engine_plugin"
+      instance_id: "engine"
+      config:
+        model: "912uls"
+        max_power_hp: 100
+        max_rpm: 5800
+        idle_rpm: 1400
+        reduction_ratio: 2.43
+        fuel_consumption_max_lph: 24.0
+        fuel_consumption_cruise_lph: 16.0
+
+    - plugin: "simple_electrical_system"
+      instance_id: "electrical"
+      config:
+        battery_voltage: 12.6
+        battery_capacity_ah: 12.0
+        alternator_voltage: 14.0
+        alternator_amps: 18.0
+
+    - plugin: "simple_fuel_system"
+      instance_id: "fuel"
+      config:
+        left_tank_capacity: 10.0   # 38 liters total
+        right_tank_capacity: 10.0
+        unusable_fuel: 0.5
+        fuel_selector: "both"
+
+  # Fuel system - CH701 wing tanks
+  fuel:
+    implementation: "simple_gravity"
+    fuel_type: "mogas_91"
+    lbs_per_gallon: 6.0
+    tanks:
+      left:
+        capacity_total: 10.5
+        capacity_usable: 10.0
+        initial_quantity: 10.0
+        fuel_type: "mogas_91"
+        position: [-2.5, 0.0, -3.5]
+      right:
+        capacity_total: 10.5
+        capacity_usable: 10.0
+        initial_quantity: 10.0
+        fuel_type: "mogas_91"
+        position: [-2.5, 0.0, 3.5]
+    selector_positions: [OFF, LEFT, RIGHT, BOTH]
+
+  # Weight and balance - CH701 specific
+  weight_balance:
+    empty_weight: 580.0         # 263 kg
+    empty_moment: 40600.0
+    max_gross_weight: 992.0     # 450 kg (ULM single-seat limit)
+    cg_limits:
+      forward: 65.0
+      aft: 78.0
+    stations:
+      fuel:
+        - name: "fuel_main"
+          arm: 70.0
+          max_weight: 120.0
+          initial_weight: 120.0
+      seats:
+        - name: "seat_pilot"
+          arm: 68.0
+          max_weight: 242.0     # 110 kg pilot + gear
+          initial_weight: 176.0 # 80 kg pilot
+        - name: "seat_passenger"
+          arm: 68.0
+          max_weight: 220.0
+          initial_weight: 0.0
+      cargo:
+        - name: "baggage"
+          arm: 90.0
+          max_weight: 33.0      # 15 kg
+          initial_weight: 0.0
+
+  # Performance - CH701 STOL performance
+  performance:
+    reference_weight_lbs: 992.0
+    wing_area_sqft: 122.0
+    max_power_hp: 100.0
+    cl_max_clean: 2.0           # With slats
+    cl_max_landing: 2.8         # Full flaps + slats
+    wing_loading_lbs_sqft: 8.1  # Very low wing loading
+    vspeeds_reference:
+      V_S: 27                   # Stall clean (kt) - incredibly low
+      V_SO: 24                  # Stall landing config
+      V_R: 28                   # Rotate - almost at stall!
+      V_X: 35                   # Best angle
+      V_Y: 45                   # Best rate
+      V_NE: 100                 # Never exceed
+      V_NO: 85                  # Max structural cruise
+    takeoff_reference:
+      ground_roll_ft: 165       # ~50m - exceptional STOL
+      distance_50ft: 490        # ~150m to clear obstacle
+      climb_rate_fpm: 900
+    landing_reference:
+      ground_roll_ft: 180       # ~55m
+      distance_50ft: 525        # ~160m from obstacle
+
+  # Ground physics - CH701 specific
+  ground_physics:
+    type: "ulm"
+    mass_kg: 263.0
+    max_brake_force_n: 2500.0   # Small drum brakes
+    max_steering_angle_deg: 40.0
+    wing_span_m: 8.23           # 27 ft wingspan
+    wing_area_m2: 11.33
+    weathervane_sensitivity: 0.35   # Very light, more weathervaning
+    gust_sensitivity: 0.6
+    taildragger:
+      is_taildragger: false     # Tricycle version
+      tailwheel_locked: false
+      prop_clearance_m: 0.20
+      cg_height_m: 0.85
+      wheelbase_m: 3.2
+
+  # CH701 special features
+  special_features:
+    # Leading edge slats
+    leading_edge_slats:
+      enabled: true
+      type: "automatic"
+      deploy_aoa_deg: 6.0
+      full_deploy_aoa_deg: 12.0
+    # Full-span flaperons
+    flaperons:
+      enabled: true
+      type: "full_span"
+      max_flap_deg: 40
+      max_aileron_deg: 18
+    # STOL gear
+    landing_gear:
+      type: "tricycle"
+      main_tire_size: "4.00-6"
+      nose_tire_size: "4.00-6"
+      tundra_tires_available: true
+      gear_spread_m: 1.83       # 6 ft track
+
+  # Audio - CH701 specific sounds
+  audio:
+    engine_sounds:
+      start: "assets/sounds/aircraft/ulm/rotax_start.wav"
+      idle: "assets/sounds/aircraft/ulm/rotax_idle.wav"
+      shutdown: "assets/sounds/aircraft/ulm/rotax_shutdown.wav"
+      prop: "assets/sounds/aircraft/ulm/prop_2blade.wav"
+      pitch_idle: 1.0
+      pitch_full: 1.65
+    wind_sounds:
+      struts: "assets/sounds/aircraft/ulm/wind_struts.wav"
+      canopy: "assets/sounds/aircraft/ulm/wind_open_cockpit.wav"
+    system_sounds:
+      slat_deploy: "assets/sounds/aircraft/ulm/slat_deploy.wav"
+      stall_warning: "assets/sounds/aircraft/ulm/stall_horn.wav"
+      flap_motor: "assets/sounds/aircraft/ulm/flap_electric.wav"
+
+  # Initial state - CH701
+  initial_state:
+    position:
+      latitude: 45.7269         # Lyon region (France)
+      longitude: 4.9441
+      altitude_ft: 0
+    fuel:
+      left_tank_gallons: 10.0
+      right_tank_gallons: 10.0
+    electrical:
+      battery_master: false
+      alternator_switch: false
+    engine:
+      running: false
+      mixture: 1.0
+      throttle: 0.0
+    controls:
+      parking_brake: true
+      gear_down: true
+      flaps: 0
+      slats: 0.0                # Auto-deployed

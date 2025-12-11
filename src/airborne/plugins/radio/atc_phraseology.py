@@ -392,11 +392,11 @@ class ATCPhraseology:
             count: Number of passengers
 
         Returns:
-            Formatted passenger count (e.g., "two souls on board")
+            Formatted passenger count (localized)
         """
         if count == 1:
-            return "one soul on board"
-        return f"{self._format_number(count)} souls on board"
+            return f"{self._format_number(count)} {t('atc.soul_on_board')}"
+        return f"{self._format_number(count)} {t('atc.souls_on_board')}"
 
     # --- Radio Check ---
 
@@ -406,7 +406,7 @@ class ATCPhraseology:
         Returns:
             Radio check message
         """
-        return f"{self.context.airport_name} Ground, {self._full_pilot_callsign()}, radio check"
+        return f"{self.context.airport_name} {_facility_name('ground')}, {self._full_pilot_callsign()}, {t('atc.radio_check')}"
 
     def atc_radio_check_response(self) -> str:
         """Generate ATC radio check response.
@@ -416,8 +416,8 @@ class ATCPhraseology:
         """
         return (
             f"{self._abbreviated_callsign()}, "
-            f"{self.context.airport_name} Ground, "
-            f"reading you five by five"
+            f"{self.context.airport_name} {_facility_name('ground')}, "
+            f"{t('atc.reading_you_five_by_five')}"
         )
 
     # --- Pilot Messages ---
@@ -454,11 +454,11 @@ class ATCPhraseology:
             Startup request without ATIS info
         """
         return (
-            f"{self.context.airport_name} Ground, "
+            f"{self.context.airport_name} {_facility_name('ground')}, "
             f"{self._full_pilot_callsign()}, "
-            f"at {self.context.parking_location}, "
+            f"{t('atc.at')} {self.context.parking_location}, "
             f"{self._format_passengers(self.context.passengers)}, "
-            f"request startup"
+            f"{t('atc.request_startup')}"
         )
 
     def pilot_request_taxi(self) -> str:
@@ -468,11 +468,11 @@ class ATCPhraseology:
             Pilot message requesting taxi clearance
         """
         return (
-            f"{self.context.airport_name} Ground, "
+            f"{self.context.airport_name} {_facility_name('ground')}, "
             f"{self._full_pilot_callsign()}, "
-            f"at {self.context.parking_location} "
-            f"with information {self.context.atis_info}, "
-            f"request taxi"
+            f"{t('atc.at')} {self.context.parking_location} "
+            f"{t('atc.with_information')} {self.context.atis_info}, "
+            f"{t('atc.request_taxi')}"
         )
 
     def pilot_ready_for_departure(self, intersection: str | None = None) -> str:
@@ -485,13 +485,13 @@ class ATCPhraseology:
             Pilot ready message
         """
         base = (
-            f"{self.context.airport_name} Tower, "
+            f"{self.context.airport_name} {_facility_name('tower')}, "
             f"{self._abbreviated_callsign()}, "
-            f"holding short runway {self._format_runway(self.context.runway)}, "
-            f"ready for departure"
+            f"{t('atc.hold_short')} {t('atc.runway')} {self._format_runway(self.context.runway)}, "
+            f"{t('atc.ready_for_departure')}"
         )
         if intersection:
-            base += f" at {intersection}"
+            base += f" {t('atc.at')} {intersection}"
         return base
 
     def pilot_request_takeoff(self) -> str:
@@ -501,10 +501,10 @@ class ATCPhraseology:
             Pilot takeoff request
         """
         return (
-            f"{self.context.airport_name} Tower, "
+            f"{self.context.airport_name} {_facility_name('tower')}, "
             f"{self._abbreviated_callsign()}, "
-            f"runway {self._format_runway(self.context.runway)}, "
-            f"ready for takeoff"
+            f"{t('atc.runway')} {self._format_runway(self.context.runway)}, "
+            f"{t('atc.ready_for_departure')}"
         )
 
     def pilot_departure_checkin(self, altitude: int | None = None) -> str:
@@ -598,7 +598,7 @@ class ATCPhraseology:
         Returns:
             Pilot readback message
         """
-        return f"Startup approved, will advise ready, {self._abbreviated_callsign()}"
+        return f"{t('atc.readback_startup')}, {self._abbreviated_callsign()}"
 
     def atc_taxi_clearance(self, taxiway: str = "Alpha") -> str:
         """Generate ATC taxi clearance.
@@ -611,9 +611,9 @@ class ATCPhraseology:
         """
         return (
             f"{self._abbreviated_callsign()}, "
-            f"taxi runway {self._format_runway(self.context.runway)} "
-            f"via {taxiway}, "
-            f"hold short runway {self._format_runway(self.context.runway)}"
+            f"{t('atc.taxi')} {t('atc.runway')} {self._format_runway(self.context.runway)} "
+            f"{t('atc.taxi_via')} {taxiway}, "
+            f"{t('atc.hold_short')} {t('atc.runway')} {self._format_runway(self.context.runway)}"
         )
 
     def atc_hold_short(self) -> str:
@@ -642,7 +642,7 @@ class ATCPhraseology:
             f"{t('atc.cleared_takeoff')}"
         )
         if wind:
-            base += f", wind {wind}"
+            base += f", {t('atc.wind')} {wind}"
         return base
 
     def atc_lineup_wait(self) -> str:

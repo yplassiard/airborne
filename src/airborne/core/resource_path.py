@@ -222,31 +222,46 @@ def setup_library_paths() -> None:
     """
     import ctypes
 
-    lib_dir = get_platform_lib_dir()
-
-    if not lib_dir.exists():
-        return
-
-    lib_dir_str = str(lib_dir)
-
     if sys.platform == "darwin":
         # macOS: Preload libfmod.dylib directly using ctypes
         # DYLD_LIBRARY_PATH changes don't work at runtime due to SIP
-        fmod_path = lib_dir / "libfmod.dylib"
-        if fmod_path.exists():
-            try:
-                ctypes.CDLL(str(fmod_path))
-            except OSError:
-                pass  # Will fail later with more context
+        # Check multiple locations: lib/macos (development), lib/fmod (bundled)
+        fmod_paths = [
+            get_platform_lib_dir() / "libfmod.dylib",  # lib/macos/libfmod.dylib
+            get_resource_path("lib/fmod/libfmod.dylib"),  # lib/fmod/libfmod.dylib (bundled)
+        ]
+        for fmod_path in fmod_paths:
+            if fmod_path.exists():
+                try:
+                    ctypes.CDLL(str(fmod_path))
+                    break  # Successfully loaded
+                except OSError:
+                    continue  # Try next path
     elif sys.platform == "win32":
         # Windows: Add to PATH
+        lib_dirs = [
+            get_platform_lib_dir(),  # lib/windows
+            get_resource_path("lib/fmod"),  # lib/fmod (bundled)
+        ]
         current = os.environ.get("PATH", "")
-        if lib_dir_str not in current:
-            os.environ["PATH"] = f"{lib_dir_str};{current}" if current else lib_dir_str
+        for lib_dir in lib_dirs:
+            if lib_dir.exists():
+                lib_dir_str = str(lib_dir)
+                if lib_dir_str not in current:
+                    os.environ["PATH"] = f"{lib_dir_str};{current}" if current else lib_dir_str
+                    current = os.environ["PATH"]
     else:
         # Linux: LD_LIBRARY_PATH
+        lib_dirs = [
+            get_platform_lib_dir(),  # lib/linux
+            get_resource_path("lib/fmod"),  # lib/fmod (bundled)
+        ]
         current = os.environ.get("LD_LIBRARY_PATH", "")
-        if lib_dir_str not in current:
-            os.environ["LD_LIBRARY_PATH"] = (
-                f"{lib_dir_str}:{current}" if current else lib_dir_str
-            )
+        for lib_dir in lib_dirs:
+            if lib_dir.exists():
+                lib_dir_str = str(lib_dir)
+                if lib_dir_str not in current:
+                    os.environ["LD_LIBRARY_PATH"] = (
+                        f"{lib_dir_str}:{current}" if current else lib_dir_str
+                    )
+                    current = os.environ["LD_LIBRARY_PATH"]

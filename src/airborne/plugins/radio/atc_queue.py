@@ -205,7 +205,8 @@ class ATCMessageQueue:
         try:
             # Check if this is dynamic text or a config key
             if self._is_dynamic_text(self._current_message.message_key):
-                # Dynamic text - use play_dynamic_speech
+                # Dynamic text - use play_dynamic_speech (generates TTS on main thread)
+                # Note: TTS must run on main thread (pyttsx3/NSSpeechSynthesizer requirement)
                 if hasattr(self._atc_audio, "play_dynamic_speech"):
                     self._current_source_id = self._atc_audio.play_dynamic_speech(
                         self._current_message.message_key,
@@ -217,7 +218,7 @@ class ATCMessageQueue:
                     self._complete_current_message()
                     return
             else:
-                # Config key - use play_atc_message
+                # Config key - use play_atc_message (pre-recorded, non-blocking)
                 self._current_source_id = self._atc_audio.play_atc_message(
                     self._current_message.message_key, volume=1.0
                 )
@@ -275,7 +276,7 @@ class ATCMessageQueue:
         """Check if queue is busy (transmitting or waiting).
 
         Returns:
-            True if currently transmitting or waiting between messages.
+            True if currently transmitting or waiting.
         """
         return self._state in ("TRANSMITTING", "WAITING")
 

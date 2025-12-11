@@ -81,6 +81,9 @@ class ATCMenu(Menu):
         self._last_aircraft_state: dict[str, Any] = {}
         self._readback_system: Any = None  # ATCReadbackSystem for Shift+F1 functionality
 
+        # V2 callback for sending text to NLU after TTS plays
+        self._v2_text_callback: Any = None
+
         # Flight context for phraseology generation
         self._flight_context = FlightContext(
             callsign="N12345",
@@ -165,6 +168,15 @@ class ATCMenu(Menu):
         """
         self._readback_system = readback_system
         logger.debug("Readback system connected to ATC menu")
+
+    def set_v2_callback(self, callback: Any) -> None:
+        """Set callback for V2 integration (sends text to NLU after TTS).
+
+        Args:
+            callback: Function that takes pilot_text string as argument.
+        """
+        self._v2_text_callback = callback
+        logger.debug("V2 callback set for ATC menu")
 
     def get_phraseology(self) -> ATCPhraseology | None:
         """Get the phraseology generator.
@@ -342,12 +354,23 @@ class ATCMenu(Menu):
         # Handle CTAF announcements (no ATC response expected)
         if pilot_text and not atc_text:
             self._waiting_response = True
+
+            # Create callback that handles V2 and completion
+            def ctaf_callback() -> None:
+                # Send to V2 NLU if callback is set
+                if self._v2_text_callback:
+                    try:
+                        self._v2_text_callback(pilot_text)
+                    except Exception as e:
+                        logger.error(f"Error in V2 callback: {e}")
+                self._on_atc_response_complete()
+
             pilot_msg = ATCMessage(
                 message_key=pilot_text,
                 sender="PILOT",
                 priority=0,
                 delay_after=0.5,
-                callback=self._on_atc_response_complete,
+                callback=ctaf_callback,
             )
             self._atc_queue.enqueue(pilot_msg)
             logger.info(f"Enqueued CTAF: PILOT='{pilot_text[:50]}...'")
@@ -359,12 +382,21 @@ class ATCMenu(Menu):
 
         self._waiting_response = True
 
+        # Create callback for after pilot message plays - sends to V2 NLU
+        def pilot_callback() -> None:
+            if self._v2_text_callback:
+                try:
+                    self._v2_text_callback(pilot_text)
+                except Exception as e:
+                    logger.error(f"Error in V2 callback: {e}")
+
         # Enqueue pilot message with dynamic text
         pilot_msg = ATCMessage(
             message_key=pilot_text,  # Dynamic text instead of key
             sender="PILOT",
             priority=0,
             delay_after=2.0,
+            callback=pilot_callback,
         )
         self._atc_queue.enqueue(pilot_msg)
 

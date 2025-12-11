@@ -183,7 +183,7 @@ class AudioRecorder:
         exinfo = CREATESOUNDEXINFO()
         exinfo.cbsize = ctypes.sizeof(CREATESOUNDEXINFO)
         exinfo.numchannels = CHANNELS
-        exinfo.format = pyfmodex.enums.SOUND_FORMAT.PCM16
+        exinfo.format = pyfmodex.enums.SOUND_FORMAT.PCM16.value  # Use .value for enum
         exinfo.defaultfrequency = SAMPLE_RATE
         exinfo.length = self._buffer_length_samples * CHANNELS * (BITS_PER_SAMPLE // 8)
 
@@ -192,7 +192,7 @@ class AudioRecorder:
         # LOOP_NORMAL = loop the recording buffer
         mode = MODE.OPENUSER | MODE.LOOP_NORMAL
         self._record_sound = self._system.create_sound(
-            name_or_data=None,
+            None,  # First positional arg (name_or_addr)
             mode=mode,
             exinfo=exinfo,
         )
@@ -300,6 +300,15 @@ class AudioRecorder:
                 recording_duration = time.time() - self._recording_start_time
                 logger.info(f"Recording stopped: {recording_duration:.2f}s")
 
+                # If record_pos is 0 or very small but we recorded for a while,
+                # estimate based on duration (FMOD may not update position immediately)
+                if record_pos < 1000 and recording_duration > 0.5:
+                    expected_samples = int(recording_duration * SAMPLE_RATE)
+                    record_pos = min(expected_samples, self._buffer_length_samples)
+                    logger.warning(
+                        f"Record position seems wrong, using estimate: {record_pos} samples"
+                    )
+
                 # Extract audio data from sound buffer
                 audio_data = self._extract_audio_data(record_pos)
 
@@ -332,18 +341,23 @@ class AudioRecorder:
                 logger.warning("No audio data recorded")
                 return b""
 
-            # Lock and read the buffer
-            ptr1, len1, ptr2, len2 = self._record_sound.lock(0, length_bytes)
+            # Lock returns ((ptr1, len1), (ptr2, len2))
+            result = self._record_sound.lock(0, length_bytes)
+            (ptr1, len1), (ptr2, len2) = result
+
+            # Get actual lengths (may be ctypes objects with .value)
+            actual_len1 = len1.value if hasattr(len1, "value") else len1
+            actual_len2 = len2.value if hasattr(len2, "value") else len2
 
             # Copy data from the buffer
             audio_data = b""
-            if ptr1 and len1 > 0:
-                audio_data += ctypes.string_at(ptr1, len1)
-            if ptr2 and len2 > 0:
-                audio_data += ctypes.string_at(ptr2, len2)
+            if ptr1 and actual_len1 > 0:
+                audio_data += ctypes.string_at(ptr1, actual_len1)
+            if ptr2 and actual_len2 > 0:
+                audio_data += ctypes.string_at(ptr2, actual_len2)
 
-            # Unlock the buffer
-            self._record_sound.unlock(ptr1, ptr2, len1, len2)
+            # Unlock takes two tuples: (ptr1, len1), (ptr2, len2)
+            self._record_sound.unlock((ptr1, len1), (ptr2, len2))
 
             logger.debug(f"Extracted {len(audio_data)} bytes of audio data")
             return audio_data
@@ -393,23 +407,26 @@ class AudioRecorder:
             start_pos = max(0, record_pos - window_samples)
             length_bytes = window_samples * bytes_per_sample
 
-            # Lock and read
-            ptr1, len1, ptr2, len2 = self._record_sound.lock(
-                start_pos * bytes_per_sample, length_bytes
-            )
+            # Lock returns ((ptr1, len1), (ptr2, len2))
+            result = self._record_sound.lock(start_pos * bytes_per_sample, length_bytes)
+            (ptr1, len1), (ptr2, len2) = result
+
+            # Get actual length (may be ctypes object with .value)
+            actual_len1 = len1.value if hasattr(len1, "value") else len1
 
             # Calculate RMS
             rms = 0.0
             sample_count = 0
 
-            if ptr1 and len1 > 0:
-                data = ctypes.string_at(ptr1, len1)
+            if ptr1 and actual_len1 > 0:
+                data = ctypes.string_at(ptr1, actual_len1)
                 samples = struct.unpack(f"<{len(data) // 2}h", data)
                 for sample in samples:
                     rms += sample * sample
                     sample_count += 1
 
-            self._record_sound.unlock(ptr1, ptr2, len1, len2)
+            # Unlock takes two tuples
+            self._record_sound.unlock((ptr1, len1), (ptr2, len2))
 
             if sample_count > 0:
                 rms = (rms / sample_count) ** 0.5 / 32768.0

@@ -401,6 +401,13 @@ class InputManager:  # pylint: disable=too-many-instance-attributes
         # Current input state
         self.state = InputState()
 
+        # Initialize trim: start at neutral (0°) and compute normalized value
+        # This ensures the physics model gets the correct initial trim position
+        self.state.pitch_trim_deg = self._pitch_trim_neutral_deg
+        self.state.rudder_trim_deg = self._rudder_trim_neutral_deg
+        self.state.pitch_trim = self._pitch_trim_deg_to_normalized(self._pitch_trim_neutral_deg)
+        self.state.rudder_trim = self._rudder_trim_deg_to_normalized(self._rudder_trim_neutral_deg)
+
         # Previous state for change detection
         self._previous_throttle = 0.0
 
@@ -560,6 +567,22 @@ class InputManager:  # pylint: disable=too-many-instance-attributes
                 aircraft_id or "none",
             )
 
+            # Register action handlers for trim controls
+            # These handlers bridge the context manager's YAML-defined actions to the
+            # InputManager's trim processing (_modifier_actions mechanism)
+            self.context_manager.register_action_handler(
+                "trim_pitch_up", self._handle_trim_action
+            )
+            self.context_manager.register_action_handler(
+                "trim_pitch_down", self._handle_trim_action
+            )
+            self.context_manager.register_action_handler(
+                "trim_rudder_left", self._handle_trim_action
+            )
+            self.context_manager.register_action_handler(
+                "trim_rudder_right", self._handle_trim_action
+            )
+
             # Detect and log any conflicts
             conflicts = self.context_manager.detect_conflicts()
             if conflicts:
@@ -585,6 +608,43 @@ class InputManager:  # pylint: disable=too-many-instance-attributes
         """
         logger.info("Reinitializing context manager for aircraft: %s", aircraft_id)
         self._initialize_context_manager(aircraft_id=aircraft_id)
+
+    def reload_trim_config(self) -> None:
+        """Reload trim configuration from aircraft_config.
+
+        Call this after setting aircraft_config to ensure trim parameters
+        (ranges, steps, neutral position) are updated from the aircraft's
+        trim configuration.
+
+        This also reinitializes the trim state to neutral (0°) and computes
+        the correct normalized value for physics.
+        """
+        # Reload trim configuration from aircraft config
+        trim_config = self.aircraft_config.get("trim", {})
+        pitch_trim_config = trim_config.get("pitch", {})
+        rudder_trim_config = trim_config.get("rudder", {})
+
+        self._pitch_trim_min_deg = pitch_trim_config.get("min_deg", -10.0)
+        self._pitch_trim_max_deg = pitch_trim_config.get("max_deg", 20.0)
+        self._pitch_trim_step_deg = pitch_trim_config.get("step_deg", 1.0)
+        self._pitch_trim_neutral_deg = pitch_trim_config.get("neutral_deg", 0.0)
+
+        self._rudder_trim_min_deg = rudder_trim_config.get("min_deg", -15.0)
+        self._rudder_trim_max_deg = rudder_trim_config.get("max_deg", 15.0)
+        self._rudder_trim_step_deg = rudder_trim_config.get("step_deg", 1.0)
+        self._rudder_trim_neutral_deg = rudder_trim_config.get("neutral_deg", 0.0)
+
+        # Reinitialize trim state to neutral (0°) with correct normalized value
+        self.state.pitch_trim_deg = self._pitch_trim_neutral_deg
+        self.state.rudder_trim_deg = self._rudder_trim_neutral_deg
+        self.state.pitch_trim = self._pitch_trim_deg_to_normalized(self._pitch_trim_neutral_deg)
+        self.state.rudder_trim = self._rudder_trim_deg_to_normalized(self._rudder_trim_neutral_deg)
+
+        logger.info(
+            f"Trim config reloaded: pitch range {self._pitch_trim_min_deg}° to "
+            f"{self._pitch_trim_max_deg}°, step {self._pitch_trim_step_deg}°, "
+            f"neutral {self._pitch_trim_neutral_deg}° (normalized: {self.state.pitch_trim:.3f})"
+        )
 
     def process_events(self, events: list[pygame.event.Event]) -> None:
         """Process pygame events.
@@ -939,6 +999,31 @@ class InputManager:  # pylint: disable=too-many-instance-attributes
             # Clear trigger state for non-repeatable actions
             self._actions_triggered.discard(action)
             self._handle_action_released(action)
+
+    def _handle_trim_action(self, action: str, key: int, mods: int) -> None:
+        """Handle trim action from context manager.
+
+        This bridges the context manager's string-based actions to the
+        InputManager's trim processing mechanism.
+
+        Args:
+            action: Action name (e.g., "trim_pitch_up").
+            key: Pygame key code.
+            mods: Pygame modifier mask.
+        """
+        # Map string action to InputAction enum
+        action_map = {
+            "trim_pitch_up": InputAction.TRIM_PITCH_UP,
+            "trim_pitch_down": InputAction.TRIM_PITCH_DOWN,
+            "trim_rudder_left": InputAction.TRIM_RUDDER_LEFT,
+            "trim_rudder_right": InputAction.TRIM_RUDDER_RIGHT,
+        }
+
+        input_action = action_map.get(action)
+        if input_action:
+            # Add to modifier_actions for processing in _process_trim_controls
+            self._modifier_actions.add(input_action)
+            logger.debug(f"Trim action registered: {action} -> {input_action.name}")
 
     def _handle_action_pressed(self, action: InputAction) -> None:
         """Handle action press.
@@ -1467,6 +1552,11 @@ class InputManager:  # pylint: disable=too-many-instance-attributes
                     # Update normalized value for backward compatibility
                     self.state.pitch_trim = self._pitch_trim_deg_to_normalized(new_trim_deg)
 
+                    logger.info(
+                        f"TRIM_PITCH_UP: {old_trim_deg:.1f}° -> {new_trim_deg:.1f}° "
+                        f"(normalized: {self.state.pitch_trim:.3f})"
+                    )
+
                     # Publish event for TTS announcement (with degrees)
                     if abs(new_trim_deg - old_trim_deg) > 0.01:
                         self.event_bus.publish(
@@ -1485,6 +1575,11 @@ class InputManager:  # pylint: disable=too-many-instance-attributes
                     )
                     self.state.pitch_trim_deg = new_trim_deg
                     self.state.pitch_trim = self._pitch_trim_deg_to_normalized(new_trim_deg)
+
+                    logger.info(
+                        f"TRIM_PITCH_DOWN: {old_trim_deg:.1f}° -> {new_trim_deg:.1f}° "
+                        f"(normalized: {self.state.pitch_trim:.3f})"
+                    )
 
                     if abs(new_trim_deg - old_trim_deg) > 0.01:
                         self.event_bus.publish(

@@ -1,0 +1,219 @@
+# ULM Class 2 (Pendular/Trike) Base Configuration
+# Base configuration for French ULM Class 2 weight-shift aircraft
+# These are pendular (trike) aircraft controlled by weight shift
+#
+# ULM Class 2 characteristics:
+# - Maximum takeoff weight: 450 kg (single seat) or 472.5 kg (two seat)
+# - Weight-shift control (no control surfaces on wing)
+# - Hang glider-derived flexible wing
+# - Pusher propeller configuration
+# - Pilot exposed to airflow
+
+aircraft:
+  name: "ULM Class 2 Base"
+  icao_code: "ULAC"
+  manufacturer: "Generic"
+  category: "ultralight"
+  class: "class2_pendular"
+  fixed_gear: true
+
+  # Flight model - Weight-shift
+  flight_model: "WeightShift"
+  flight_model_config:
+    wing_area_sqft: 180.0       # ~17 m² typical flex wing
+    weight_lbs: 550.0           # ~250 kg empty
+    max_thrust_lbs: 180.0
+
+    # Flex wing dimensions
+    wing_span_m: 10.0           # Typical flex wing span
+    hang_point_height_m: 1.2    # Wing-trike pivot height
+    pilot_arm_m: 0.5            # Pilot offset from hang point
+
+    # Flex wing aerodynamics
+    cl_0: 0.50                  # High base CL (cambered profile)
+    cl_alpha: 0.08              # Lower lift slope (flexible)
+    cl_max: 1.4                 # Lower max CL than rigid wing
+    stall_aoa_deg: 20.0         # Higher stall AOA (flex deforms)
+    drag_coefficient: 0.065     # Higher drag (exposed pilot)
+
+    # Speed stability - flex wings trim to specific speed
+    trim_airspeed_kt: 50.0      # Natural trim speed
+    speed_stability: 0.5        # Restoring force coefficient
+
+    # Control authority (bar movement to wing response)
+    pitch_authority: 0.30       # Bar fore/aft effectiveness
+    roll_authority: 0.25        # Bar lateral effectiveness
+
+    # Pendulum dynamics
+    pendulum_frequency: 0.8     # Hz - natural swing frequency
+    pendulum_damping: 0.4       # Damping coefficient
+
+  # No conventional flaps on pendular
+  flaps:
+    positions:
+      - name: "N/A"
+        degrees: 0
+        normalized: 0.0
+    default_position: 0
+
+  # Propeller - pusher configuration typical
+  propeller:
+    type: "fixed_pitch"
+    diameter_m: 1.50            # Smaller prop (pusher)
+    pitch_ratio: 0.55
+    efficiency_static: 0.65     # Lower (pusher behind wing)
+    efficiency_cruise: 0.78
+    cruise_advance_ratio: 0.55
+    static_thrust_multiplier: 4.5
+
+  # Engine - typically Rotax on rear frame
+  plugins:
+    - plugin: "rotax_engine_plugin"
+      instance_id: "engine"
+      config:
+        model: "912uls"
+        max_power_hp: 100
+        max_rpm: 5800
+        idle_rpm: 1400
+        reduction_ratio: 2.43
+
+    - plugin: "simple_electrical_system"
+      instance_id: "electrical"
+      config:
+        battery_voltage: 12.6
+        battery_capacity_ah: 8.0     # Small battery
+        alternator_voltage: 14.0
+        alternator_amps: 15.0
+
+    - plugin: "simple_fuel_system"
+      instance_id: "fuel"
+      config:
+        left_tank_capacity: 10.0     # Single tank usually
+        right_tank_capacity: 0.0
+        unusable_fuel: 0.5
+        fuel_selector: "left"
+
+  # Electrical - minimal system
+  electrical:
+    implementation: "simple_12v"
+    battery:
+      voltage_nominal: 12.6
+      capacity_ah: 8.0
+      internal_resistance: 0.10
+    alternator:
+      max_amps: 15.0
+      voltage_regulated: 14.0
+      rpm_threshold: 2000
+    loads:
+      master_relay:
+        amps: 0.1
+        essential: true
+        min_voltage: 10.0
+      starter_motor:
+        amps: 80.0
+        essential: true
+        min_voltage: 11.5
+      avionics:
+        amps: 3.0
+        essential: false
+        min_voltage: 11.5
+
+  # Fuel system - single tank
+  fuel:
+    implementation: "simple_gravity"
+    fuel_type: "mogas_91"
+    lbs_per_gallon: 6.0
+    tanks:
+      main:
+        capacity_total: 11.0    # ~40 liters
+        capacity_usable: 10.0
+        initial_quantity: 10.0
+        fuel_type: "mogas_91"
+        position: [0.0, -0.3, 0.0]  # Under seat
+    selector_positions: [OFF, ON]
+
+  # Weight and balance - pendular
+  weight_balance:
+    empty_weight: 550.0         # ~250 kg
+    empty_moment: 33000.0
+    max_gross_weight: 1040.0    # ~472.5 kg
+    cg_limits:
+      forward: 55.0             # Different CG envelope
+      aft: 70.0
+    stations:
+      fuel:
+        - name: "fuel_main"
+          arm: 60.0
+          max_weight: 66.0      # ~30 liters max
+          initial_weight: 60.0
+      seats:
+        - name: "pilot"
+          arm: 58.0
+          max_weight: 242.0
+          initial_weight: 176.0
+        - name: "passenger"
+          arm: 58.0
+          max_weight: 220.0
+          initial_weight: 0.0
+
+  # Performance - typical trike
+  performance:
+    reference_weight_lbs: 1040.0
+    wing_area_sqft: 180.0
+    max_power_hp: 100.0
+    cl_max_clean: 1.4
+    wing_loading_lbs_sqft: 5.8  # Very low wing loading
+    vspeeds_reference:
+      V_S: 28                   # Stall speed (kt)
+      V_R: 32                   # Rotation
+      V_X: 38                   # Best angle
+      V_Y: 45                   # Best rate
+      V_NE: 85                  # Never exceed
+      V_NO: 70                  # Normal operating
+    takeoff_reference:
+      ground_roll_ft: 400
+      distance_50ft: 800
+      climb_rate_fpm: 700
+
+  # Ground physics - trike specific
+  ground_physics:
+    type: "ulm"
+    mass_kg: 250.0
+    max_brake_force_n: 2000.0   # Small brakes
+    max_steering_angle_deg: 30.0
+    wing_span_m: 10.0
+    wing_area_m2: 17.0
+    weathervane_sensitivity: 0.4   # Higher (big wing)
+    gust_sensitivity: 0.7          # Very sensitive
+    taildragger:
+      is_taildragger: false
+
+  # Audio
+  audio:
+    engine_sounds:
+      start: "assets/sounds/aircraft/ulm/rotax_start.wav"
+      idle: "assets/sounds/aircraft/ulm/rotax_idle.wav"
+      shutdown: "assets/sounds/aircraft/ulm/rotax_shutdown.wav"
+      pitch_idle: 1.0
+      pitch_full: 1.65
+    wind_sounds:
+      airframe: "assets/sounds/aircraft/ulm/wind_open.wav"
+    system_sounds:
+      stall_warning: "assets/sounds/aircraft/ulm/stall_buzzer.wav"
+
+  # Initial state
+  initial_state:
+    position:
+      latitude: 43.6047         # Southern France
+      longitude: 1.4442
+      altitude_ft: 0
+    fuel:
+      main_tank_gallons: 10.0
+    electrical:
+      battery_master: false
+    engine:
+      running: false
+      mixture: 1.0
+      throttle: 0.0
+    controls:
+      parking_brake: true

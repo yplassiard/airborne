@@ -202,6 +202,13 @@ class RadioPlugin(IPlugin):
             # Connect readback system to ATC menu for Shift+F1 functionality
             self.atc_menu.set_readback_system(self.readback_system)
 
+            # Set V2 callback for ATC menu - sends pilot text to NLU after TTS plays
+            def v2_callback(text: str) -> None:
+                if self.atc_v2_controller:
+                    self.atc_v2_controller.process_text_input(text)
+
+            self.atc_menu.set_v2_callback(v2_callback)
+
             logger.info("Interactive ATC systems initialized with flight context")
         else:
             logger.warning("ATC audio manager or TTS not available - interactive ATC disabled")
@@ -218,6 +225,10 @@ class RadioPlugin(IPlugin):
         context.message_queue.subscribe("input.atc_menu", self.handle_message)
         context.message_queue.subscribe("input.atc_acknowledge", self.handle_message)
         context.message_queue.subscribe("input.atc_repeat", self.handle_message)
+        # ATC menu navigation (arrow keys when menu is open)
+        context.message_queue.subscribe("input.menu_previous", self.handle_message)
+        context.message_queue.subscribe("input.menu_next", self.handle_message)
+        context.message_queue.subscribe("input.menu_select", self.handle_message)
         context.message_queue.subscribe("aircraft.state", self.handle_message)
         context.message_queue.subscribe("atc.request", self.handle_message)
         context.message_queue.subscribe("input.atc_v2_text_input", self.handle_message)
@@ -307,6 +318,12 @@ class RadioPlugin(IPlugin):
             self._handle_atc_acknowledge(message)
         elif message.topic == "input.atc_repeat":
             self._handle_atc_repeat(message)
+        elif message.topic == "input.menu_previous":
+            self._handle_menu_previous(message)
+        elif message.topic == "input.menu_next":
+            self._handle_menu_next(message)
+        elif message.topic == "input.menu_select":
+            self._handle_menu_select(message)
         elif message.topic == "aircraft.state":
             self._handle_aircraft_state(message)
         elif message.topic == "atc.request":
@@ -837,6 +854,33 @@ class RadioPlugin(IPlugin):
             return
 
         self.readback_system.request_repeat()
+
+    def _handle_menu_previous(self, _message: Message) -> None:
+        """Handle menu navigation up (arrow up key).
+
+        Args:
+            _message: Menu previous message (unused).
+        """
+        if self.atc_menu and self.atc_menu.is_open():
+            self.atc_menu.move_selection_up()
+
+    def _handle_menu_next(self, _message: Message) -> None:
+        """Handle menu navigation down (arrow down key).
+
+        Args:
+            _message: Menu next message (unused).
+        """
+        if self.atc_menu and self.atc_menu.is_open():
+            self.atc_menu.move_selection_down()
+
+    def _handle_menu_select(self, _message: Message) -> None:
+        """Handle menu selection (Enter key).
+
+        Args:
+            _message: Menu select message (unused).
+        """
+        if self.atc_menu and self.atc_menu.is_open():
+            self.atc_menu.select_current()
 
     def _handle_aircraft_state(self, message: Message) -> None:
         """Handle aircraft state updates.

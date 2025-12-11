@@ -448,6 +448,8 @@ class AirBorne:
             self.input_manager.fixed_gear = self.input_manager.aircraft_config.get(
                 "fixed_gear", False
             )
+            # Reload trim configuration from aircraft (ranges, steps, neutral position)
+            self.input_manager.reload_trim_config()
             logger.info(
                 f"InputManager updated with aircraft config: fixed_gear={self.input_manager.fixed_gear}"
             )

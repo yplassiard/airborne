@@ -80,6 +80,106 @@ check_dependencies() {
     log_success "Dependencies OK"
 }
 
+generate_tts_helper_spec() {
+    log_info "Generating TTS Helper spec file..."
+
+    cat > tts_helper.spec << 'TTS_SPEC_EOF'
+# -*- mode: python ; coding: utf-8 -*-
+# TTS Helper - Standalone executable for TTS Cache Service
+
+import sys
+import os
+from pathlib import Path
+
+project_root = Path(SPECPATH)
+sys.path.insert(0, str(project_root / 'src'))
+
+block_cipher = None
+
+a = Analysis(
+    ['src/airborne/tts_cache_service/tts_helper.py'],
+    pathex=[str(project_root), str(project_root / 'src')],
+    binaries=[],
+    datas=[
+        # TTS needs config for cache settings
+        ('config/tts_cache_service.yaml', 'config'),
+    ],
+    hiddenimports=[
+        'airborne.tts_cache_service',
+        'airborne.tts_cache_service.service',
+        'airborne.tts_cache_service.cache',
+        'airborne.tts_cache_service.protocol',
+        'airborne.settings',
+        'websockets',
+        'websockets.client',
+        'websockets.server',
+        'websockets.exceptions',
+        'pyttsx3',
+        'pyttsx3.drivers',
+        'pyttsx3.drivers.nsss',
+        'yaml',
+    ],
+    hookspath=[],
+    hooksconfig={},
+    runtime_hooks=[],
+    excludes=[
+        'pytest',
+        'mypy',
+        'pylint',
+        'ruff',
+        'pygame',
+        'numpy',
+        'pyfmodex',
+        'pybass3',
+    ],
+    win_no_prefer_redirects=False,
+    win_private_assemblies=False,
+    cipher=block_cipher,
+    noarchive=False,
+)
+
+pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
+
+exe = EXE(
+    pyz,
+    a.scripts,
+    a.binaries,
+    a.zipfiles,
+    a.datas,
+    [],
+    name='tts_helper',
+    debug=False,
+    bootloader_ignore_signals=False,
+    strip=False,
+    upx=True,
+    console=False,  # No console window
+    disable_windowed_traceback=False,
+    argv_emulation=False,
+    target_arch=None,
+    codesign_identity=None,
+    entitlements_file=None,
+)
+TTS_SPEC_EOF
+
+    log_success "TTS Helper spec file generated"
+}
+
+build_tts_helper() {
+    log_info "Building TTS Helper executable..."
+
+    generate_tts_helper_spec
+
+    uv run pyinstaller tts_helper.spec --distpath dist/helpers --workpath build/tts_helper
+
+    if [ -f "dist/helpers/tts_helper" ] || [ -f "dist/helpers/tts_helper.exe" ]; then
+        log_success "TTS Helper built successfully!"
+        log_info "Location: dist/helpers/tts_helper"
+    else
+        log_error "TTS Helper build failed!"
+        exit 1
+    fi
+}
+
 generate_spec_file() {
     log_info "Generating PyInstaller spec file..."
 
@@ -112,17 +212,25 @@ current_platform = platform.system().lower()
 # Determine which audio libraries to include based on platform
 binaries = []
 if current_platform == 'darwin':
-    if os.path.exists('lib/fmod/libfmod.dylib'):
+    # FMOD library - check both possible locations
+    if os.path.exists('lib/macos/libfmod.dylib'):
+        binaries.append(('lib/macos/libfmod.dylib', 'lib/fmod'))
+    elif os.path.exists('lib/fmod/libfmod.dylib'):
         binaries.append(('lib/fmod/libfmod.dylib', 'lib/fmod'))
+    # BASS library
     if os.path.exists('lib/macos/libbass.dylib'):
         binaries.append(('lib/macos/libbass.dylib', 'lib'))
 elif current_platform == 'linux':
-    if os.path.exists('lib/fmod/libfmod.so'):
+    if os.path.exists('lib/linux/libfmod.so'):
+        binaries.append(('lib/linux/libfmod.so', 'lib/fmod'))
+    elif os.path.exists('lib/fmod/libfmod.so'):
         binaries.append(('lib/fmod/libfmod.so', 'lib/fmod'))
     if os.path.exists('lib/linux/libbass.so'):
         binaries.append(('lib/linux/libbass.so', 'lib'))
 elif current_platform == 'windows':
-    if os.path.exists('lib/fmod/fmod.dll'):
+    if os.path.exists('lib/windows/fmod.dll'):
+        binaries.append(('lib/windows/fmod.dll', 'lib/fmod'))
+    elif os.path.exists('lib/fmod/fmod.dll'):
         binaries.append(('lib/fmod/fmod.dll', 'lib/fmod'))
     if os.path.exists('lib/windows/bass.dll'):
         binaries.append(('lib/windows/bass.dll', 'lib'))
@@ -197,6 +305,16 @@ a = Analysis(
         'airborne.aviation',
         'airborne.airports',
         'airborne.scenario',
+
+        # TTS Cache Service (for bundled thread mode)
+        'airborne.tts_cache_service',
+        'airborne.tts_cache_service.service',
+        'airborne.tts_cache_service.client',
+        'airborne.tts_cache_service.cache',
+        'airborne.tts_cache_service.protocol',
+        'websockets',
+        'websockets.client',
+        'websockets.server',
     ],
     hookspath=[],
     hooksconfig={},
@@ -264,7 +382,7 @@ app = BUNDLE(
         'LSMinimumSystemVersion': '10.15.0',
         'NSHighResolutionCapable': True,
         'NSSupportsAutomaticGraphicsSwitching': True,
-        'NSMicrophoneUsageDescription': 'This app may use text-to-speech for accessibility.',
+        'NSMicrophoneUsageDescription': 'AirBorne uses the microphone for voice communication with Air Traffic Control (ATC).',
         'LSUIElement': False,  # Show in dock
         'LSBackgroundOnly': False,  # Not a background-only app
         'NSAppTransportSecurity': {
@@ -287,11 +405,21 @@ build_macos() {
         return
     fi
 
+    # Build TTS helper first
+    build_tts_helper
+
     log_info "Building macOS app..."
 
     uv run pyinstaller airborne.spec
 
     if [ -d "dist/AirBorne.app" ]; then
+        # Copy TTS helper into the app bundle
+        log_info "Adding TTS helper to app bundle..."
+        HELPERS_DIR="dist/AirBorne.app/Contents/Helpers"
+        mkdir -p "$HELPERS_DIR"
+        cp dist/helpers/tts_helper "$HELPERS_DIR/"
+        chmod +x "$HELPERS_DIR/tts_helper"
+
         log_success "macOS app built successfully!"
         log_info "Location: $PROJECT_ROOT/dist/AirBorne.app"
         log_info "Size: $(du -sh dist/AirBorne.app | cut -f1)"

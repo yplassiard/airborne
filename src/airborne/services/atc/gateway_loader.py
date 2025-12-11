@@ -17,11 +17,31 @@ Typical usage:
 import contextlib
 import json
 import logging
+import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
 logger = logging.getLogger(__name__)
+
+
+def _get_default_cache_dir() -> Path:
+    """Get the default cache directory for gateway data.
+
+    Returns a writable cache directory:
+    - When bundled: ~/.airborne/cache/airports/gateway_cache
+    - When running from source: data/airports/gateway_cache (relative to project root)
+    """
+    if hasattr(sys, "_MEIPASS"):
+        # Bundled app - use user's home directory
+        cache_dir = Path.home() / ".airborne" / "cache" / "airports" / "gateway_cache"
+    else:
+        # Development - use project data directory
+        # Import here to avoid circular imports
+        from airborne.core.resource_path import get_data_path
+
+        cache_dir = get_data_path("airports/gateway_cache")
+    return cache_dir
 
 # Try to import xplane_airports
 try:
@@ -208,10 +228,11 @@ class GatewayAirportLoader:
 
         Args:
             cache_dir: Directory for caching fetched data.
-                      Defaults to data/airports/gateway_cache
+                      Defaults to ~/.airborne/cache/airports/gateway_cache when bundled,
+                      or data/airports/gateway_cache when running from source.
         """
         if cache_dir is None:
-            self.cache_dir = Path("data/airports/gateway_cache")
+            self.cache_dir = _get_default_cache_dir()
         else:
             self.cache_dir = Path(cache_dir)
 

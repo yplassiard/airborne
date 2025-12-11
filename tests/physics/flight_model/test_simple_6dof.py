@@ -764,3 +764,203 @@ class TestSimple6DOFAngleOfAttack:
 
         # At zero velocity, AOA should equal pitch
         assert aoa_deg == pytest.approx(5.0, abs=0.1)
+
+
+class TestSimple6DOFGlideRatio:
+    """Test glide ratio calculations for propeller aircraft."""
+
+    @pytest.fixture
+    def c172_model(self) -> Simple6DOFFlightModel:
+        """Create a model configured like a Cessna 172."""
+        model = Simple6DOFFlightModel()
+        model.initialize({
+            "wing_area_sqft": 174.0,  # 16.2 m²
+            "weight_lbs": 2400.0,
+            "max_thrust_lbs": 300.0,
+            "wing_span_m": 11.0,
+            "drag_coefficient": 0.027,
+            "oswald_efficiency": 0.7,
+        })
+        return model
+
+    @pytest.fixture
+    def dr400_model(self) -> Simple6DOFFlightModel:
+        """Create a model configured like a Robin DR400."""
+        model = Simple6DOFFlightModel()
+        model.initialize({
+            "wing_area_sqft": 146.0,  # 13.6 m²
+            "weight_lbs": 2200.0,
+            "max_thrust_lbs": 280.0,
+            "wing_span_m": 8.72,
+            "drag_coefficient": 0.025,  # Cleaner design
+            "oswald_efficiency": 0.75,
+        })
+        return model
+
+    def test_aspect_ratio_from_config(self, c172_model: Simple6DOFFlightModel) -> None:
+        """Test aspect ratio can be configured or calculated."""
+        # C172: span=11m, area=16.2m² -> AR = 11²/16.2 ≈ 7.5
+        ar = c172_model.get_aspect_ratio()
+        expected_ar = 11.0**2 / (174.0 * 0.092903)
+        assert ar == pytest.approx(expected_ar, rel=0.01)
+
+    def test_best_glide_ratio_c172_realistic(self, c172_model: Simple6DOFFlightModel) -> None:
+        """Test C172 best glide ratio is realistic (8:1 to 10:1)."""
+        best_ld = c172_model.get_best_glide_ratio()
+
+        # C172 achieves approximately 9:1 L/D
+        assert 8.0 <= best_ld <= 11.0, f"C172 glide ratio {best_ld:.1f} outside expected 8-10"
+
+    def test_best_glide_ratio_dr400_realistic(self, dr400_model: Simple6DOFFlightModel) -> None:
+        """Test DR400 best glide ratio is realistic."""
+        best_ld = dr400_model.get_best_glide_ratio()
+
+        # DR400 (low wing, cleaner) typically achieves 10:1 to 12:1
+        assert 9.0 <= best_ld <= 13.0, f"DR400 glide ratio {best_ld:.1f} outside expected 10-12"
+
+    def test_best_glide_cl_reasonable(self, c172_model: Simple6DOFFlightModel) -> None:
+        """Test best glide CL is in reasonable range."""
+        cl_best = c172_model.get_best_glide_cl()
+
+        # Best glide CL typically 0.5 to 0.9 for GA aircraft
+        assert 0.4 <= cl_best <= 1.0, f"Best glide CL {cl_best:.2f} outside reasonable range"
+
+    def test_best_glide_speed_c172(self, c172_model: Simple6DOFFlightModel) -> None:
+        """Test C172 best glide speed is realistic."""
+        v_bg_kts = c172_model.get_best_glide_speed_kts()
+
+        # C172 best glide speed is approximately 65-68 KIAS at typical weight
+        # Our test uses max weight so speed will be higher
+        assert 55.0 <= v_bg_kts <= 80.0, f"C172 best glide {v_bg_kts:.1f}kt outside expected range"
+
+    def test_current_glide_ratio_zero_at_rest(self, c172_model: Simple6DOFFlightModel) -> None:
+        """Test current glide ratio is zero when aircraft at rest."""
+        ld = c172_model.get_glide_ratio()
+        assert ld == 0.0
+
+    def test_current_glide_ratio_in_flight(self, c172_model: Simple6DOFFlightModel) -> None:
+        """Test current glide ratio is computed correctly in flight."""
+        # Set up for steady gliding flight
+        c172_model.state.velocity = Vector3(0.0, 0.0, 33.0)  # ~65 kts forward
+        c172_model.state.rotation.x = 0.05  # Small pitch up for positive AOA
+
+        inputs = ControlInputs(throttle=0.0)
+        c172_model.update(0.016, inputs)
+
+        ld = c172_model.get_glide_ratio()
+
+        # In flight, should have a positive glide ratio
+        assert ld > 0.0
+        # Should be reasonable (not exceed best by much)
+        assert ld <= c172_model.get_best_glide_ratio() * 1.2
+
+    def test_higher_drag_reduces_glide_ratio(self) -> None:
+        """Test that higher parasite drag reduces glide ratio."""
+        model_clean = Simple6DOFFlightModel()
+        model_clean.initialize({
+            "wing_area_sqft": 174.0,
+            "weight_lbs": 2400.0,
+            "max_thrust_lbs": 300.0,
+            "wing_span_m": 11.0,
+            "drag_coefficient": 0.025,  # Clean
+        })
+
+        model_dirty = Simple6DOFFlightModel()
+        model_dirty.initialize({
+            "wing_area_sqft": 174.0,
+            "weight_lbs": 2400.0,
+            "max_thrust_lbs": 300.0,
+            "wing_span_m": 11.0,
+            "drag_coefficient": 0.040,  # Dirty (flaps, gear down)
+        })
+
+        assert model_clean.get_best_glide_ratio() > model_dirty.get_best_glide_ratio()
+
+    def test_higher_aspect_ratio_improves_glide(self) -> None:
+        """Test that higher aspect ratio improves glide ratio."""
+        model_low_ar = Simple6DOFFlightModel()
+        model_low_ar.initialize({
+            "wing_area_sqft": 174.0,
+            "weight_lbs": 2400.0,
+            "max_thrust_lbs": 300.0,
+            "wing_span_m": 9.0,  # Lower AR
+        })
+
+        model_high_ar = Simple6DOFFlightModel()
+        model_high_ar.initialize({
+            "wing_area_sqft": 174.0,
+            "weight_lbs": 2400.0,
+            "max_thrust_lbs": 300.0,
+            "wing_span_m": 13.0,  # Higher AR (like a motor glider)
+        })
+
+        assert model_high_ar.get_best_glide_ratio() > model_low_ar.get_best_glide_ratio()
+
+    def test_higher_oswald_improves_glide(self) -> None:
+        """Test that higher Oswald efficiency improves glide ratio."""
+        model_low_e = Simple6DOFFlightModel()
+        model_low_e.initialize({
+            "wing_area_sqft": 174.0,
+            "weight_lbs": 2400.0,
+            "max_thrust_lbs": 300.0,
+            "wing_span_m": 11.0,
+            "oswald_efficiency": 0.65,  # Lower efficiency
+        })
+
+        model_high_e = Simple6DOFFlightModel()
+        model_high_e.initialize({
+            "wing_area_sqft": 174.0,
+            "weight_lbs": 2400.0,
+            "max_thrust_lbs": 300.0,
+            "wing_span_m": 11.0,
+            "oswald_efficiency": 0.80,  # Higher efficiency
+        })
+
+        assert model_high_e.get_best_glide_ratio() > model_low_e.get_best_glide_ratio()
+
+    def test_ga_aircraft_glide_ratios_ordered(self) -> None:
+        """Test that glide ratios follow expected ordering for GA aircraft."""
+        # C172 - high wing, fixed gear
+        c172 = Simple6DOFFlightModel()
+        c172.initialize({
+            "wing_area_sqft": 174.0,
+            "weight_lbs": 2400.0,
+            "max_thrust_lbs": 300.0,
+            "wing_span_m": 11.0,
+            "drag_coefficient": 0.027,
+            "oswald_efficiency": 0.70,
+        })
+
+        # Mooney - low wing, retractable gear, clean
+        mooney = Simple6DOFFlightModel()
+        mooney.initialize({
+            "wing_area_sqft": 175.0,
+            "weight_lbs": 2740.0,
+            "max_thrust_lbs": 350.0,
+            "wing_span_m": 11.0,
+            "drag_coefficient": 0.021,  # Much cleaner
+            "oswald_efficiency": 0.78,
+        })
+
+        # Motor glider - very high AR, clean
+        motor_glider = Simple6DOFFlightModel()
+        motor_glider.initialize({
+            "wing_area_sqft": 161.0,
+            "weight_lbs": 1700.0,
+            "max_thrust_lbs": 150.0,
+            "wing_span_m": 15.0,  # High AR
+            "drag_coefficient": 0.018,  # Very clean
+            "oswald_efficiency": 0.85,
+        })
+
+        ld_c172 = c172.get_best_glide_ratio()
+        ld_mooney = mooney.get_best_glide_ratio()
+        ld_motor_glider = motor_glider.get_best_glide_ratio()
+
+        # Motor glider should have best glide ratio
+        assert ld_motor_glider > ld_mooney > ld_c172
+
+        # Verify realistic ranges
+        assert 8.0 <= ld_c172 <= 11.0  # C172: ~9:1
+        assert 11.0 <= ld_mooney <= 14.0  # Mooney: ~12:1
+        assert 18.0 <= ld_motor_glider <= 30.0  # Motor glider: ~20-25:1

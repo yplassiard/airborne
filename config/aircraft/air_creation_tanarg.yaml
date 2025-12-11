@@ -1,0 +1,211 @@
+# Air Création Tanarg 912 Configuration
+# The Tanarg is a high-performance French pendular trike (ULM Class 2)
+# from Air Création, one of the world's leading trike manufacturers.
+#
+# Key features:
+# - BioniX or Fun wing (high-performance flex wings)
+# - Streamlined trike pod
+# - Side-by-side seating
+# - Rotax 912 engine with pusher prop
+# - Excellent stability and handling
+
+# Inherit from Class 2 base
+_base: ulm_class2_base.yaml
+
+aircraft:
+  name: "Air Création Tanarg 912"
+  icao_code: "TANG"
+  manufacturer: "Air Création"
+  category: "ultralight"
+  class: "class2_pendular"
+  fixed_gear: true
+
+  # Flight model - Weight-shift with Tanarg specifics
+  flight_model: "WeightShift"
+  flight_model_config:
+    # Tanarg with BioniX 15 wing
+    wing_area_sqft: 161.0       # 15 m² BioniX wing
+    weight_lbs: 595.0           # 270 kg empty
+    max_thrust_lbs: 200.0
+
+    # BioniX wing dimensions
+    wing_span_m: 9.8            # BioniX span
+    hang_point_height_m: 1.25
+    pilot_arm_m: 0.55
+
+    # BioniX wing aerodynamics (high performance)
+    cl_0: 0.55                  # High-performance profile
+    cl_alpha: 0.085             # Good lift slope for flex wing
+    cl_max: 1.5                 # Better than basic wings
+    stall_aoa_deg: 22.0         # Higher stall AOA
+    drag_coefficient: 0.055     # Lower drag (streamlined pod)
+
+    # Speed stability
+    trim_airspeed_kt: 55.0      # Higher trim speed (faster wing)
+    speed_stability: 0.45       # Slightly less stable (faster)
+
+    # Control authority
+    pitch_authority: 0.32       # Good pitch response
+    roll_authority: 0.28        # Good roll response
+
+    # Pendulum dynamics
+    pendulum_frequency: 0.75    # Slightly slower (heavier trike)
+    pendulum_damping: 0.45
+
+  # Propeller - Tanarg pusher
+  propeller:
+    type: "fixed_pitch"
+    diameter_m: 1.52            # 60" diameter
+    pitch_ratio: 0.58           # Higher pitch for speed
+    efficiency_static: 0.68
+    efficiency_cruise: 0.80
+    cruise_advance_ratio: 0.58
+    static_thrust_multiplier: 4.8
+
+  # Engine - Rotax 912S
+  plugins:
+    - plugin: "rotax_engine_plugin"
+      instance_id: "engine"
+      config:
+        model: "912uls"
+        max_power_hp: 100
+        max_rpm: 5800
+        idle_rpm: 1400
+        reduction_ratio: 2.43
+        fuel_consumption_max_lph: 22.0
+        fuel_consumption_cruise_lph: 14.0
+
+    - plugin: "simple_electrical_system"
+      instance_id: "electrical"
+      config:
+        battery_voltage: 12.6
+        battery_capacity_ah: 12.0    # Larger battery
+        alternator_voltage: 14.0
+        alternator_amps: 20.0
+
+    - plugin: "simple_fuel_system"
+      instance_id: "fuel"
+      config:
+        left_tank_capacity: 14.5     # 55 liters
+        right_tank_capacity: 0.0
+        unusable_fuel: 0.5
+        fuel_selector: "on"
+
+  # Fuel system - Tanarg single tank
+  fuel:
+    implementation: "simple_gravity"
+    fuel_type: "mogas_91"
+    lbs_per_gallon: 6.0
+    tanks:
+      main:
+        capacity_total: 15.0    # 57 liters
+        capacity_usable: 14.5   # 55 liters usable
+        initial_quantity: 14.5
+        fuel_type: "mogas_91"
+        position: [0.0, -0.25, 0.0]
+    selector_positions: [OFF, ON]
+
+  # Weight and balance - Tanarg specific
+  weight_balance:
+    empty_weight: 595.0         # 270 kg
+    empty_moment: 35700.0
+    max_gross_weight: 1040.0    # 472.5 kg
+    cg_limits:
+      forward: 56.0
+      aft: 68.0
+    stations:
+      fuel:
+        - name: "fuel_main"
+          arm: 58.0
+          max_weight: 87.0      # 55L = 40kg = 87 lbs
+          initial_weight: 87.0
+      seats:
+        - name: "pilot"
+          arm: 60.0
+          max_weight: 220.0
+          initial_weight: 176.0
+        - name: "passenger"
+          arm: 62.0
+          max_weight: 220.0
+          initial_weight: 0.0
+
+  # Performance - Tanarg with BioniX
+  performance:
+    reference_weight_lbs: 1040.0
+    wing_area_sqft: 161.0
+    max_power_hp: 100.0
+    cl_max_clean: 1.5
+    wing_loading_lbs_sqft: 6.5
+    vspeeds_reference:
+      V_S: 30                   # Stall speed (kt)
+      V_R: 35
+      V_X: 42
+      V_Y: 50
+      V_NE: 95                  # Higher VNE (performance wing)
+      V_NO: 80
+      V_C: 65                   # Cruise speed
+    takeoff_reference:
+      ground_roll_ft: 350
+      distance_50ft: 700
+      climb_rate_fpm: 800
+    range_nm: 220               # With reserve
+
+  # Ground physics - Tanarg specific
+  ground_physics:
+    type: "ulm"
+    mass_kg: 270.0
+    max_brake_force_n: 2500.0
+    max_steering_angle_deg: 35.0
+    wing_span_m: 9.8
+    wing_area_m2: 15.0
+    weathervane_sensitivity: 0.35
+    gust_sensitivity: 0.6
+
+  # Tanarg special features
+  special_features:
+    wing:
+      type: "BioniX 15"
+      material: "Dacron"
+      battens: 15
+      span_m: 9.8
+      area_m2: 15.0
+    trike:
+      type: "Tanarg"
+      seating: "side_by_side"
+      fairing: "streamlined_pod"
+      wheel_fairings: true
+    safety:
+      ballistic_parachute: true   # Optional BRS system
+      parachute_type: "Galaxy"
+
+  # Audio - Tanarg sounds
+  audio:
+    engine_sounds:
+      start: "assets/sounds/aircraft/ulm/rotax_start.wav"
+      idle: "assets/sounds/aircraft/ulm/rotax_idle.wav"
+      shutdown: "assets/sounds/aircraft/ulm/rotax_shutdown.wav"
+      prop: "assets/sounds/aircraft/ulm/prop_3blade.wav"
+      pitch_idle: 1.0
+      pitch_full: 1.6
+    wind_sounds:
+      airframe: "assets/sounds/aircraft/ulm/wind_pod.wav"
+      wing: "assets/sounds/aircraft/ulm/wind_flex_wing.wav"
+    system_sounds:
+      stall_warning: "assets/sounds/aircraft/ulm/stall_buzzer.wav"
+
+  # Initial state - Tanarg
+  initial_state:
+    position:
+      latitude: 43.9333         # Nîmes area (Air Création HQ)
+      longitude: 4.3000
+      altitude_ft: 0
+    fuel:
+      main_tank_gallons: 14.5
+    electrical:
+      battery_master: false
+    engine:
+      running: false
+      mixture: 1.0
+      throttle: 0.0
+    controls:
+      parking_brake: true

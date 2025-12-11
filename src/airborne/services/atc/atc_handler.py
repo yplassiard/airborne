@@ -11,6 +11,7 @@ from dataclasses import dataclass, field
 from enum import Enum, auto
 from typing import TYPE_CHECKING, Any
 
+from airborne.core.i18n import t
 from airborne.core.logging_system import get_logger
 from airborne.services.atc.atis_generator import ATISBroadcast, DynamicATISGenerator
 from airborne.services.atc.flight_phase import FlightPhase, FlightPhaseManager
@@ -381,7 +382,7 @@ class ATCHandler:
             request_type=request_type,
             approved=False,
             callsign=request.callsign,
-            text=f"{self._abbreviated_callsign(request.callsign)}, standby",
+            text=f"{self._abbreviated_callsign(request.callsign)}, {t('atc.standby')}",
             words=self._build_abbreviated_callsign_words(request.callsign) + ["STANDBY"],
         )
 
@@ -404,6 +405,7 @@ class ATCHandler:
 
         # Build facility name based on whether towered (use chunk IDs)
         facility = "GROUND" if self.is_towered else "traffic"
+        facility_name = t("atc.ground") if self.is_towered else "traffic"
 
         words = (
             callsign_words
@@ -417,9 +419,9 @@ class ATCHandler:
 
         text = (
             f"{self._abbreviated_callsign(request.callsign)}, "
-            f"{self.airport_name} {facility.lower()}, start up approved, "
-            f"altimeter {atis.weather.altimeter:.2f}, "
-            f"advise ready to taxi"
+            f"{self.airport_name} {facility_name}, {t('atc.startup_approved')}, "
+            f"{t('atc.altimeter')} {atis.weather.altimeter:.2f}, "
+            f"{t('atc.advise_ready_taxi')}"
         )
 
         # Transition to parked hot
@@ -431,7 +433,7 @@ class ATCHandler:
             callsign=request.callsign,
             text=text,
             words=words,
-            instructions=["Start up approved", "Advise ready to taxi"],
+            instructions=[t('atc.startup_approved'), t('atc.advise_ready_taxi')],
         )
 
     def _handle_taxi_request(self, request: ATCRequest) -> ATCResponse:
@@ -471,8 +473,8 @@ class ATCHandler:
         taxiway_str = ", ".join(taxiways)
         text = (
             f"{self._abbreviated_callsign(request.callsign)}, "
-            f"taxi to runway {' '.join(runway_words)} via {taxiway_str}, "
-            f"hold short of runway"
+            f"{t('atc.taxi')} {t('atc.runway')} {' '.join(runway_words)} {t('atc.taxi_via')} {taxiway_str}, "
+            f"{t('atc.hold_short')} {t('atc.runway')}"
         )
 
         # Transition to taxi out
@@ -485,8 +487,8 @@ class ATCHandler:
             text=text,
             words=words,
             instructions=[
-                f"Taxi to runway {runway} via {taxiway_str}",
-                "Hold short of runway",
+                f"{t('atc.taxi')} {t('atc.runway')} {runway} {t('atc.taxi_via')} {taxiway_str}",
+                f"{t('atc.hold_short')} {t('atc.runway')}",
             ],
         )
 
@@ -503,6 +505,7 @@ class ATCHandler:
 
         # Build facility name (use chunk IDs)
         facility = "TOWER" if self.is_towered else "traffic"
+        facility_name = t("atc.tower") if self.is_towered else "traffic"
 
         words = (
             callsign_words
@@ -519,9 +522,9 @@ class ATCHandler:
 
         text = (
             f"{self._abbreviated_callsign(request.callsign)}, "
-            f"{self.airport_name} {facility.lower()}, "
-            f"runway {' '.join(runway_words)}, cleared for takeoff, "
-            f"wind {wind_dir:03d} at {wind_speed}"
+            f"{self.airport_name} {facility_name}, "
+            f"{t('atc.runway')} {' '.join(runway_words)}, {t('atc.cleared_for_takeoff')}, "
+            f"{t('atc.wind')} {wind_dir:03d} {t('atc.at')} {wind_speed}"
         )
 
         # Transition to lineup
@@ -534,7 +537,7 @@ class ATCHandler:
             callsign=request.callsign,
             text=text,
             words=words,
-            instructions=[f"Runway {runway} cleared for takeoff"],
+            instructions=[f"{t('atc.runway')} {runway} {t('atc.cleared_for_takeoff')}"],
             next_frequency=self._frequencies.get("tower"),
         )
 
@@ -557,8 +560,8 @@ class ATCHandler:
 
         text = (
             f"{self._abbreviated_callsign(request.callsign)}, "
-            f"{self.airport_name} departure, radar contact, "
-            f"climb and maintain three thousand"
+            f"{self.airport_name} {t('atc.departure')}, {t('atc.radar_contact')}, "
+            f"{t('atc.climb_and_maintain')} 3000"
         )
 
         # Transition to departure
@@ -570,7 +573,7 @@ class ATCHandler:
             callsign=request.callsign,
             text=text,
             words=words,
-            instructions=["Radar contact", "Climb and maintain 3000"],
+            instructions=[t("atc.radar_contact"), f"{t('atc.climb_and_maintain')} 3000"],
             next_frequency=self._frequencies.get("departure"),
         )
 
@@ -587,6 +590,7 @@ class ATCHandler:
 
         # Build facility name (use chunk IDs)
         facility = "TOWER" if self.is_towered else "traffic"
+        facility_name = t("atc.tower") if self.is_towered else "traffic"
 
         words = (
             callsign_words
@@ -603,9 +607,9 @@ class ATCHandler:
 
         text = (
             f"{self._abbreviated_callsign(request.callsign)}, "
-            f"{self.airport_name} {facility.lower()}, "
-            f"runway {' '.join(runway_words)}, cleared to land, "
-            f"wind {wind_dir:03d} at {wind_speed}"
+            f"{self.airport_name} {facility_name}, "
+            f"{t('atc.runway')} {' '.join(runway_words)}, {t('atc.cleared_to_land')}, "
+            f"{t('atc.wind')} {wind_dir:03d} {t('atc.at')} {wind_speed}"
         )
 
         # Transition to final
@@ -617,7 +621,7 @@ class ATCHandler:
             callsign=request.callsign,
             text=text,
             words=words,
-            instructions=[f"Runway {runway} cleared to land"],
+            instructions=[f"{t('atc.runway')} {runway} {t('atc.cleared_to_land')}"],
             next_frequency=self._frequencies.get("tower"),
         )
 
@@ -627,7 +631,7 @@ class ATCHandler:
 
         words = callsign_words + ["ROGER"]
 
-        text = f"{self._abbreviated_callsign(request.callsign)}, roger"
+        text = f"{self._abbreviated_callsign(request.callsign)}, {t('atc.roger')}"
 
         return ATCResponse(
             request_type=request.request_type,
@@ -643,7 +647,7 @@ class ATCHandler:
 
         words = callsign_words + ["ROGER", "GO_AROUND", "FLY_RUNWAY_HEADING"]
 
-        text = f"{self._abbreviated_callsign(request.callsign)}, roger, fly runway heading"
+        text = f"{self._abbreviated_callsign(request.callsign)}, {t('atc.roger')}, {t('atc.fly_runway_heading')}"
 
         # Transition back to pattern
         self._phase_manager.transition_to(FlightPhase.INITIAL_CLIMB, force=True)
@@ -654,7 +658,7 @@ class ATCHandler:
             callsign=request.callsign,
             text=text,
             words=words,
-            instructions=["Fly runway heading"],
+            instructions=[t("atc.fly_runway_heading")],
         )
 
     def _handle_clear_report(self, request: ATCRequest) -> ATCResponse:
@@ -670,8 +674,8 @@ class ATCHandler:
         )
 
         text = (
-            f"{self._abbreviated_callsign(request.callsign)}, roger, "
-            f"contact ground on {ground_freq:.1f}"
+            f"{self._abbreviated_callsign(request.callsign)}, {t('atc.roger')}, "
+            f"{t('atc.contact_ground')} {t('atc.on')} {ground_freq:.1f}"
         )
 
         # Transition to taxi in
@@ -684,7 +688,7 @@ class ATCHandler:
             callsign=request.callsign,
             text=text,
             words=words,
-            instructions=[f"Contact ground on {ground_freq:.1f}"],
+            instructions=[f"{t('atc.contact_ground')} {t('atc.on')} {ground_freq:.1f}"],
             next_frequency=ground_freq,
         )
 

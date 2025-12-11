@@ -327,6 +327,20 @@ class ATCAudioManager:
         self._tts_provider = tts_provider
         logger.info("TTS provider set for ATC audio manager")
 
+    def set_radio_speaker_position(self, position: Any) -> None:
+        """Set the 3D position of the radio speaker for spatial audio.
+
+        Args:
+            position: Vector3 position of the radio speaker in cockpit space.
+
+        Note:
+            Currently ATC audio uses 2D playback, so this position is stored
+            but not actively used. In future, could enable 3D positional audio
+            for more realistic radio speaker placement.
+        """
+        self._radio_speaker_position = position
+        logger.debug(f"Radio speaker position set: ({position.x:.2f}, {position.y:.2f}, {position.z:.2f})")
+
     def _get_voice_for_key(self, key: str) -> str:
         """Get the appropriate TTS voice for a message key.
 

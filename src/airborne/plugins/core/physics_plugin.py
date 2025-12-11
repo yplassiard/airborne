@@ -359,8 +359,19 @@ class PhysicsPlugin(IPlugin):
             # NOT added to control inputs. Trim creates a separate aerodynamic
             # moment (via trim tab) - it doesn't change elevator deflection.
             # This allows the pilot to release the controls and let trim hold attitude.
-            self._pitch_trim = float(data.get("pitch_trim", 0.0))
-            self._rudder_trim = float(data.get("rudder_trim", 0.0))
+            new_pitch_trim = float(data.get("pitch_trim", 0.0))
+            new_rudder_trim = float(data.get("rudder_trim", 0.0))
+
+            # Log when trim changes
+            if abs(new_pitch_trim - self._pitch_trim) > 0.001:
+                pitch_trim_deg = float(data.get("pitch_trim_deg", 0.0))
+                logger.info(
+                    f"[PHYSICS] Pitch trim changed: {self._pitch_trim:.3f} -> {new_pitch_trim:.3f} "
+                    f"({pitch_trim_deg:.1f}°)"
+                )
+
+            self._pitch_trim = new_pitch_trim
+            self._rudder_trim = new_rudder_trim
 
             # Set control inputs (no trim added - trim moment is calculated separately)
             self.control_inputs.pitch = pitch_input

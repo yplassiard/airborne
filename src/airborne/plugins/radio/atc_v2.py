@@ -160,7 +160,7 @@ class ATCV2Controller:
         """Initialize the V2 controller based on settings.
 
         Returns:
-            True if initialization succeeded.
+            True if initialization succeeded (at least NLU for text input).
         """
         settings = get_atc_v2_settings()
 
@@ -169,35 +169,40 @@ class ATCV2Controller:
             self._state = V2State.DISABLED
             return False
 
+        voice_input_available = False
+        text_input_available = False
+
         try:
-            # Initialize audio recorder
+            # Initialize audio recorder (optional - text input still works without it)
             if self._audio_engine:
                 fmod_system = self._audio_engine.get_system()
                 if fmod_system:
                     self._recorder = AudioRecorder(fmod_system)
-                    if not self._recorder.initialize(settings.input_device_index):
-                        logger.error("Failed to initialize audio recorder")
-                        return False
+                    if self._recorder.initialize(settings.input_device_index):
+                        voice_input_available = True
+                        logger.info("Audio recorder initialized - voice input available")
+                    else:
+                        logger.warning("Audio recorder failed - voice input disabled, text input still available")
+                        self._recorder = None
                 else:
-                    logger.error("FMOD system not available")
-                    return False
+                    logger.warning("FMOD system not available - voice input disabled")
             else:
-                logger.error("Audio engine not set")
-                return False
+                logger.warning("Audio engine not set - voice input disabled")
 
-            # Initialize ASR provider
-            if settings.asr_provider == PROVIDER_LOCAL:
+            # Initialize ASR provider (only if voice input available)
+            if voice_input_available and settings.asr_provider == PROVIDER_LOCAL:
                 self._asr_provider = LocalASRProvider()
                 self._asr_provider.initialize(
                     {
                         "model": settings.whisper_model,
                     }
                 )
-            else:
-                logger.warning("Remote ASR provider not implemented")
-                return False
+                logger.info("ASR provider initialized")
+            elif voice_input_available:
+                logger.warning("Remote ASR provider not implemented - voice input disabled")
+                voice_input_available = False
 
-            # Initialize NLU provider
+            # Initialize NLU provider (required for both voice and text input)
             if settings.nlu_provider == PROVIDER_LOCAL:
                 if not settings.llama_model_path:
                     logger.error("Llama model path not configured")
@@ -209,6 +214,8 @@ class ATCV2Controller:
                         "model_path": settings.llama_model_path,
                     }
                 )
+                text_input_available = True
+                logger.info("NLU provider initialized - text input available")
             else:
                 logger.warning("Remote NLU provider not implemented")
                 return False
@@ -216,12 +223,20 @@ class ATCV2Controller:
             # Initialize intent processor
             self._intent_processor = IntentProcessor(self._atc_handler)
 
-            self._initialized = True
-            self._state = V2State.IDLE
-            self._set_state(V2State.IDLE)
+            # Success if at least text input is available
+            if text_input_available:
+                self._initialized = True
+                self._state = V2State.IDLE
+                self._set_state(V2State.IDLE)
 
-            logger.info("ATC V2 controller initialized successfully")
-            return True
+                if voice_input_available:
+                    logger.info("ATC V2 initialized: voice + text input available")
+                else:
+                    logger.info("ATC V2 initialized: text input only (voice unavailable)")
+                return True
+            else:
+                logger.error("Neither voice nor text input available")
+                return False
 
         except Exception as e:
             logger.error(f"Failed to initialize ATC V2: {e}")

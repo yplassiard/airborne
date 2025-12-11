@@ -57,6 +57,63 @@ from airborne.tts_cache_service.protocol import (
 logger = logging.getLogger(__name__)
 
 
+def _is_bundled() -> bool:
+    """Check if running from a PyInstaller bundle."""
+    return hasattr(sys, "_MEIPASS")
+
+
+def _get_tts_helper_path() -> Path | None:
+    """Get path to TTS helper executable in bundled app.
+
+    Returns:
+        Path to tts_helper executable, or None if not found.
+    """
+    if not _is_bundled():
+        return None
+
+    # In a macOS .app bundle:
+    # sys._MEIPASS is Contents/Frameworks
+    # Helper is at Contents/Helpers/tts_helper
+    bundle_dir = Path(sys._MEIPASS)
+    logger.debug("Looking for TTS helper, _MEIPASS=%s", bundle_dir)
+
+    # Try macOS app bundle location
+    if sys.platform == "darwin":
+        # Contents/Frameworks -> Contents/Helpers
+        helpers_dir = bundle_dir.parent / "Helpers"
+        helper_path = helpers_dir / "tts_helper"
+        logger.debug("Checking helper path: %s (exists=%s)", helper_path, helper_path.exists())
+        if helper_path.exists():
+            return helper_path
+
+        # Alternative: derive from sys.executable
+        # sys.executable is Contents/MacOS/airborne
+        exe_path = Path(sys.executable)
+        if exe_path.parent.name == "MacOS":
+            contents_dir = exe_path.parent.parent
+            helper_path = contents_dir / "Helpers" / "tts_helper"
+            logger.debug("Checking helper path (from exe): %s (exists=%s)", helper_path, helper_path.exists())
+            if helper_path.exists():
+                return helper_path
+
+    # Try Windows/Linux location (helpers alongside main executable)
+    helper_path = bundle_dir / "helpers" / "tts_helper"
+    if sys.platform == "win32":
+        helper_path = helper_path.with_suffix(".exe")
+    if helper_path.exists():
+        return helper_path
+
+    # Fallback: check alongside the bundle dir
+    helper_path = bundle_dir.parent / "helpers" / "tts_helper"
+    if sys.platform == "win32":
+        helper_path = helper_path.with_suffix(".exe")
+    if helper_path.exists():
+        return helper_path
+
+    logger.warning("TTS helper not found in bundle")
+    return None
+
+
 class TTSServiceClient:
     """Client for TTS Cache Service with subprocess management.
 
@@ -154,8 +211,18 @@ class TTSServiceClient:
         if not await self._start_subprocess():
             return False
 
-        # Connect to WebSocket
-        if not await self._connect():
+        # Connect to WebSocket with retries (service may take time to start)
+        max_retries = 10
+        retry_delay = 0.5
+        for attempt in range(max_retries):
+            if await self._connect():
+                break
+            if attempt < max_retries - 1:
+                logger.debug("Connection attempt %d failed, retrying in %.1fs...", attempt + 1, retry_delay)
+                await asyncio.sleep(retry_delay)
+                retry_delay = min(retry_delay * 1.5, 2.0)  # Cap at 2 seconds
+        else:
+            logger.error("Failed to connect after %d attempts", max_retries)
             return False
 
         # Start background tasks
@@ -190,38 +257,66 @@ class TTSServiceClient:
         logger.info("TTS Service client stopped")
 
     async def _start_subprocess(self) -> bool:
-        """Start the service subprocess."""
+        """Start the service subprocess (or helper executable if bundled)."""
+        # Check if already running
         if self._process and self._process.poll() is None:
             logger.debug("Service process already running")
             return True
 
         try:
-            cmd = [
-                sys.executable,
-                "-m",
-                "airborne.tts_cache_service.service",
-            ]
-            if self.config_path:
-                cmd.extend(["--config", str(self.config_path)])
+            # Check for bundled helper executable first
+            helper_path = _get_tts_helper_path()
+            if helper_path:
+                cmd = [
+                    str(helper_path),
+                    "--host", self.host,
+                    "--port", str(self.port),
+                ]
+                logger.info("Starting TTS helper executable: %s", " ".join(cmd))
+            else:
+                # Development mode: use python -m
+                cmd = [
+                    sys.executable,
+                    "-m",
+                    "airborne.tts_cache_service.service",
+                ]
+                if self.config_path:
+                    cmd.extend(["--config", str(self.config_path)])
+                logger.info("Starting TTS service subprocess: %s", " ".join(cmd))
 
-            logger.info("Starting TTS service subprocess: %s", " ".join(cmd))
+            # For bundled helper executables, redirect stderr to a log file for debugging
+            if helper_path:
+                import tempfile
+                log_dir = Path.home() / "Library" / "Logs" / "AirBorne"
+                log_dir.mkdir(parents=True, exist_ok=True)
+                helper_log = log_dir / "tts_helper.log"
+                self._helper_log_file = open(helper_log, "w")
+                logger.debug("TTS helper stderr -> %s", helper_log)
+                self._process = subprocess.Popen(
+                    cmd,
+                    stdout=subprocess.DEVNULL,
+                    stderr=self._helper_log_file,
+                )
+            else:
+                self._process = subprocess.Popen(
+                    cmd,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                )
 
-            self._process = subprocess.Popen(
-                cmd,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-            )
-
-            # Wait for service to be ready
-            await asyncio.sleep(1.0)
+            # Wait for service to be ready (bundled helper needs more time)
+            await asyncio.sleep(2.0 if helper_path else 1.0)
 
             if self._process.poll() is not None:
-                stdout, stderr = self._process.communicate()
-                logger.error(
-                    "Service process exited immediately. stdout: %s, stderr: %s",
-                    stdout.decode()[:500],
-                    stderr.decode()[:500],
-                )
+                if helper_path:
+                    logger.error("TTS helper process exited immediately (exit code: %d)", self._process.returncode)
+                else:
+                    stdout, stderr = self._process.communicate()
+                    logger.error(
+                        "Service process exited immediately. stdout: %s, stderr: %s",
+                        stdout.decode()[:500],
+                        stderr.decode()[:500],
+                    )
                 return False
 
             logger.info("Service subprocess started (PID: %d)", self._process.pid)

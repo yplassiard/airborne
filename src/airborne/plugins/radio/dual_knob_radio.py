@@ -192,16 +192,7 @@ class DualKnobRadioSystem(RadioSystem):
         freq = self.frequency_manager.get_active(self.selected_radio)
         mhz_part = int(freq)
 
-        # Build announcement: "one one eight" for 118
-        from airborne.plugins.radio.callsign_builder import CallsignBuilder
-
-        builder = CallsignBuilder(voice="pilot")
-        digit_files = builder.build_callsign(str(mhz_part))
-
-        # Speak each digit
-        for file in digit_files:
-            self.frequency_announcer._speak_file("pilot", file)
-
+        self.frequency_announcer.announce_mhz(mhz_part)
         logger.debug("%s MHz: %d", self.selected_radio, mhz_part)
 
     def _announce_khz(self) -> None:
@@ -213,25 +204,7 @@ class DualKnobRadioSystem(RadioSystem):
         mhz_part = int(freq)
         khz_part = freq - mhz_part
 
-        # Build announcement: "decimal seven five" for .75
-        from airborne.plugins.radio.callsign_builder import CallsignBuilder
-
-        builder = CallsignBuilder(voice="pilot")
-
-        # Say "decimal"
-        self.frequency_announcer._speak_file("pilot", "DECIMAL")
-
-        # Say digits after decimal (e.g., "75" → "seven five")
-        khz_str = f"{khz_part:.3f}"[2:]  # Get "750" from "0.750"
-        # Remove trailing zeros
-        khz_str = khz_str.rstrip("0")
-        if not khz_str:
-            khz_str = "0"
-
-        for digit in khz_str:
-            digit_file = builder.DIGIT_FILES[digit]
-            self.frequency_announcer._speak_file("pilot", digit_file)
-
+        self.frequency_announcer.announce_khz(khz_part)
         logger.debug("%s kHz: %.3f", self.selected_radio, khz_part)
 
     def _announce_full_frequency(self) -> None:

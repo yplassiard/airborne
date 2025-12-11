@@ -63,13 +63,19 @@ SLOT_PATTERNS = {
 }
 
 # Try to import llama-cpp-python
+# Note: The import itself can fail with FileNotFoundError if the native library is missing
+LLAMA_CPP_AVAILABLE = False
+Llama = None  # type: ignore[assignment,misc]
+
 try:
     from llama_cpp import Llama
 
     LLAMA_CPP_AVAILABLE = True
 except ImportError:
-    LLAMA_CPP_AVAILABLE = False
-    Llama = None  # type: ignore[assignment,misc]
+    pass  # Library not installed
+except (OSError, FileNotFoundError) as e:
+    # Native library missing (common in bundled apps)
+    logger.warning(f"llama-cpp native library not found: {e}")
 
 
 # System prompt for ATC intent extraction - kept compact to fit context window

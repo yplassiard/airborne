@@ -1014,12 +1014,24 @@ def setup_logging(config: dict[str, Any]) -> None:
     max_size_mb = log_config.get("max_size_mb", 10)
     backup_count = log_config.get("backup_count", 3)
 
+    # Ensure log file is in the correct directory (not relative to cwd)
+    log_path = Path(log_file)
+    if not log_path.is_absolute():
+        # Use ~/Library/Logs/AirBorne on macOS, or ~/.airborne on others
+        import sys
+        if sys.platform == "darwin":
+            log_dir = Path.home() / "Library" / "Logs" / "AirBorne"
+        else:
+            log_dir = Path.home() / ".airborne" / "logs"
+        log_dir.mkdir(parents=True, exist_ok=True)
+        log_path = log_dir / log_path.name
+
     # Create formatter
     formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 
     # File handler with rotation
     file_handler = RotatingFileHandler(
-        log_file,
+        log_path,
         maxBytes=max_size_mb * 1024 * 1024,
         backupCount=backup_count,
     )
@@ -1106,6 +1118,55 @@ def main() -> None:
     except Exception as e:
         logger.exception("Fatal error: %s", e)
         sys.exit(1)
+
+
+def run_service(
+    host: str = "127.0.0.1",
+    port: int = 51127,
+    stop_event: "threading.Event | None" = None,
+) -> None:
+    """Run the TTS service (for use from a thread in bundled mode).
+
+    Args:
+        host: WebSocket server host.
+        port: WebSocket server port.
+        stop_event: Threading event to signal shutdown.
+    """
+    import threading
+
+    # Load config
+    config = load_config(None)
+
+    # Override host/port
+    config.setdefault("server", {})["host"] = host
+    config.setdefault("server", {})["port"] = port
+
+    # Setup logging (minimal for thread mode)
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    )
+
+    logger.info("TTS Cache Service starting in thread mode...")
+
+    # Create service
+    service = TTSCacheService(config)
+
+    # Monitor stop_event in a thread
+    if stop_event:
+        def monitor_stop() -> None:
+            stop_event.wait()
+            logger.info("Stop event received, shutting down service...")
+            service._shutdown_event.set()
+
+        monitor_thread = threading.Thread(target=monitor_stop, daemon=True)
+        monitor_thread.start()
+
+    # Run service
+    try:
+        asyncio.run(service.run())
+    except Exception as e:
+        logger.exception("TTS service error: %s", e)
 
 
 if __name__ == "__main__":

@@ -424,15 +424,18 @@ class InputContextManager:
             self.event_bus.publish(InputActionEvent(action=action))
 
         # Publish as message for plugins to handle
-        self.message_queue.publish(
-            Message(
-                sender="input_context_manager",
-                recipients=["*"],
-                topic=f"input.{action}",
-                data={"key": key, "mods": mods},
-                priority=MessagePriority.NORMAL,
+        # Skip push_to_talk since it requires special press/release handling
+        # (main.py handles it via KEYDOWN/KEYUP events)
+        if action != "push_to_talk":
+            self.message_queue.publish(
+                Message(
+                    sender="input_context_manager",
+                    recipients=["*"],
+                    topic=f"input.{action}",
+                    data={"key": key, "mods": mods},
+                    priority=MessagePriority.NORMAL,
+                )
             )
-        )
 
     def push_context(self, context_name: str):
         """Push new context onto stack (becomes active).
