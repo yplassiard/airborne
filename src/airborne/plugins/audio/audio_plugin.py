@@ -1014,49 +1014,65 @@ class AudioPlugin(IPlugin):
             return
 
         # Handle trim adjustment sound and TTS
+        # event.value is now in DEGREES (e.g., 5.0 = 5° nose up)
         if event.action == "trim_pitch_adjusted":
-            # Store trim value (convert from 0-100 percentage to -1.0 to 1.0 scale)
             if event.value is not None:
-                trim_percent = int(event.value)
-                self._pitch_trim = (trim_percent - 50) / 50.0  # 0->-1.0, 50->0.0, 100->1.0
+                trim_deg = float(event.value)
+                # Store normalized value for internal use
+                # Assuming C172-like range (-10 to +20), neutral at 0
+                self._pitch_trim = trim_deg / 15.0  # Approximate normalization
+
             # Play click sound
             if self.sound_manager:
                 self.sound_manager.play_sound_2d(
                     "assets/sounds/aircraft/click_knob.mp3", volume=0.3
                 )
-            # Announce trim position (HIGH priority + interrupt to stop previous announcements)
+
+            # Announce trim position in degrees
             if self.tts_provider and event.value is not None:
-                trim_percent = int(event.value)
                 from airborne.audio.tts.base import TTSPriority
 
-                message = t("cockpit.pitch_trim", value=trim_percent)
+                trim_deg = float(event.value)
+                rounded_deg = round(trim_deg)
+
+                if abs(rounded_deg) < 1:
+                    # Near neutral
+                    message = t("cockpit.pitch_trim_neutral")
+                else:
+                    # Format: "Pitch trim 5 degrees nose up"
+                    direction = t("cockpit.trim_nose_up") if rounded_deg > 0 else t("cockpit.trim_nose_down")
+                    message = t("cockpit.pitch_trim_deg", value=abs(rounded_deg), direction=direction)
+
                 self.tts_provider.speak(message, priority=TTSPriority.HIGH, interrupt=True)
             return
 
         # Handle rudder trim adjustment sound and TTS
         if event.action == "trim_rudder_adjusted":
-            # Store trim value (convert from 0-100 percentage to -1.0 to 1.0 scale)
             if event.value is not None:
-                trim_percent = int(event.value)
-                self._rudder_trim = (trim_percent - 50) / 50.0  # 0->-1.0, 50->0.0, 100->1.0
+                trim_deg = float(event.value)
+                self._rudder_trim = trim_deg / 15.0  # Approximate normalization
+
             # Play click sound
             if self.sound_manager:
                 self.sound_manager.play_sound_2d(
                     "assets/sounds/aircraft/click_knob.mp3", volume=0.3
                 )
-            # Announce rudder trim position (HIGH priority + interrupt to stop previous announcements)
+
+            # Announce rudder trim position in degrees
             if self.tts_provider and event.value is not None:
-                trim_percent = int(event.value)
                 from airborne.audio.tts.base import TTSPriority
 
-                # Convert to left/right/neutral
-                if trim_percent < 45:
-                    trim_text = t("cockpit.trim_left")
-                elif trim_percent > 55:
-                    trim_text = t("cockpit.trim_right")
+                trim_deg = float(event.value)
+                rounded_deg = round(trim_deg)
+
+                if abs(rounded_deg) < 1:
+                    # Near neutral
+                    message = t("cockpit.rudder_trim_neutral")
                 else:
-                    trim_text = t("cockpit.trim_neutral")
-                message = t("cockpit.rudder_trim", value=trim_text)
+                    # Format: "Rudder trim 3 degrees right"
+                    direction = t("cockpit.trim_right") if rounded_deg > 0 else t("cockpit.trim_left")
+                    message = t("cockpit.rudder_trim_deg", value=abs(rounded_deg), direction=direction)
+
                 self.tts_provider.speak(message, priority=TTSPriority.HIGH, interrupt=True)
             return
 

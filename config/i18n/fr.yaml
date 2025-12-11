@@ -214,12 +214,18 @@ cockpit:
   fuel_remaining_minutes: "Carburant restant {value} minutes"
   fuel_status_hours: "Carburant {gallons} gallons restant {hours} heures {minutes} minutes"
   fuel_status_minutes: "Carburant {gallons} gallons restant {minutes} minutes"
-  # Trim readouts
-  pitch_trim: "Trim profondeur {value} pour cent"
-  rudder_trim: "Trim direction {value}"
+  # Trim readouts (degree-based)
+  pitch_trim: "Trim profondeur {value} pour cent"  # Legacy
+  pitch_trim_deg: "Trim profondeur {value} degrés {direction}"
+  pitch_trim_neutral: "Trim profondeur neutre"
+  rudder_trim: "Trim direction {value}"  # Legacy
+  rudder_trim_deg: "Trim direction {value} degrés {direction}"
+  rudder_trim_neutral: "Trim direction neutre"
   trim_left: "gauche"
   trim_right: "droite"
   trim_neutral: "neutre"
+  trim_nose_up: "à cabrer"
+  trim_nose_down: "à piquer"
   # Altimeter
   altimeter_inhg: "{value} pouces"
   altimeter_hpa: "{value} hectopascals"

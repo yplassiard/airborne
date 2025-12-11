@@ -115,6 +115,27 @@ aircraft:
       speed_kts: 135            # 250 km/h at 75%
       fuel_gph: 10.0
 
+  # Elevator trim configuration
+  # DR400 has a trim wheel on center console with degree markings
+  # Range is approximately -5° (nose down) to +15° (nose up)
+  trim:
+    pitch:
+      min_deg: -5.0               # Full nose-down trim tab position (degrees)
+      max_deg: 15.0               # Full nose-up trim tab position (degrees)
+      neutral_deg: 0.0            # Neutral/takeoff position (degrees)
+      step_deg: 1.0               # Degrees per trim wheel click
+      # Recommended positions for different flight phases
+      recommended:
+        takeoff: 4.0              # Nose up for rotation
+        climb: 6.0                # Nose up for Vy climb
+        cruise: 2.0               # Slight nose up (varies with speed/CG)
+        approach: 4.0             # Nose up for slow flight
+    rudder:
+      min_deg: -10.0              # Full left rudder trim (degrees)
+      max_deg: 10.0               # Full right rudder trim (degrees)
+      neutral_deg: 0.0            # Centered position
+      step_deg: 1.0               # Degrees per click
+
   # Landing limits and surface compatibility
   landing_limits:
     max_sink_rate_fpm: 550          # DR400 has more delicate gear than C172

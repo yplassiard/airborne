@@ -246,6 +246,27 @@ aircraft:
       distance_50ft: 1685           # Distance to clear 50 ft obstacle
       climb_rate_fpm: 730           # Rate of climb at sea level
 
+  # Elevator trim configuration
+  # C172 has a trim wheel with position indicator marked in degrees of trim tab deflection
+  # Range is approximately -10° (nose down) to +20° (nose up)
+  trim:
+    pitch:
+      min_deg: -10.0              # Full nose-down trim tab position (degrees)
+      max_deg: 20.0               # Full nose-up trim tab position (degrees)
+      neutral_deg: 0.0            # Neutral/takeoff position (degrees)
+      step_deg: 1.0               # Degrees per trim wheel click
+      # Recommended positions for different flight phases
+      recommended:
+        takeoff: 5.0              # Nose up for rotation (~5-7° typical)
+        climb: 7.0                # Nose up for Vy climb
+        cruise: 3.0               # Slight nose up (varies with speed/CG)
+        approach: 5.0             # Nose up for slow flight
+    rudder:
+      min_deg: -15.0              # Full left rudder trim (degrees)
+      max_deg: 15.0               # Full right rudder trim (degrees)
+      neutral_deg: 0.0            # Centered position
+      step_deg: 1.0               # Degrees per click
+
   # Landing limits and surface compatibility
   landing_limits:
     max_sink_rate_fpm: 600          # Maximum touchdown sink rate before damage

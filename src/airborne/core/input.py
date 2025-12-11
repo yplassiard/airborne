@@ -57,8 +57,13 @@ class InputStateEvent(Event):
     brakes: float = 0.0
     flaps: float = 0.0
     gear: float = 1.0
-    pitch_trim: float = 0.0  # Pitch trim position (-1.0 to 1.0)
-    rudder_trim: float = 0.0  # Rudder trim position (-1.0 to 1.0)
+    # Trim positions stored in DEGREES (aircraft-specific range)
+    # Positive = nose up / right, Negative = nose down / left
+    pitch_trim_deg: float = 0.0  # Pitch trim in degrees (e.g., -10° to +20° for C172)
+    rudder_trim_deg: float = 0.0  # Rudder trim in degrees (e.g., -15° to +15°)
+    # Legacy normalized values for backward compatibility (computed from degrees)
+    pitch_trim: float = 0.0  # Normalized pitch trim (-1.0 to 1.0) - DEPRECATED
+    rudder_trim: float = 0.0  # Normalized rudder trim (-1.0 to 1.0) - DEPRECATED
 
 
 @dataclass
@@ -316,8 +321,12 @@ class InputState:
     brakes: float = 0.0
     flaps: float = 0.0
     gear: float = 1.0  # Default gear down
-    pitch_trim: float = 0.0  # Pitch trim position (-1.0 to 1.0)
-    rudder_trim: float = 0.0  # Rudder trim position (-1.0 to 1.0)
+    # Trim in degrees (primary storage)
+    pitch_trim_deg: float = 0.0  # Pitch trim in degrees
+    rudder_trim_deg: float = 0.0  # Rudder trim in degrees
+    # Normalized trim for backward compatibility
+    pitch_trim: float = 0.0  # Normalized pitch trim (-1.0 to 1.0)
+    rudder_trim: float = 0.0  # Normalized rudder trim (-1.0 to 1.0)
 
     def clamp_all(self) -> None:
         """Clamp all values to valid ranges."""
@@ -328,6 +337,7 @@ class InputState:
         self.brakes = max(0.0, min(1.0, self.brakes))
         self.flaps = max(0.0, min(1.0, self.flaps))
         self.gear = max(0.0, min(1.0, self.gear))
+        # Note: degree-based trim is clamped by InputManager based on aircraft config
         self.pitch_trim = max(-1.0, min(1.0, self.pitch_trim))
         self.rudder_trim = max(-1.0, min(1.0, self.rudder_trim))
 
@@ -371,6 +381,22 @@ class InputManager:  # pylint: disable=too-many-instance-attributes
         # Aircraft configuration
         self.aircraft_config = aircraft_config or {}
         self.fixed_gear = self.aircraft_config.get("fixed_gear", False)
+
+        # Trim configuration from aircraft (degrees-based)
+        # Default values for C172-like aircraft if not specified
+        trim_config = self.aircraft_config.get("trim", {})
+        pitch_trim_config = trim_config.get("pitch", {})
+        rudder_trim_config = trim_config.get("rudder", {})
+
+        self._pitch_trim_min_deg = pitch_trim_config.get("min_deg", -10.0)
+        self._pitch_trim_max_deg = pitch_trim_config.get("max_deg", 20.0)
+        self._pitch_trim_step_deg = pitch_trim_config.get("step_deg", 1.0)
+        self._pitch_trim_neutral_deg = pitch_trim_config.get("neutral_deg", 0.0)
+
+        self._rudder_trim_min_deg = rudder_trim_config.get("min_deg", -15.0)
+        self._rudder_trim_max_deg = rudder_trim_config.get("max_deg", 15.0)
+        self._rudder_trim_step_deg = rudder_trim_config.get("step_deg", 1.0)
+        self._rudder_trim_neutral_deg = rudder_trim_config.get("neutral_deg", 0.0)
 
         # Current input state
         self.state = InputState()
@@ -1175,8 +1201,10 @@ class InputManager:  # pylint: disable=too-many-instance-attributes
                         "brakes": self.state.brakes,
                         "flaps": self.state.flaps,
                         "gear": self.state.gear,
-                        "pitch_trim": self.state.pitch_trim,
-                        "rudder_trim": self.state.rudder_trim,
+                        "pitch_trim": self.state.pitch_trim,  # Normalized (-1 to 1)
+                        "rudder_trim": self.state.rudder_trim,  # Normalized (-1 to 1)
+                        "pitch_trim_deg": self.state.pitch_trim_deg,  # Degrees
+                        "rudder_trim_deg": self.state.rudder_trim_deg,  # Degrees
                     },
                     priority=MessagePriority.HIGH,
                 )
@@ -1340,9 +1368,66 @@ class InputManager:  # pylint: disable=too-many-instance-attributes
         self._yaw_input_target = yaw_input_target
         self.state.brakes = brakes
 
+    def _pitch_trim_deg_to_normalized(self, deg: float) -> float:
+        """Convert pitch trim from degrees to normalized (-1.0 to +1.0).
+
+        Uses aircraft-specific trim range from config.
+        Maps min_deg to -1.0, max_deg to +1.0.
+
+        Args:
+            deg: Trim position in degrees.
+
+        Returns:
+            Normalized trim value (-1.0 to +1.0).
+        """
+        trim_range = self._pitch_trim_max_deg - self._pitch_trim_min_deg
+        if trim_range <= 0:
+            return 0.0
+        # Map [min_deg, max_deg] to [-1.0, +1.0]
+        return 2.0 * (deg - self._pitch_trim_min_deg) / trim_range - 1.0
+
+    def _rudder_trim_deg_to_normalized(self, deg: float) -> float:
+        """Convert rudder trim from degrees to normalized (-1.0 to +1.0).
+
+        Args:
+            deg: Trim position in degrees.
+
+        Returns:
+            Normalized trim value (-1.0 to +1.0).
+        """
+        trim_range = self._rudder_trim_max_deg - self._rudder_trim_min_deg
+        if trim_range <= 0:
+            return 0.0
+        return 2.0 * (deg - self._rudder_trim_min_deg) / trim_range - 1.0
+
+    def _format_trim_announcement(self, deg: float, is_pitch: bool = True) -> str:
+        """Format trim position for TTS announcement.
+
+        Args:
+            deg: Trim position in degrees.
+            is_pitch: True for pitch trim, False for rudder trim.
+
+        Returns:
+            Formatted string like "5 degrees nose up" or "neutral".
+        """
+        # Round to nearest integer for announcement
+        rounded_deg = round(deg)
+
+        if abs(rounded_deg) < 0.5:
+            return "neutral"
+
+        if is_pitch:
+            direction = "nose up" if rounded_deg > 0 else "nose down"
+        else:
+            direction = "right" if rounded_deg > 0 else "left"
+
+        return f"{abs(rounded_deg)} degrees {direction}"
+
     @staticmethod
     def _trim_to_percent(trim_value: float) -> int:
         """Convert trim value (-1.0 to +1.0) to percentage (0-100).
+
+        DEPRECATED: Use degree-based trim instead.
 
         Args:
             trim_value: Trim value in range [-1.0, 1.0]
@@ -1356,7 +1441,11 @@ class InputManager:  # pylint: disable=too-many-instance-attributes
         return int((trim_value + 1.0) / 2.0 * 100)
 
     def _process_trim_controls(self) -> None:
-        """Process trim control inputs (shared by both keyboard modes)."""
+        """Process trim control inputs (shared by both keyboard modes).
+
+        Trim is stored in DEGREES and converted to normalized values for physics.
+        Each click adjusts by the aircraft-specific step_deg (typically 1°).
+        """
         # Check for Shift modifier
         mods = pygame.key.get_mods()
         shift_pressed = bool(mods & (pygame.KMOD_SHIFT | pygame.KMOD_LSHIFT | pygame.KMOD_RSHIFT))
@@ -1369,74 +1458,81 @@ class InputManager:  # pylint: disable=too-many-instance-attributes
             if action == InputAction.TRIM_PITCH_UP:
                 # Rate-limited trim increase (10 clicks/second max)
                 if self._time_since_last_trim_click >= self._trim_click_interval:
-                    increment = 0.05  # 5% per click
-                    old_trim = self.state.pitch_trim
-                    self.state.pitch_trim = min(1.0, self.state.pitch_trim + increment)
-                    # Publish event for TTS announcement
-                    if abs(self.state.pitch_trim - old_trim) > 0.001:
-                        trim_percent = self._trim_to_percent(self.state.pitch_trim)
+                    old_trim_deg = self.state.pitch_trim_deg
+                    new_trim_deg = min(
+                        self._pitch_trim_max_deg,
+                        self.state.pitch_trim_deg + self._pitch_trim_step_deg
+                    )
+                    self.state.pitch_trim_deg = new_trim_deg
+                    # Update normalized value for backward compatibility
+                    self.state.pitch_trim = self._pitch_trim_deg_to_normalized(new_trim_deg)
+
+                    # Publish event for TTS announcement (with degrees)
+                    if abs(new_trim_deg - old_trim_deg) > 0.01:
                         self.event_bus.publish(
-                            InputActionEvent(action="trim_pitch_adjusted", value=trim_percent)
+                            InputActionEvent(action="trim_pitch_adjusted", value=new_trim_deg)
                         )
                         self._time_since_last_trim_click = 0.0
-                        # Mark for removal - trim click should only apply once
                         actions_to_remove.add(action)
+
             elif action == InputAction.TRIM_PITCH_DOWN:
                 # Rate-limited trim decrease (10 clicks/second max)
                 if self._time_since_last_trim_click >= self._trim_click_interval:
-                    decrement = 0.05  # 5% per click
-                    old_trim = self.state.pitch_trim
-                    self.state.pitch_trim = max(-1.0, self.state.pitch_trim - decrement)
-                    # Publish event for TTS announcement
-                    if abs(self.state.pitch_trim - old_trim) > 0.001:
-                        trim_percent = self._trim_to_percent(self.state.pitch_trim)
+                    old_trim_deg = self.state.pitch_trim_deg
+                    new_trim_deg = max(
+                        self._pitch_trim_min_deg,
+                        self.state.pitch_trim_deg - self._pitch_trim_step_deg
+                    )
+                    self.state.pitch_trim_deg = new_trim_deg
+                    self.state.pitch_trim = self._pitch_trim_deg_to_normalized(new_trim_deg)
+
+                    if abs(new_trim_deg - old_trim_deg) > 0.01:
                         self.event_bus.publish(
-                            InputActionEvent(action="trim_pitch_adjusted", value=trim_percent)
+                            InputActionEvent(action="trim_pitch_adjusted", value=new_trim_deg)
                         )
                         self._time_since_last_trim_click = 0.0
-                        # Mark for removal - trim click should only apply once
                         actions_to_remove.add(action)
+
             elif action == InputAction.TRIM_RUDDER_RIGHT:
                 # Rate-limited rudder trim right (10 clicks/second max)
-                logger.debug(
-                    f"Processing TRIM_RUDDER_RIGHT: time_since_click={self._time_since_last_trim_click:.3f}, interval={self._trim_click_interval:.3f}"
-                )
                 if self._time_since_last_trim_click >= self._trim_click_interval:
-                    increment = 0.05  # 5% per click
-                    old_trim = self.state.rudder_trim
-                    self.state.rudder_trim = min(1.0, self.state.rudder_trim + increment)
-                    # Publish event for TTS announcement
-                    if abs(self.state.rudder_trim - old_trim) > 0.001:
-                        trim_percent = self._trim_to_percent(self.state.rudder_trim)
+                    old_trim_deg = self.state.rudder_trim_deg
+                    new_trim_deg = min(
+                        self._rudder_trim_max_deg,
+                        self.state.rudder_trim_deg + self._rudder_trim_step_deg
+                    )
+                    self.state.rudder_trim_deg = new_trim_deg
+                    self.state.rudder_trim = self._rudder_trim_deg_to_normalized(new_trim_deg)
+
+                    if abs(new_trim_deg - old_trim_deg) > 0.01:
                         logger.info(
-                            f"Rudder trim RIGHT: {old_trim:.2f} -> {self.state.rudder_trim:.2f} ({trim_percent}%)"
+                            f"Rudder trim RIGHT: {old_trim_deg:.1f}° -> {new_trim_deg:.1f}°"
                         )
                         self.event_bus.publish(
-                            InputActionEvent(action="trim_rudder_adjusted", value=trim_percent)
+                            InputActionEvent(action="trim_rudder_adjusted", value=new_trim_deg)
                         )
                         self._time_since_last_trim_click = 0.0
-                        # Mark for removal - trim click should only apply once
                         actions_to_remove.add(action)
+
             elif action == InputAction.TRIM_RUDDER_LEFT:
                 # Rate-limited rudder trim left (10 clicks/second max)
-                logger.debug(
-                    f"Processing TRIM_RUDDER_LEFT: time_since_click={self._time_since_last_trim_click:.3f}, interval={self._trim_click_interval:.3f}"
-                )
                 if self._time_since_last_trim_click >= self._trim_click_interval:
-                    decrement = 0.05  # 5% per click
-                    old_trim = self.state.rudder_trim
-                    self.state.rudder_trim = max(-1.0, self.state.rudder_trim - decrement)
-                    # Publish event for TTS announcement
-                    if abs(self.state.rudder_trim - old_trim) > 0.001:
-                        trim_percent = self._trim_to_percent(self.state.rudder_trim)
+                    old_trim_deg = self.state.rudder_trim_deg
+                    new_trim_deg = max(
+                        self._rudder_trim_min_deg,
+                        self.state.rudder_trim_deg - self._rudder_trim_step_deg
+                    )
+                    self.state.rudder_trim_deg = new_trim_deg
+                    self.state.rudder_trim = self._rudder_trim_deg_to_normalized(new_trim_deg)
+
+                    if abs(new_trim_deg - old_trim_deg) > 0.01:
                         logger.info(
-                            f"Rudder trim LEFT: {old_trim:.2f} -> {self.state.rudder_trim:.2f} ({trim_percent}%)"
+                            f"Rudder trim LEFT: {old_trim_deg:.1f}° -> {new_trim_deg:.1f}°"
                         )
                         self.event_bus.publish(
-                            InputActionEvent(action="trim_rudder_adjusted", value=trim_percent)
+                            InputActionEvent(action="trim_rudder_adjusted", value=new_trim_deg)
                         )
                         self._time_since_last_trim_click = 0.0
-                        # Mark for removal - trim click should only apply once
                         actions_to_remove.add(action)
 
         # Remove processed trim actions (they should only fire once per click)
@@ -1448,27 +1544,40 @@ class InputManager:  # pylint: disable=too-many-instance-attributes
             pitch_up_held = pygame.K_UP in self._keys_pressed
             pitch_down_held = pygame.K_DOWN in self._keys_pressed
 
+            # Continuous trim adjustment rate (degrees per second when held)
+            trim_rate_deg_per_sec = 10.0  # 10 degrees per second
+            trim_change_deg = trim_rate_deg_per_sec * 0.016  # Assume ~60 FPS
+
             if pitch_down_held:
                 # Shift+DOWN = trim nose up (continuously adjust while held)
-                trim_change = self._trim_adjustment_rate * 0.016  # Assume ~60 FPS
-                old_trim = self.state.pitch_trim
-                self.state.pitch_trim = min(1.0, self.state.pitch_trim + trim_change)
-                # TTS announcement on significant change (every 5%)
-                if int(old_trim * 20) != int(self.state.pitch_trim * 20):
-                    trim_percent = self._trim_to_percent(self.state.pitch_trim)
+                old_trim_deg = self.state.pitch_trim_deg
+                new_trim_deg = min(
+                    self._pitch_trim_max_deg,
+                    self.state.pitch_trim_deg + trim_change_deg
+                )
+                self.state.pitch_trim_deg = new_trim_deg
+                self.state.pitch_trim = self._pitch_trim_deg_to_normalized(new_trim_deg)
+
+                # TTS announcement on significant change (every 1°)
+                if int(old_trim_deg) != int(new_trim_deg):
                     self.event_bus.publish(
-                        InputActionEvent(action="trim_pitch_adjusted", value=trim_percent)
+                        InputActionEvent(action="trim_pitch_adjusted", value=new_trim_deg)
                     )
+
             elif pitch_up_held:
                 # Shift+UP = trim nose down (continuously adjust while held)
-                trim_change = self._trim_adjustment_rate * 0.016  # Assume ~60 FPS
-                old_trim = self.state.pitch_trim
-                self.state.pitch_trim = max(-1.0, self.state.pitch_trim - trim_change)
-                # TTS announcement on significant change (every 5%)
-                if int(old_trim * 20) != int(self.state.pitch_trim * 20):
-                    trim_percent = self._trim_to_percent(self.state.pitch_trim)
+                old_trim_deg = self.state.pitch_trim_deg
+                new_trim_deg = max(
+                    self._pitch_trim_min_deg,
+                    self.state.pitch_trim_deg - trim_change_deg
+                )
+                self.state.pitch_trim_deg = new_trim_deg
+                self.state.pitch_trim = self._pitch_trim_deg_to_normalized(new_trim_deg)
+
+                # TTS announcement on significant change (every 1°)
+                if int(old_trim_deg) != int(new_trim_deg):
                     self.event_bus.publish(
-                        InputActionEvent(action="trim_pitch_adjusted", value=trim_percent)
+                        InputActionEvent(action="trim_pitch_adjusted", value=new_trim_deg)
                     )
 
     def _update_joystick_controls(self) -> None:
