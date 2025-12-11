@@ -88,6 +88,10 @@ class Simple6DOFFlightModel(IFlightModel):
         self.aspect_ratio = 7.4  # Wing aspect ratio (b²/S)
         self.oswald_efficiency = 0.7  # Oswald efficiency factor
 
+        # Ground effect parameters
+        self.ground_effect_enabled = True  # Can be disabled for testing
+        self.ground_effect_factor = 1.0  # Current ground effect multiplier (for telemetry)
+
         # Stability and damping coefficients (configurable)
         self.pitch_damping_coefficient = (
             -25.0
@@ -404,6 +408,77 @@ class Simple6DOFFlightModel(IFlightModel):
 
         return total_cd
 
+    def _calculate_ground_effect(self, height_agl_m: float) -> tuple[float, float]:
+        """Calculate ground effect lift and drag modifiers.
+
+        Ground effect occurs when flying within approximately one wingspan
+        of the ground. It increases lift and reduces induced drag due to:
+        - Reduced wingtip vortex strength (ground interrupts vortex formation)
+        - Increased effective aspect ratio
+        - Modified pressure distribution under the wing
+
+        The effect is most pronounced at very low heights (< 0.1 wingspan)
+        and diminishes as height increases, becoming negligible above 1 wingspan.
+
+        Physics basis:
+        - Lift increase: Up to 10-15% at very low heights
+        - Induced drag reduction: Up to 50% at very low heights
+        - Effect scales with (1 - h/b)² where h=height, b=wingspan
+
+        Args:
+            height_agl_m: Height above ground level in meters.
+
+        Returns:
+            Tuple of (lift_multiplier, induced_drag_multiplier).
+            - lift_multiplier: 1.0 (no effect) to ~1.15 (max ground effect)
+            - induced_drag_multiplier: 1.0 (no effect) to ~0.5 (max ground effect)
+
+        Examples:
+            >>> # At 2m AGL with 11m wingspan (h/b = 0.18)
+            >>> lift_mult, drag_mult = model._calculate_ground_effect(2.0)
+            >>> # lift_mult ≈ 1.10, drag_mult ≈ 0.60
+
+        Note:
+            Ground effect makes the aircraft "float" during landing flare
+            and reduces takeoff roll distance. Pilots must account for this
+            when transitioning out of ground effect on climb-out.
+        """
+        if not self.ground_effect_enabled:
+            return 1.0, 1.0
+
+        # No ground effect if too high or on ground
+        if height_agl_m <= 0 or height_agl_m > self.wing_span:
+            return 1.0, 1.0
+
+        # Height to wingspan ratio (h/b)
+        h_b_ratio = height_agl_m / self.wing_span
+
+        # Ground effect formulas based on Prandtl's lifting line theory
+        # and empirical data from wind tunnel tests
+        #
+        # The lift increase and drag reduction follow a (1 - h/b)² relationship
+        # with different coefficients for each effect.
+
+        # Lift multiplier: increases as height decreases
+        # Maximum increase ~15% at very low heights (h/b < 0.1)
+        # Formula: 1 + k_lift * (1 - h/b)² where k_lift ≈ 0.15
+        lift_coefficient = 0.15
+        lift_multiplier = 1.0 + lift_coefficient * (1.0 - h_b_ratio) ** 2
+
+        # Induced drag multiplier: decreases as height decreases
+        # Maximum reduction ~50% at very low heights
+        # Formula based on span efficiency increase in ground effect
+        # e_IGE / e_OGE = 1 / (1 - (16*h/b)^2 / (1 + (16*h/b)^2))
+        # Simplified: drag_mult = 1 - k_drag * (1 - h/b)²
+        drag_coefficient = 0.50
+        induced_drag_multiplier = 1.0 - drag_coefficient * (1.0 - h_b_ratio) ** 2
+
+        # Clamp to reasonable values
+        lift_multiplier = max(1.0, min(1.20, lift_multiplier))
+        induced_drag_multiplier = max(0.40, min(1.0, induced_drag_multiplier))
+
+        return lift_multiplier, induced_drag_multiplier
+
     def _calculate_forces(self, inputs: ControlInputs) -> None:
         """Calculate aerodynamic and propulsive forces.
 
@@ -418,18 +493,27 @@ class Simple6DOFFlightModel(IFlightModel):
         # Pre-compute for reuse
         q = 0.5 * AIR_DENSITY_SEA_LEVEL * airspeed * airspeed
 
+        # --- Ground Effect ---
+        # Calculate ground effect modifiers based on AGL altitude
+        height_agl_m = self.state.agl_altitude_m
+        ge_lift_mult, ge_drag_mult = self._calculate_ground_effect(height_agl_m)
+        self.ground_effect_factor = ge_lift_mult  # Store for telemetry
+
         # --- Lift ---
         # Lift depends on angle of attack with realistic stall behavior
         angle_of_attack = self._calculate_angle_of_attack()  # radians
 
         # Calculate lift coefficient using realistic stall model with flap effects
         cl = self._calculate_lift_coefficient(angle_of_attack, inputs.flaps)
-        lift_magnitude = q * self.wing_area * cl
+
+        # Apply ground effect to lift
+        lift_magnitude = q * self.wing_area * cl * ge_lift_mult
 
         # DEBUG: Log lift calculation details every 60 frames (~1 second)
         if self._updates % 60 == 0:
+            ge_info = f" GE={ge_lift_mult:.2f}" if ge_lift_mult > 1.01 else ""
             logger.debug(
-                f"[LIFT CALC] airspeed={airspeed:.1f}m/s q={q:.1f}Pa wing_area={self.wing_area:.2f}m² AOA={angle_of_attack * RADIANS_TO_DEGREES:.2f}° CL_slope={self.lift_coefficient_slope:.3f} CL={cl:.3f} lift_mag={lift_magnitude:.1f}N mass={self.state.mass:.1f}kg weight={self.state.mass * GRAVITY:.1f}N"
+                f"[LIFT CALC] airspeed={airspeed:.1f}m/s q={q:.1f}Pa wing_area={self.wing_area:.2f}m² AOA={angle_of_attack * RADIANS_TO_DEGREES:.2f}° CL_slope={self.lift_coefficient_slope:.3f} CL={cl:.3f} lift_mag={lift_magnitude:.1f}N mass={self.state.mass:.1f}kg weight={self.state.mass * GRAVITY:.1f}N{ge_info}"
             )
 
         # Lift direction: perpendicular to velocity vector
@@ -462,12 +546,21 @@ class Simple6DOFFlightModel(IFlightModel):
         # Calculate total drag coefficient with stall effects
         # cl is already calculated above in lift calculation
         cd = self._calculate_drag_coefficient(cl, angle_of_attack)
-        drag_magnitude = q * self.wing_area * cd
+
+        # Apply ground effect to induced drag only (not parasite drag)
+        # Induced drag: CD_i = CL² / (π * e * AR)
+        cd_induced_base = (cl * cl) / (math.pi * self.oswald_efficiency * self.aspect_ratio)
+        cd_induced = cd_induced_base * ge_drag_mult  # Reduced in ground effect
+
+        # Recalculate total drag with ground effect on induced component
+        cd_parasite = self.drag_coefficient
+        cd_stall = cd - cd_parasite - cd_induced_base  # Extract stall drag from total
+        cd_total_with_ge = cd_parasite + cd_induced + max(0.0, cd_stall)
+
+        drag_magnitude = q * self.wing_area * cd_total_with_ge
 
         # Store components for telemetry (break down for analysis)
-        cd_induced = (cl * cl) / (math.pi * self.aspect_ratio * self.oswald_efficiency)
-
-        self.drag_parasite_n = q * self.wing_area * self.drag_coefficient
+        self.drag_parasite_n = q * self.wing_area * cd_parasite
         self.drag_induced_n = q * self.wing_area * cd_induced
         self.lift_coefficient = cl
         self.angle_of_attack_deg = angle_of_attack * RADIANS_TO_DEGREES
@@ -792,6 +885,23 @@ class Simple6DOFFlightModel(IFlightModel):
         """
         self.elevation_service = elevation_service
         logger.info("Flight model: terrain elevation service connected")
+
+    def set_ground_effect_enabled(self, enabled: bool) -> None:
+        """Enable or disable ground effect simulation.
+
+        Args:
+            enabled: True to enable ground effect, False to disable.
+        """
+        self.ground_effect_enabled = enabled
+        logger.info("Ground effect %s", "enabled" if enabled else "disabled")
+
+    def get_ground_effect_factor(self) -> float:
+        """Get current ground effect lift multiplier.
+
+        Returns:
+            Ground effect factor (1.0 = no effect, >1.0 = in ground effect).
+        """
+        return self.ground_effect_factor
 
     def get_forces(self) -> FlightForces:
         """Get current forces.
