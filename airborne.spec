@@ -17,17 +17,25 @@ current_platform = platform.system().lower()
 # Determine which audio libraries to include based on platform
 binaries = []
 if current_platform == 'darwin':
-    if os.path.exists('lib/fmod/libfmod.dylib'):
+    # FMOD library - check both possible locations
+    if os.path.exists('lib/macos/libfmod.dylib'):
+        binaries.append(('lib/macos/libfmod.dylib', 'lib/fmod'))
+    elif os.path.exists('lib/fmod/libfmod.dylib'):
         binaries.append(('lib/fmod/libfmod.dylib', 'lib/fmod'))
+    # BASS library
     if os.path.exists('lib/macos/libbass.dylib'):
         binaries.append(('lib/macos/libbass.dylib', 'lib'))
 elif current_platform == 'linux':
-    if os.path.exists('lib/fmod/libfmod.so'):
+    if os.path.exists('lib/linux/libfmod.so'):
+        binaries.append(('lib/linux/libfmod.so', 'lib/fmod'))
+    elif os.path.exists('lib/fmod/libfmod.so'):
         binaries.append(('lib/fmod/libfmod.so', 'lib/fmod'))
     if os.path.exists('lib/linux/libbass.so'):
         binaries.append(('lib/linux/libbass.so', 'lib'))
 elif current_platform == 'windows':
-    if os.path.exists('lib/fmod/fmod.dll'):
+    if os.path.exists('lib/windows/fmod.dll'):
+        binaries.append(('lib/windows/fmod.dll', 'lib/fmod'))
+    elif os.path.exists('lib/fmod/fmod.dll'):
         binaries.append(('lib/fmod/fmod.dll', 'lib/fmod'))
     if os.path.exists('lib/windows/bass.dll'):
         binaries.append(('lib/windows/bass.dll', 'lib'))
@@ -102,6 +110,16 @@ a = Analysis(
         'airborne.aviation',
         'airborne.airports',
         'airborne.scenario',
+
+        # TTS Cache Service (for bundled thread mode)
+        'airborne.tts_cache_service',
+        'airborne.tts_cache_service.service',
+        'airborne.tts_cache_service.client',
+        'airborne.tts_cache_service.cache',
+        'airborne.tts_cache_service.protocol',
+        'websockets',
+        'websockets.client',
+        'websockets.server',
     ],
     hookspath=[],
     hooksconfig={},
@@ -169,7 +187,7 @@ app = BUNDLE(
         'LSMinimumSystemVersion': '10.15.0',
         'NSHighResolutionCapable': True,
         'NSSupportsAutomaticGraphicsSwitching': True,
-        'NSMicrophoneUsageDescription': 'This app may use text-to-speech for accessibility.',
+        'NSMicrophoneUsageDescription': 'AirBorne uses the microphone for voice communication with Air Traffic Control (ATC).',
         'LSUIElement': False,  # Show in dock
         'LSBackgroundOnly': False,  # Not a background-only app
         'NSAppTransportSecurity': {

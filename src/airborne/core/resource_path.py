@@ -178,6 +178,37 @@ def get_lib_path(lib_file: str) -> Path:
     return get_resource_path(f"lib/{lib_file}")
 
 
+def get_architecture() -> str:
+    """Get the current CPU architecture.
+
+    Returns:
+        Architecture identifier: 'arm64', 'x86_64', 'x86', or 'amd64'.
+
+    Examples:
+        >>> get_architecture()  # On Apple Silicon Mac
+        'arm64'
+        >>> get_architecture()  # On Intel Mac or 64-bit Linux
+        'x86_64'
+    """
+    import platform
+
+    machine = platform.machine().lower()
+
+    if machine in ("arm64", "aarch64"):
+        return "arm64"
+    elif machine in ("x86_64", "amd64"):
+        if sys.platform == "win32":
+            return "amd64"
+        return "x86_64"
+    elif machine in ("i386", "i686", "x86"):
+        return "x86"
+    else:
+        # Default fallback
+        if sys.maxsize > 2**32:
+            return "x86_64" if sys.platform != "win32" else "amd64"
+        return "x86"
+
+
 def get_platform_lib_dir() -> Path:
     """Get the platform-specific library directory.
 
@@ -203,6 +234,40 @@ def get_platform_lib_dir() -> Path:
     return get_resource_path(f"lib/{platform_dir}")
 
 
+def get_fmod_lib_dir() -> Path:
+    """Get the FMOD library directory for current platform and architecture.
+
+    Returns the appropriate FMOD library directory based on the current
+    platform and CPU architecture:
+    - macOS ARM: res/darwin/arm64
+    - macOS Intel: res/darwin/x86_64
+    - Linux 32-bit: res/linux/x86
+    - Linux 64-bit: res/linux/x86_64
+    - Windows 32-bit: res/windows/x86
+    - Windows 64-bit: res/windows/amd64
+    - Windows ARM: res/windows/arm64
+
+    Returns:
+        Path to the FMOD library directory.
+
+    Examples:
+        >>> str(get_fmod_lib_dir())  # On Apple Silicon Mac
+        '/Users/user/dev/airborne/res/darwin/arm64'
+        >>> str(get_fmod_lib_dir())  # On Windows 64-bit
+        'C:/dev/airborne/res/windows/amd64'
+    """
+    arch = get_architecture()
+
+    if sys.platform == "darwin":
+        platform_dir = "darwin"
+    elif sys.platform == "win32":
+        platform_dir = "windows"
+    else:
+        platform_dir = "linux"
+
+    return get_resource_path(f"res/{platform_dir}/{arch}")
+
+
 def setup_library_paths() -> None:
     """Set up platform-specific library paths for native libraries.
 
@@ -222,46 +287,49 @@ def setup_library_paths() -> None:
     """
     import ctypes
 
+    # Try FMOD lib directory first (res/platform/arch), then fall back to old lib dir
+    fmod_lib_dir = get_fmod_lib_dir()
+    lib_dir = get_platform_lib_dir()
+
+    # Use FMOD lib dir if it exists, otherwise fall back to platform lib dir
+    if fmod_lib_dir.exists():
+        active_lib_dir = fmod_lib_dir
+    elif lib_dir.exists():
+        active_lib_dir = lib_dir
+    else:
+        return
+
+    lib_dir_str = str(active_lib_dir)
+
     if sys.platform == "darwin":
         # macOS: Preload libfmod.dylib directly using ctypes
         # DYLD_LIBRARY_PATH changes don't work at runtime due to SIP
-        # Check multiple locations: lib/macos (development), lib/fmod (bundled)
-        fmod_paths = [
-            get_platform_lib_dir() / "libfmod.dylib",  # lib/macos/libfmod.dylib
-            get_resource_path("lib/fmod/libfmod.dylib"),  # lib/fmod/libfmod.dylib (bundled)
-        ]
-        for fmod_path in fmod_paths:
-            if fmod_path.exists():
-                try:
-                    ctypes.CDLL(str(fmod_path))
-                    break  # Successfully loaded
-                except OSError:
-                    continue  # Try next path
+        fmod_path = active_lib_dir / "libfmod.dylib"
+        if fmod_path.exists():
+            try:
+                ctypes.CDLL(str(fmod_path))
+            except OSError:
+                pass  # Will fail later with more context
     elif sys.platform == "win32":
-        # Windows: Add to PATH
-        lib_dirs = [
-            get_platform_lib_dir(),  # lib/windows
-            get_resource_path("lib/fmod"),  # lib/fmod (bundled)
-        ]
+        # Windows: Add to DLL search path and preload fmod.dll
+        # Use os.add_dll_directory() (Python 3.8+) for proper DLL discovery
+        if hasattr(os, "add_dll_directory"):
+            os.add_dll_directory(lib_dir_str)
+        # Also add to PATH as fallback
         current = os.environ.get("PATH", "")
-        for lib_dir in lib_dirs:
-            if lib_dir.exists():
-                lib_dir_str = str(lib_dir)
-                if lib_dir_str not in current:
-                    os.environ["PATH"] = f"{lib_dir_str};{current}" if current else lib_dir_str
-                    current = os.environ["PATH"]
+        if lib_dir_str not in current:
+            os.environ["PATH"] = f"{lib_dir_str};{current}" if current else lib_dir_str
+        # Preload fmod.dll directly (similar to macOS approach)
+        fmod_path = active_lib_dir / "fmod.dll"
+        if fmod_path.exists():
+            try:
+                ctypes.CDLL(str(fmod_path))
+            except OSError:
+                pass  # Will fail later with more context
     else:
         # Linux: LD_LIBRARY_PATH
-        lib_dirs = [
-            get_platform_lib_dir(),  # lib/linux
-            get_resource_path("lib/fmod"),  # lib/fmod (bundled)
-        ]
         current = os.environ.get("LD_LIBRARY_PATH", "")
-        for lib_dir in lib_dirs:
-            if lib_dir.exists():
-                lib_dir_str = str(lib_dir)
-                if lib_dir_str not in current:
-                    os.environ["LD_LIBRARY_PATH"] = (
-                        f"{lib_dir_str}:{current}" if current else lib_dir_str
-                    )
-                    current = os.environ["LD_LIBRARY_PATH"]
+        if lib_dir_str not in current:
+            os.environ["LD_LIBRARY_PATH"] = (
+                f"{lib_dir_str}:{current}" if current else lib_dir_str
+            )

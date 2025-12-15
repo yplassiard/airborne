@@ -210,30 +210,43 @@ import platform
 current_platform = platform.system().lower()
 
 # Determine which audio libraries to include based on platform
+# FMOD libraries are now in res/{platform}/{arch}/ format
+import platform as plat
+machine = plat.machine().lower()
+
+# Map machine to architecture
+if machine in ('arm64', 'aarch64'):
+    arch = 'arm64'
+elif machine in ('x86_64', 'amd64'):
+    arch = 'amd64' if current_platform == 'windows' else 'x86_64'
+elif machine in ('i386', 'i686', 'x86'):
+    arch = 'x86'
+else:
+    arch = 'x86_64' if current_platform != 'windows' else 'amd64'
+
 binaries = []
 if current_platform == 'darwin':
-    # FMOD library - check both possible locations
-    if os.path.exists('lib/macos/libfmod.dylib'):
-        binaries.append(('lib/macos/libfmod.dylib', 'lib/fmod'))
-    elif os.path.exists('lib/fmod/libfmod.dylib'):
-        binaries.append(('lib/fmod/libfmod.dylib', 'lib/fmod'))
-    # BASS library
-    if os.path.exists('lib/macos/libbass.dylib'):
-        binaries.append(('lib/macos/libbass.dylib', 'lib'))
+    # FMOD library - check new res/ location first, then fall back to lib/
+    fmod_res_path = f'res/darwin/{arch}/libfmod.dylib'
+    if os.path.exists(fmod_res_path):
+        binaries.append((fmod_res_path, f'res/darwin/{arch}'))
+    elif os.path.exists('lib/macos/libfmod.dylib'):
+        binaries.append(('lib/macos/libfmod.dylib', 'lib/macos'))
 elif current_platform == 'linux':
-    if os.path.exists('lib/linux/libfmod.so'):
-        binaries.append(('lib/linux/libfmod.so', 'lib/fmod'))
-    elif os.path.exists('lib/fmod/libfmod.so'):
-        binaries.append(('lib/fmod/libfmod.so', 'lib/fmod'))
-    if os.path.exists('lib/linux/libbass.so'):
-        binaries.append(('lib/linux/libbass.so', 'lib'))
+    fmod_res_path = f'res/linux/{arch}/libfmod.so'
+    if os.path.exists(fmod_res_path):
+        # Include all .so files for Linux (symlinks and versioned libs)
+        import glob
+        for so_file in glob.glob(f'res/linux/{arch}/libfmod*.so*'):
+            binaries.append((so_file, f'res/linux/{arch}'))
+    elif os.path.exists('lib/linux/libfmod.so'):
+        binaries.append(('lib/linux/libfmod.so', 'lib/linux'))
 elif current_platform == 'windows':
-    if os.path.exists('lib/windows/fmod.dll'):
-        binaries.append(('lib/windows/fmod.dll', 'lib/fmod'))
-    elif os.path.exists('lib/fmod/fmod.dll'):
-        binaries.append(('lib/fmod/fmod.dll', 'lib/fmod'))
-    if os.path.exists('lib/windows/bass.dll'):
-        binaries.append(('lib/windows/bass.dll', 'lib'))
+    fmod_res_path = f'res/windows/{arch}/fmod.dll'
+    if os.path.exists(fmod_res_path):
+        binaries.append((fmod_res_path, f'res/windows/{arch}'))
+    elif os.path.exists('lib/windows/fmod.dll'):
+        binaries.append(('lib/windows/fmod.dll', 'lib/windows'))
 
 a = Analysis(
     ['src/airborne/main.py'],
@@ -265,7 +278,6 @@ a = Analysis(
     hiddenimports=[
         # Runtime dependencies from pyproject.toml:
         'pygame',           # Main game framework
-        'pybass3',          # BASS audio library
         'numpy',            # Math operations
         'yaml',             # Config file parsing (from pyyaml)
         'dateutil',         # Date utilities (from python-dateutil)

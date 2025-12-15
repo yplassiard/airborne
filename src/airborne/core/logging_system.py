@@ -131,6 +131,10 @@ def initialize_logging(
     """
     global _logging_config, _initialized
 
+    # Skip if already initialized to avoid rotating open log files
+    if _initialized:
+        return
+
     if config_path:
         try:
             config_path = Path(config_path)
@@ -174,7 +178,7 @@ def _get_default_config() -> dict[str, Any]:
         "version": 1,
         "level": "INFO",
         "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-        "date_format": "%Y-%m-%d %H:%M:%S.%f",
+        "date_format": "%Y-%m-%d %H:%M:%S",
         "log_dir": "logs",
         "combined_log": {
             "enabled": True,
